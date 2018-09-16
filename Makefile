@@ -1,25 +1,32 @@
-SUBDIRS = kernel
+ROOTDIR = $(shell pwd)
+SUBDIRS = lib kernel
 KERNELFILE = woot
-ISODIR = $(PWD)/iso
+ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
+LIBDIR = $(ROOTDIR)/lib
+
+export LIBDIR
 
 MAKE = make
 CC = gcc
 CXX = g++
 ASM = yasm
 LD = ld
+AR = ar
 
-COMMONFLAGS = -ggdb -m32 -fno-stack-protector -mno-sse -fno-pic
+COMMONFLAGS = -ggdb -m32 -fno-stack-protector -mno-sse -fno-pic -fshort-wchar -nostdinc
+COMMONFLAGS += -I $(ROOTDIR)/include
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -fno-exceptions
 ASMFLAGS = -gdwarf2 -f elf32
-LDFLAGS = -melf_i386
+LDFLAGS = -melf_i386 -nostdlib -L $(LIBDIR)
 
 export MAKE
 export CC
 export CXX
 export ASM
 export LD
+export AR
 
 export CFLAGS
 export CXXFLAGS
