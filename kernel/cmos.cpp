@@ -34,7 +34,7 @@ void CMOS::RestoreNMI(bool state)
     cpuRestoreInterrupts(cs);
 }
 
-int CMOS::GetIRQ()
+uint CMOS::GetIRQ()
 {
     return 8;
 }

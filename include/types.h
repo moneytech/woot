@@ -32,6 +32,8 @@ typedef uint32_t uintptr_t;
 typedef int32_t intptr_t;
 typedef intptr_t ptrdiff_t;
 
+typedef int64_t time_t;
+
 #ifndef __cplusplus
 typedef uint16_t wchar_t;
 typedef int bool;

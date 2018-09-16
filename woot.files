@@ -4,10 +4,12 @@ include/ints.h
 include/irqs.h
 include/limits.h
 include/stdlib.h
+include/time.h
 kernel/cmos.cpp
 kernel/ints.cpp
 kernel/irqs.cpp
 kernel/isrs.asm
+kernel/time.cpp
 lib/arith.c
 lib/malloc.c
 lib/stdlib.c

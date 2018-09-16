@@ -10,7 +10,7 @@ public:
     static void Write(byte reg, byte val);
     static bool DisableNMI();
     static void RestoreNMI(bool state);
-    static int GetIRQ();
+    static uint GetIRQ();
     static void EnableTimer();
     static void DisableTimer();
     static int GetTimerFrequency();

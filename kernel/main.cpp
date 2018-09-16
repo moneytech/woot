@@ -3,6 +3,7 @@
 #include <idt.h>
 #include <ints.h>
 #include <irqs.h>
+#include <time.h>
 
 static unsigned short *video = (unsigned short *)0xC00B8000;
 
@@ -24,10 +25,14 @@ static Ints::Handler kbdTestHandler = { nullptr, kbdTest, nullptr };
 
 extern "C" int kmain(void *mbootInfo)
 {
+    cpuInitFPU(0x37F);
+    cpuEnableSSE();
     GDT::Initialize();
     IDT::Initialize();
     IRQs::Initialize();
     cpuEnableInterrupts();
+    Time::Initialize();
+    Time::StartSystemTimer();
 
     video[0] = 0x1F00 | 'X';
 

@@ -42,6 +42,15 @@ void _outsw(const void *buffer, word port, size_t n);
 void _outsl(const void *buffer, word port, size_t n);
 void _outsd(const void *buffer, word port, size_t n);
 
+// int n instruction
+void cpuINT(byte intNo);
+
+// floating point stuff
+void cpuFXSave(void *buffer);
+void cpuFXRstor(void *buffer);
+void cpuInitFPU(word cw);
+void cpuEnableSSE();
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
