@@ -175,7 +175,7 @@ char *strdup(const char *s)
 char *strcpy(char *dest, const char *src)
 {
     char *ret = dest;
-    while(*dest++ = *src++);
+    while((*dest++ = *src++));
     return ret;
 }
 
@@ -231,7 +231,7 @@ char *strcat(char *dest, const char *src)
     char *ret = dest;
     while (*dest)
         dest++;
-    while(*dest++ = *src++);
+    while((*dest++ = *src++));
     return ret;
 }
 
@@ -329,7 +329,7 @@ long strtol(const char *nptr, char **endptr, int base)
             break;
         if (c >= base)
             break;
-        if (any < 0 || acc > cutoff || acc == cutoff && c > cutlim)
+        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
             any = -1;
         else {
             any = 1;
@@ -388,7 +388,7 @@ unsigned long strtoul(const char *nptr, char **endptr, int base)
             break;
         if (c >= base)
             break;
-        if (any < 0 || acc > cutoff || acc == cutoff && c > cutlim)
+        if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
             any = -1;
         else {
             any = 1;

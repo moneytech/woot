@@ -22,6 +22,16 @@ void operator delete[](void *ptr, size_t size)
     free(ptr);
 }
 
+void operator delete(void *ptr)
+{
+    free(ptr);
+}
+
+void operator delete[](void *ptr)
+{
+    free(ptr);
+}
+
 extern "C" void __cxa_pure_virtual()
 {
     cpuSystemHalt(0xCACACACA);

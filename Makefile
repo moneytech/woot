@@ -8,8 +8,8 @@ LIBDIR = $(ROOTDIR)/lib
 export LIBDIR
 
 MAKE = make
-CC = gcc
-CXX = g++
+CC = clang
+CXX = clang++
 ASM = yasm
 LD = ld
 AR = ar

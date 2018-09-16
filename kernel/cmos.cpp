@@ -24,6 +24,7 @@ bool CMOS::DisableNMI()
     byte v = _inb(0x70);
     _outb(0x70, v & 0x7F);
     cpuRestoreInterrupts(cs);
+    return v & 0x80;
 }
 
 void CMOS::RestoreNMI(bool state)

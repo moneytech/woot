@@ -26,6 +26,7 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
 #endif // EXTRA_RETURN
         _outb(port, c);
     }
+    return n;
 }
 
 DebugStream::~DebugStream()
