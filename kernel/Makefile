@@ -1,6 +1,6 @@
 OUTFILE = woot
 OBJS = boot.o main.o cpu.o gdt.o idt.o isrs.o ints.o irqs.o cmos.o time.o
-OBJS += stream.o debugstream.o
+OBJS += stream.o debugstream.o bitmap.o
 
 LDFLAGS += -Tldscript
 
