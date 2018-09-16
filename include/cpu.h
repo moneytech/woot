@@ -13,6 +13,7 @@ void cpuRestoreInterrupts(bool state);	// restores interrupt state
                     // returned by cpuDisableInterrupts
 
 void cpuSystemHalt(uintptr_t errcode); // errcode will be put into eax before halting
+void cpuWaitForInterrupt(uintptr_t debug); // as above (for debug purpose)
 
 uintptr_t cpuGetEIP();
 uintptr_t cpuGetESP();

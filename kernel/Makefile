@@ -1,5 +1,5 @@
 OUTFILE = woot
-OBJS = boot.o main.o cpu.o gdt.o idt.o isrs.o ints.o
+OBJS = boot.o main.o cpu.o gdt.o idt.o isrs.o ints.o irqs.o
 
 LDFLAGS += -Tldscript
 

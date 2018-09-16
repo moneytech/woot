@@ -137,8 +137,8 @@ private:
     static Handler *Handlers[];
 public:
     static void CommonHandler(State *state);
-    static void RegisterHandler(int intNo, Handler *handler);
-    static void UnRegisterHandler(int intNo, Handler *handler);
+    static void RegisterHandler(uint intNo, Handler *handler);
+    static void UnRegisterHandler(uint intNo, Handler *handler);
 };
 
 // returns true if interrupt was properly handled

@@ -1,8 +1,10 @@
 include/errno.h
 include/ints.h
+include/irqs.h
 include/limits.h
 include/stdlib.h
 kernel/ints.cpp
+kernel/irqs.cpp
 kernel/isrs.asm
 lib/arith.c
 lib/malloc.c

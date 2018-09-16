@@ -31,6 +31,11 @@ cpuSystemHalt:
     cli
     hlt
 
+global cpuWaitForInterrupt
+cpuWaitForInterrupt:
+    mov eax, [esp + 4]
+    hlt
+
 global cpuGetEIP
 cpuGetEIP:
     pop eax

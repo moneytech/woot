@@ -23,9 +23,9 @@ void Ints::CommonHandler(Ints::State *state)
     }
 }
 
-void Ints::RegisterHandler(int intNo, Ints::Handler *handler)
+void Ints::RegisterHandler(uint intNo, Ints::Handler *handler)
 {
-    if(intNo < 0 || intNo >= VECTOR_COUNT || !handler)
+    if(intNo >= VECTOR_COUNT || !handler)
         return;
     bool ints = cpuDisableInterrupts();
     handler->Next = Handlers[intNo];
@@ -33,9 +33,9 @@ void Ints::RegisterHandler(int intNo, Ints::Handler *handler)
     cpuRestoreInterrupts(ints);
 }
 
-void Ints::UnRegisterHandler(int intNo, Ints::Handler *handler)
+void Ints::UnRegisterHandler(uint intNo, Ints::Handler *handler)
 {
-    if(intNo < 0 || intNo >= VECTOR_COUNT || !handler)
+    if(intNo >= VECTOR_COUNT || !handler)
         return;
     bool ints = cpuDisableInterrupts();
     for(Handler *prev = 0, *h = Handlers[intNo]; h; prev = h, h = h->Next)
