@@ -1,0 +1,7 @@
+Makefile
+README.md
+iso/boot/grub/grub.cfg
+kernel/Makefile
+kernel/boot.asm
+kernel/ldscript
+kernel/main.cpp
