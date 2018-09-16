@@ -1,4 +1,4 @@
-LIBCOBJS = malloc.o string.o stdlib.o arith.o
+LIBCOBJS = malloc.o string.o stdlib.o arith.o math.o cxx.o stdio.o
 
 all: $(LIBCOBJS)
 	$(AR) r libc.a $(LIBCOBJS)

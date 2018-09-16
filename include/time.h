@@ -1,8 +1,10 @@
 #ifndef TIME_H
 #define TIME_H
 
-#include <ints.h>
 #include <types.h>
+
+#ifdef __cplusplus
+#include <ints.h>
 
 class Time
 {
@@ -36,8 +38,14 @@ public:
     static void FakeTick();
 };
 
+extern "C" {
+#endif // __cplusplus
+
 time_t time(time_t *tloc);
 int gettimeofday(time_t *t);
 
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // TIME_H
