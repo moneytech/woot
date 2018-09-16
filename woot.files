@@ -1,8 +1,10 @@
+include/cmos.h
 include/errno.h
 include/ints.h
 include/irqs.h
 include/limits.h
 include/stdlib.h
+kernel/cmos.cpp
 kernel/ints.cpp
 kernel/irqs.cpp
 kernel/isrs.asm

@@ -4,21 +4,23 @@
 #include <ints.h>
 #include <irqs.h>
 
-bool divByZero(Ints::State *state, void *context)
+static unsigned short *video = (unsigned short *)0xC00B8000;
+
+static bool divByZero(Ints::State *state, void *context)
 {
     _outsb("Division by zero\r\n", 0xE9, 18);
     return true;
 }
-Ints::Handler divByZeroHandler = { nullptr, divByZero, nullptr };
+static Ints::Handler divByZeroHandler = { nullptr, divByZero, nullptr };
 
-bool kbdTest(Ints::State *state, void *context)
+static bool kbdTest(Ints::State *state, void *context)
 {
-    _inb(0x60);
-    _outb(0xE9, '.');
+    byte d = _inb(0x60);
+    video[1] = 0x2F00 | d;
     IRQs::SendEOI(1);
     return true;
 }
-Ints::Handler kbdTestHandler = { nullptr, kbdTest, nullptr };
+static Ints::Handler kbdTestHandler = { nullptr, kbdTest, nullptr };
 
 extern "C" int kmain(void *mbootInfo)
 {
@@ -27,7 +29,6 @@ extern "C" int kmain(void *mbootInfo)
     IRQs::Initialize();
     cpuEnableInterrupts();
 
-    unsigned short *video = (unsigned short *)0xC00B8000;
     video[0] = 0x1F00 | 'X';
 
     Ints::RegisterHandler(0u, &divByZeroHandler);
