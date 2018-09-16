@@ -1,8 +1,7 @@
 OUTFILE = woot
-OBJS = boot.o main.o cpu.o gdt.o idt.o
+OBJS = boot.o main.o cpu.o gdt.o idt.o isrs.o ints.o
 
 LDFLAGS += -Tldscript
-#LDFLAGS += $(LIBDIR)/string.o $(LIBDIR)/malloc.o $(LIBDIR)/stdlib.o $(LIBDIR)/arith.o
 
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<

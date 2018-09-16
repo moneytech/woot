@@ -2,6 +2,7 @@
 #define SYSDEFS_H
 
 #define KERNEL_BASE 0xC0000000
+#define SYSCALLS_INT_VECTOR 128
 
 // segments
 #define SEG_CODE32_KERNEL   0x0008
