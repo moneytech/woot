@@ -17,10 +17,16 @@ static unsigned short *video = (unsigned short *)0xC00B8000;
 static bool kbdTest(Ints::State *state, void *context)
 {
     byte d = _inb(0x60);
+    printf("%.2x\n", d);
     if(d == 0x81) // esc release
     {
         volatile int a, b = 1, c = 0;
         a = b / c; // generate division by zero
+    }
+    else if(d == 0xA9) // `~ release
+    {
+        byte *zeroptr = nullptr;
+        zeroptr[0] = 0x55; // generate page fault
     }
     video[1] = 0x2F00 | d;
     return true;
