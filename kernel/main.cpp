@@ -18,7 +18,6 @@ static bool kbdTest(Ints::State *state, void *context)
 {
     byte d = _inb(0x60);
     video[1] = 0x2F00 | d;
-    IRQs::SendEOI(1);
     return true;
 }
 static Ints::Handler kbdTestHandler = { nullptr, kbdTest, nullptr };

@@ -1,5 +1,6 @@
 #include <cpu.h>
 #include <ints.h>
+#include <irqs.h>
 
 #define VECTOR_COUNT 256
 
@@ -12,6 +13,19 @@ extern "C" void intsCommonHandler(Ints::State *state)
 
 void Ints::CommonHandler(Ints::State *state)
 {
+    int irq = state->InterruptNumber - IRQS_BASE;
+    bool isIrq = irq >= 0 && irq < IRQS_COUNT;
+
+    // handle spurious irqs
+    if(isIrq)
+    {
+        if(IRQs::IsSpurious(irq))
+        {
+            IRQs::HandleSpurious(irq);
+            return;
+        }
+    }
+
     bool handled = false;
     Handler *handler = Handlers[state->InterruptNumber];
     for(handled = false; !handled && handler && handler->Callback; handler = handler->Next)
@@ -21,6 +35,8 @@ void Ints::CommonHandler(Ints::State *state)
         _outsb("Unhandled interrupt/exception. System Halted!\r\n", 0xE9, 47);
         cpuSystemHalt(state->InterruptNumber);
     }
+
+    if(isIrq) IRQs::SendEOI(irq);
 }
 
 void Ints::RegisterHandler(uint intNo, Ints::Handler *handler)

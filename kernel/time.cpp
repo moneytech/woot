@@ -22,7 +22,6 @@ bool Time::Tick(Ints::State *state, void *context)
     isFakeTick = false;
     if(isIRQ)
         ++systemTicks;
-    IRQs::SendEOI(CMOS::GetIRQ());
     return true;
 }
 
