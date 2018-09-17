@@ -5,6 +5,7 @@
 #include <ints.h>
 #include <irqs.h>
 #include <multiboot.h>
+#include <paging.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -31,13 +32,15 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     printf("[main] debugStream initialized\n");
     GDT::Initialize();
     IDT::Initialize();
+
+    uint64_t ramSize = getRAMSize(mbootInfo);
+    printf("[main] found %.2f MiB of usable memory\n", (double)ramSize / (double)(1 << 20));
+    Paging::Initialize(ramSize);
+
     IRQs::Initialize();
     cpuEnableInterrupts();
     Time::Initialize();
     Time::StartSystemTimer();
-
-    uint64_t ramSize = getRAMSize(mbootInfo);
-    printf("[main] found %.2f MiB of usable memory\n", (double)ramSize / (double)(1 << 20));
 
     IRQs::RegisterHandler(1, &kbdTestHandler);
     IRQs::Enable(1);

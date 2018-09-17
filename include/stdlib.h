@@ -12,6 +12,7 @@ uint rand();
 void *malloc(size_t size);
 void free(void *ptr);
 void abort();
+void *sbrk(intptr_t incr);
 
 #ifdef __cplusplus
 }

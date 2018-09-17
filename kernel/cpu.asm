@@ -36,6 +36,39 @@ cpuWaitForInterrupt:
     mov eax, [esp + 4]
     hlt
 
+global cpuGetCR0
+cpuGetCR0:
+  mov eax, cr0
+  ret
+
+global cpuSetCR0
+cpuSetCR0:
+  mov eax, [esp + 4]
+  mov cr0, eax
+  ret
+
+global cpuGetCR2
+cpuGetCR2:
+  mov eax, cr2
+  ret
+
+global cpuGetCR3
+cpuGetCR3:
+  mov eax, cr3
+  ret
+
+global cpuSetCR3
+cpuSetCR3:
+  mov eax, [esp + 4]
+  mov cr3, eax
+  ret
+
+global cpuInvalidatePage
+cpuInvalidatePage:
+  mov eax, [esp + 4]
+  invlpg [eax]
+  ret
+
 global cpuGetEIP
 cpuGetEIP:
     pop eax
@@ -77,7 +110,7 @@ cpuFixSegments:
     mov ds, ax
     mov es, ax
     mov fs, ax
-    ;mov eax, 0x0000004B ; SEG_TLS
+    mov eax, 0x0000004B ; SEG_TLS
     mov gs, ax
     jmp 0x0008:.fixCS ; SEG_CODE32_KERNEL
 .fixCS:

@@ -7,18 +7,32 @@
 extern "C" {
 #endif // __cplusplus
 
+// interrupts
 void cpuEnableInterrupts();
 bool cpuDisableInterrupts();		// returns true if interrupts were enabled
 void cpuRestoreInterrupts(bool state);	// restores interrupt state
                     // returned by cpuDisableInterrupts
 
+// halt instructions
 void cpuSystemHalt(uintptr_t errcode); // errcode will be put into eax before halting
 void cpuWaitForInterrupt(uintptr_t debug); // as above (for debug purpose)
 
+// control registers
+dword cpuGetCR0();
+void cpuSetCR0(dword value);
+dword cpuGetCR2();
+dword cpuGetCR3();
+void cpuSetCR3(dword value);
+
+// paging
+void cpuInvalidatePage(uintptr_t addr);
+
+// pointer registers
 uintptr_t cpuGetEIP();
 uintptr_t cpuGetESP();
 uintptr_t cpuGetEBP();
 
+// system table and segment registers
 void cpuLGDT(void *gdt);
 void cpuLIDT(void *idt);
 void cpuLTR(word tr);

@@ -9,6 +9,7 @@ include/malloc.h
 include/math.h
 include/multiboot.h
 include/new.h
+include/paging.h
 include/stdarg.h
 include/stdio.h
 include/stdlib.h
@@ -20,6 +21,7 @@ kernel/debugstream.cpp
 kernel/ints.cpp
 kernel/irqs.cpp
 kernel/isrs.asm
+kernel/paging.cpp
 kernel/stream.cpp
 kernel/time.cpp
 lib/arith.c

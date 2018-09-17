@@ -52,8 +52,8 @@ class GDT
 {
     static GDTDescriptor Descriptor;
     static GDTEntry Entries[GDT_ENTRY_COUNT];
-    static TSS MainTSS;
 public:
+    static TSS MainTSS;
     static void Initialize();
     static void SetEntry(uintn i, uintptr_t Base, size_t Limit, byte Access, byte Flags);
     static void Reload();

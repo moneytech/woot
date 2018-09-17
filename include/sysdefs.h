@@ -1,8 +1,16 @@
 #ifndef SYSDEFS_H
 #define SYSDEFS_H
 
-#define PAGE_SIZE 4096
-#define KERNEL_BASE 0xC0000000
+#define KERNEL_BASE                 0xC0000000
+#define PAGE_SIZE                   0x00001000
+#define LARGE_PAGE_SIZE             0x00400000
+#define KERNEL_SPACE_SIZE           0x10000000
+#define PDE_SIZE                    4
+#define PTE_SIZE                    4
+#define PDE_PER_TABLE               1024
+#define PTE_PER_TABLE               1024
+
+// syscalls
 #define SYSCALLS_INT_VECTOR 128
 
 // segments
