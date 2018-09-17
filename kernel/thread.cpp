@@ -196,6 +196,8 @@ void Thread::Switch(Ints::State *state, Thread *thread)
 
     if(currentThread)
         currentThread->StackPointer = state->ESP;
+    currentThread->State = State::Ready;
+
     GDT::MainTSS.ESP0 = (uintptr_t)thread->KernelStack +
             thread->KernelStackSize; // initial thread->StackPointer;
     state->ESP = thread->StackPointer;

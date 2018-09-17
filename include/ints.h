@@ -139,6 +139,7 @@ public:
     static void CommonHandler(State *state);
     static void RegisterHandler(uint intNo, Handler *handler);
     static void UnRegisterHandler(uint intNo, Handler *handler);
+    static void DumpState(Ints::State *state);
 };
 
 // returns true if interrupt was properly handled
