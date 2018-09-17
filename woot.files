@@ -1,3 +1,5 @@
+hdd-empty-ext2.img.gz
+mnt/placeholder
 include/bitmap.h
 include/cmos.h
 include/debugstream.h
