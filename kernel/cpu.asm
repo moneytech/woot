@@ -35,6 +35,7 @@ global cpuWaitForInterrupt
 cpuWaitForInterrupt:
     mov eax, [esp + 4]
     hlt
+    ret
 
 global cpuGetCR0
 cpuGetCR0:

@@ -21,10 +21,8 @@ bool Time::Tick(Ints::State *state, void *context)
     Thread::Switch(state, Thread::GetNext(isIRQ && !isFakeTick));
     isFakeTick = false;
     if(isIRQ)
-    {
         ++systemTicks;
-        IRQs::SendEOI(CMOS::GetIRQ());
-    }
+    IRQs::SendEOI(CMOS::GetIRQ());
     return true;
 }
 

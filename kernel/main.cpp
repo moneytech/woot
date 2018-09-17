@@ -69,7 +69,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Thread *ct = Thread::GetCurrent();
     for(;;)
     {
-        printf("main\n");
+        //double t = Time::GetSystemUpTime();
+        Time::DateTime dt;
+        //Time::FracUnixToDateTime(t, &dt);
+        printf("main (runtime %.2d:%.2d:%.2d.%02d)\n", dt.Hour, dt.Minute, dt.Second, dt.Millisecond);
         ct->Sleep(250, false);
     }
 
