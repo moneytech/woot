@@ -3,26 +3,31 @@
 #include <new.h>
 #include <sysdefs.h>
 #include <stdlib.h>
+#include <string.h>
 #include <types.h>
 
 void *operator new(unsigned int size)
 {
-    return malloc(size);
+    return calloc(1, size);
 }
 
 void *operator new[](unsigned int size)
 {
-    return malloc(size);
+    return calloc(1, size);
 }
 
 void *operator new(size_t size, size_t alignment)
 {
-    return memalign(alignment, size);
+    void *ptr = memalign(alignment, size);
+    memset(ptr, 0, size);
+    return ptr;
 }
 
 void *operator new[](size_t size, size_t alignment)
 {
-    return memalign(alignment, size);
+    void *ptr = memalign(alignment, size);
+    memset(ptr, 0, size);
+    return ptr;
 }
 
 void operator delete(void *ptr, unsigned int size)
