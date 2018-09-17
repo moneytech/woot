@@ -10,7 +10,9 @@ class Time
 {
     static uint64_t systemTicks;
     static uint64_t systemTickFreq;
-    static bool isFakeTick;
+public:
+    static bool isFakeTick; // TODO: make this private
+private:
     static Ints::Handler tickHandler;
     static bool Tick(Ints::State *state, void *context);
 public:

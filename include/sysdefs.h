@@ -9,6 +9,8 @@
 #define PTE_SIZE                    4
 #define PDE_PER_TABLE               1024
 #define PTE_PER_TABLE               1024
+#define DEFAULT_STACK_SIZE          65536
+#define DEFAULT_SIGNAL_STACK_SIZE   16386
 
 // syscalls
 #define SYSCALLS_INT_VECTOR 128

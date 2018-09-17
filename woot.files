@@ -1,4 +1,17 @@
 hdd-empty-ext2.img.gz
+include/miscasm.h
+include/objectqueue.h
+include/process.h
+include/queue.h
+include/semaphore.h
+include/sequencer.h
+include/stddef.h
+include/thread.h
+kernel/miscasm.asm
+kernel/objectqueue.cpp
+kernel/process.cpp
+kernel/semaphore.cpp
+kernel/thread.cpp
 mnt/placeholder
 include/bitmap.h
 include/cmos.h

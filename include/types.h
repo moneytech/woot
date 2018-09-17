@@ -20,11 +20,6 @@ typedef signed short int16_t;
 typedef signed int int32_t;
 typedef signed long long int64_t;
 
-typedef uint32_t size_t;
-typedef int32_t ssize_t;
-typedef uint64_t size64_t;
-typedef int64_t ssize64_t;
-
 typedef int32_t off_t;
 typedef int64_t off64_t;
 
@@ -42,8 +37,14 @@ typedef int bool;
 #define nullptr 0
 #endif // __cplusplus
 
+typedef intn pid_t;
+typedef intn uid_t;
+typedef intn gid_t;
+
 #define TRUE true
 #define FALSE false
 #define NULL 0
+
+#include <stddef.h>
 
 #endif // TYPES_H

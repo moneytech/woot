@@ -7,6 +7,7 @@
 #include <multiboot.h>
 #include <paging.h>
 #include <stdio.h>
+#include <thread.h>
 #include <time.h>
 
 Stream *debugStream = nullptr; // main debug stream (kernel log)
@@ -22,6 +23,16 @@ static bool kbdTest(Ints::State *state, void *context)
 }
 static Ints::Handler kbdTestHandler = { nullptr, kbdTest, nullptr };
 
+void testThread(uintptr_t arg)
+{
+    Thread *ct = Thread::GetCurrent();
+    for(;;)
+    {
+        printf("test: %d\n", arg);
+        ct->Sleep(400 + 150 * ct->ID, false);
+    }
+}
+
 static uint64_t getRAMSize(multiboot_info_t *mboot_info);
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
@@ -35,8 +46,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 
     uint64_t ramSize = getRAMSize(mbootInfo);
     printf("[main] found %.2f MiB of usable memory\n", (double)ramSize / (double)(1 << 20));
-    Paging::Initialize(ramSize);
 
+    Paging::Initialize(ramSize);
+    Thread::Initialize();
     IRQs::Initialize();
     cpuEnableInterrupts();
     Time::Initialize();
@@ -45,7 +57,21 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     IRQs::RegisterHandler(1, &kbdTestHandler);
     IRQs::Enable(1);
 
-    for(;;) cpuWaitForInterrupt(0);
+    Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
+    Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);
+
+    t1->Enable();
+    t2->Enable();
+
+    t1->Resume(false);
+    t2->Resume(false);
+
+    Thread *ct = Thread::GetCurrent();
+    for(;;)
+    {
+        printf("main\n");
+        ct->Sleep(250, false);
+    }
 
     return 0xD007D007;
 }

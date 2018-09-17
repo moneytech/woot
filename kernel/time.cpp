@@ -2,6 +2,7 @@
 #include <cpu.h>
 #include <errno.h>
 #include <irqs.h>
+#include <thread.h>
 #include <time.h>
 
 uint64_t Time::systemTicks = 0;
@@ -17,7 +18,7 @@ static byte bcdToDec(byte bcd)
 bool Time::Tick(Ints::State *state, void *context)
 {
     bool isIRQ = CMOS::Read(0x0C) & 0x80;
-    //threadSwitch(state, threadGetNext(isIRQ && !isFakeTick));
+    Thread::Switch(state, Thread::GetNext(isIRQ && !isFakeTick));
     isFakeTick = false;
     if(isIRQ)
     {

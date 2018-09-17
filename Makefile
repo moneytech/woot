@@ -14,10 +14,10 @@ ASM = yasm
 LD = ld
 AR = ar
 
-COMMONFLAGS = -ggdb -m32 -fno-stack-protector -mno-sse -fno-pic -fshort-wchar -nostdinc
-COMMONFLAGS += -I $(ROOTDIR)/include
+COMMONFLAGS = -ggdb -m32 -fno-stack-protector -msse -fno-pic -fshort-wchar
+COMMONFLAGS += -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
 CFLAGS = $(COMMONFLAGS)
-CXXFLAGS = $(COMMONFLAGS) -fno-exceptions -fno-rtti
+CXXFLAGS = $(COMMONFLAGS) -fno-exceptions -fno-rtti -nostdinc++
 ASMFLAGS = -gdwarf2 -f elf32
 LDFLAGS = -melf_i386 -nostdlib -L $(LIBDIR)
 
