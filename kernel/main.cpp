@@ -6,6 +6,7 @@
 #include <irqs.h>
 #include <multiboot.h>
 #include <paging.h>
+#include <pci.h>
 #include <stdio.h>
 #include <thread.h>
 #include <time.h>
@@ -63,6 +64,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     cpuEnableInterrupts();
     Time::Initialize();
     Time::StartSystemTimer();
+    PCI::Initialize();
 
     IRQs::RegisterHandler(1, &kbdTestHandler);
     IRQs::Enable(1);
@@ -85,6 +87,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         printf("main (runtime %.2d:%.2d:%.2d.%02d)\n", dt.Hour, dt.Minute, dt.Second, dt.Millisecond);
         ct->Sleep(250, false);
     }
+
+    PCI::Cleanup();
 
     return 0xD007D007;
 }

@@ -1,6 +1,8 @@
 hdd-empty-ext2.img.gz
+include/list.h
 include/miscasm.h
 include/objectqueue.h
+include/pci.h
 include/process.h
 include/queue.h
 include/semaphore.h
@@ -9,6 +11,7 @@ include/stddef.h
 include/thread.h
 kernel/miscasm.asm
 kernel/objectqueue.cpp
+kernel/pci.cpp
 kernel/process.cpp
 kernel/semaphore.cpp
 kernel/thread.cpp
