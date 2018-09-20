@@ -4,6 +4,14 @@
 #include <list.h>
 #include <types.h>
 
+#define PCI_MAKE_ADDR(bus, dev, func, offs) (0x80000000 | (bus) << 16 | (dev) << 11 | (func) << 8 | offs)
+
+#define PCI_ADDR_BUS(addr)  (((addr) >> 16) & 0xFF)
+#define PCI_ADDR_DEV(addr)  (((addr) >> 11) & 0x1F)
+#define PCI_ADDR_FUNC(addr) (((addr) >> 8) & 0x07)
+#define PCI_ADDR_REG(addr)  (((addr) >> 2) & 0x3F)
+#define PCI_ADDR_OFFS(addr) ((addr) & 0xFF)
+
 class PCI
 {
 public:
