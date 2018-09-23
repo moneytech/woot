@@ -1,12 +1,15 @@
 #include <cpu.h>
 #include <debugstream.h>
+#include <drive.h>
 #include <gdt.h>
+#include <idedrive.h>
 #include <idt.h>
 #include <ints.h>
 #include <irqs.h>
 #include <multiboot.h>
 #include <paging.h>
 #include <pci.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <thread.h>
 #include <time.h>
@@ -14,25 +17,48 @@
 Stream *debugStream = nullptr; // main debug stream (kernel log)
 
 static unsigned short *video = (unsigned short *)0xC00B8000;
+static Semaphore *kbdSem = nullptr;
+static byte kbdData = 0;
 
 static bool kbdTest(Ints::State *state, void *context)
 {
-    byte d = _inb(0x60);
-    printf("%.2x\n", d);
-    if(d == 0x81) // esc release
-    {
-        volatile int a, b = 1, c = 0;
-        a = b / c; // generate division by zero
-    }
-    else if(d == 0xA9) // `~ release
-    {
-        byte *zeroptr = nullptr;
-        zeroptr[0] = 0x55; // generate page fault
-    }
-    video[1] = 0x2F00 | d;
+    kbdData = _inb(0x60);
+    video[1] = 0x2F00 | kbdData;
+    kbdSem->Signal(state);
     return true;
 }
 static Ints::Handler kbdTestHandler = { nullptr, kbdTest, nullptr };
+
+void kbdThread(uintptr_t arg)
+{
+    for(;;)
+    {
+        kbdSem->Wait(0, false);
+        printf("kbdData: %#.2x\n", kbdData);
+
+        if(kbdData == 0x8B) // 0 release
+        {
+            Drive *drv = Drive::GetByIndex(0);
+            byte *buf = new byte[drv->SectorSize];
+            int64_t sr = drv->ReadSectors(buf, 0, 1);
+            printf("sr = %d\n", sr);
+            for(uint j = 0; j < drv->SectorSize; j += 16)
+            {
+                printf("%.8x : ", j);
+                for(uint i = 0; i < 16; ++i)
+                    printf("%.2x ", buf[i + j]);
+                printf("| ");
+                for(uint i = 0; i < 16; ++i)
+                {
+                    byte b = buf[i + j];
+                    printf("%c", b < ' ' ? '.' : b);
+                }
+                printf("\n");
+            }
+            delete[] buf;
+        }
+    }
+}
 
 void testThread(uintptr_t arg)
 {
@@ -65,18 +91,24 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Time::Initialize();
     Time::StartSystemTimer();
     PCI::Initialize();
+    Drive::Initialize();
+    IDEDrive::Initialize();
 
     IRQs::RegisterHandler(1, &kbdTestHandler);
     IRQs::Enable(1);
 
+    kbdSem = new Semaphore(0);
     Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
     Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);
+    Thread *t3 = new Thread("keyboard thread", nullptr, (void *)kbdThread, 0, 0, 0, nullptr, nullptr);
 
     t1->Enable();
     t2->Enable();
+    t3->Enable();
 
     t1->Resume(false);
     t2->Resume(false);
+    t3->Resume(false);
 
     Thread *ct = Thread::GetCurrent();
     for(;;)
@@ -88,6 +120,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         ct->Sleep(250, false);
     }
 
+    Drive::Cleaup();
     PCI::Cleanup();
 
     return 0xD007D007;

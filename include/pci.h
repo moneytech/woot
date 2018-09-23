@@ -12,6 +12,8 @@
 #define PCI_ADDR_REG(addr)  (((addr) >> 2) & 0x3F)
 #define PCI_ADDR_OFFS(addr) ((addr) & 0xFF)
 
+class Semaphore;
+
 class PCI
 {
 public:
@@ -119,12 +121,13 @@ public:
         Device(PCI::Address address, uint16_t vid, uint16_t did, uint8_t cls, uint8_t subCls, uint8_t progif);
     };
 private:
-    static List<Device *> *devices;
     static void Check();
     static void CheckBus(uint8_t bus);
     static void CheckDevice(uint8_t bus, uint8_t device);
     static void CheckFunction(uint8_t bus, uint8_t device, uint8_t func);
 public:
+    static Semaphore *Lock;
+    static List<Device *> *Devices;
     static void Initialize();
     static uint8_t ReadConfigByte(Address address);
     static void WriteConfigByte(Address address, uint8_t value);

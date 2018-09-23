@@ -38,6 +38,7 @@ public:
     static uint64_t GetTickCount();
     static double GetSystemUpTime();
     static void FakeTick();
+    static uint Sleep(uint millis, bool interruptible);
 };
 
 extern "C" {

@@ -23,8 +23,17 @@ public:
     }
 private:
     Node *First;
-    typedef Node *iterator;
-    typedef const Node *const_iterator;
+    struct Iterator
+    {
+        Node *Current;
+        T operator *() { return Current->Value; }
+        Iterator operator ++()
+        {
+            Current = Current->Next;
+            return { Current };
+        }
+        bool operator !=(Iterator b) { return this->Current != b.Current; }
+    };
 public:
     List() : First(nullptr)
     {
@@ -100,29 +109,30 @@ public:
         for(Node *node = First; node; node = node->Next, ++i)
         {
             if(idx == i)
-                return node->Data;
+                return node->Value;
         }
         return T(0);
     }
 
-    iterator begin()
+    T Find(T value, Comparer comparer)
     {
-        return First;
-    }
-
-    const_iterator begin() const
-    {
-        return First;
-    }
-
-    iterator end()
-    {
+        for(Node *prev = nullptr, *node = First; node; prev = node, node = node->Next)
+        {
+            if(comparer(node->Value, value))
+                return node->Value;
+        }
         return nullptr;
     }
 
-    const_iterator end() const
+    Iterator begin()
     {
-        return nullptr;
+        return { First };
+    }
+
+
+    Iterator end()
+    {
+        return { nullptr };
     }
 
     ~List()

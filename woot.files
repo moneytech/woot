@@ -1,6 +1,10 @@
 hdd-empty-ext2.img.gz
+include/ata.h
+include/drive.h
+include/idedrive.h
 include/list.h
 include/miscasm.h
+include/mutex.h
 include/objectqueue.h
 include/pci.h
 include/process.h
@@ -9,7 +13,10 @@ include/semaphore.h
 include/sequencer.h
 include/stddef.h
 include/thread.h
+kernel/drive.cpp
+kernel/idedrive.cpp
 kernel/miscasm.asm
+kernel/mutex.cpp
 kernel/objectqueue.cpp
 kernel/pci.cpp
 kernel/process.cpp

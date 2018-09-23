@@ -13,7 +13,8 @@ class Queue
     bool Full;
 public:
     Queue(size_t capacity) :
-        Data(new T[capacity])
+        Data(new T[capacity]),
+        Capacity(capacity)
     {
     }
 

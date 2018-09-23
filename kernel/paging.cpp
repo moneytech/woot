@@ -93,6 +93,11 @@ void Paging::BuildAddressSpace(uintptr_t pd)
     free4k(PD);
 }
 
+uintptr_t Paging::GetAddressSpace()
+{
+    return cpuGetCR3();
+}
+
 void Paging::FlushTLB()
 {
     cpuSetCR3(cpuGetCR3());

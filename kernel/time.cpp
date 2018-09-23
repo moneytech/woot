@@ -168,6 +168,13 @@ void Time::FakeTick()
     cpuRestoreInterrupts(ints);
 }
 
+uint Time::Sleep(uint millis, bool interruptible)
+{
+    Thread *ct = Thread::GetCurrent();
+    if(!ct) return 0;
+    return ct->Sleep(millis, interruptible);
+}
+
 time_t time(time_t *tloc)
 {
     Time::DateTime dt;

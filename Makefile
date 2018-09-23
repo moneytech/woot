@@ -18,7 +18,7 @@ COMMONFLAGS = -ggdb -m32 -fno-stack-protector -msse -fno-pic -fshort-wchar
 COMMONFLAGS += -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -fno-exceptions -fno-rtti -nostdinc++
-ASMFLAGS = -gdwarf2 -f elf32
+ASMFLAGS = -gdwarf2 -f elf32 -w
 LDFLAGS = -melf_i386 -nostdlib -L $(LIBDIR)
 
 export MAKE

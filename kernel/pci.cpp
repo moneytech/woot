@@ -1,10 +1,12 @@
 #include <cpu.h>
 #include <pci.h>
+#include <semaphore.h>
 #include <stdio.h>
 
 #define PCI_SHOW_LIST 1
 
-List<PCI::Device *> *PCI::devices;
+Semaphore *PCI::Lock;
+List<PCI::Device *> *PCI::Devices;
 
 PCI::Device::Device(PCI::Address address, uint16_t vid, uint16_t did, uint8_t cls, uint8_t subCls, uint8_t progif) :
     Address(address), VendorID(vid), DeviceID(did), Class(cls), SubClass(subCls), ProgIF(progif)
@@ -62,7 +64,7 @@ void PCI::CheckFunction(uint8_t bus, uint8_t device, uint8_t func)
 #endif // PCI_LIST
 
     Device *dev = new Device(address, config.VendorID, config.DeviceID, config.Class, config.SubClass, config.ProgIF);
-    devices->Append(dev);
+    Devices->Append(dev);
 
     if(config.Class == 0x06 && config.SubClass == 0x09)
         CheckBus(config.Header.PCI2PCI.SecondaryBusNumber);
@@ -70,7 +72,8 @@ void PCI::CheckFunction(uint8_t bus, uint8_t device, uint8_t func)
 
 void PCI::Initialize()
 {
-    devices = new List<Device *>();
+    Devices = new List<Device *>();
+    Lock = new Semaphore(1);
     Check();
 }
 
@@ -161,5 +164,6 @@ void PCI::WriteConfigData(PCI::Address address, PCI::Config *config)
 
 void PCI::Cleanup()
 {
-    delete devices;
+    delete Devices;
+    delete Lock;
 }

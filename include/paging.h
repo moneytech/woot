@@ -7,7 +7,8 @@ class Paging
 {
 public:
     static void Initialize(size_t ramSize);
-    static void BuildAddressSpace(uintptr_t pd);
+    static void BuildAddressSpace(uintptr_t pd); // builds new address space
+    static uintptr_t GetAddressSpace(); // returns current address space
     static void FlushTLB();
     static void InvalidatePage(uintptr_t addr);
     static bool MapPage(uintptr_t pd, uintptr_t va, uintptr_t pa, bool ps4m, bool user, bool write);
