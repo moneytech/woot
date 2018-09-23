@@ -72,7 +72,7 @@ void testThread(uintptr_t arg)
         vidMtx->Acquire(0);
         printf("test: %d\n", arg);
         vidMtx->Release();
-        ct->Sleep(2 * ct->ID, false);
+        ct->Sleep(1000 * ct->ID, false);
     }
 }
 
@@ -127,7 +127,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         vidMtx->Acquire(0);
         printf("main (runtime %.2d:%.2d:%.2d.%02d)\n", dt.Hour, dt.Minute, dt.Second, dt.Millisecond);
         vidMtx->Release();
-        ct->Sleep(2, false);
+        ct->Sleep(900, false);
     }
 
     Drive::Cleaup();

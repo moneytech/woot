@@ -9,6 +9,7 @@ include/objectqueue.h
 include/pci.h
 include/process.h
 include/queue.h
+include/sched.h
 include/semaphore.h
 include/sequencer.h
 include/stddef.h
@@ -22,6 +23,8 @@ kernel/pci.cpp
 kernel/process.cpp
 kernel/semaphore.cpp
 kernel/thread.cpp
+lib/malloc.c
+lib/sched.cpp
 mnt/placeholder
 include/bitmap.h
 include/cmos.h
@@ -51,7 +54,6 @@ kernel/stream.cpp
 kernel/time.cpp
 lib/arith.c
 lib/cxx.cpp
-lib/malloc.c
 lib/math.c
 lib/stdio.cpp
 lib/stdlib.c

@@ -8,7 +8,8 @@
 #define LACKS_SYS_PARAM_H
 #define HAVE_MMAP 0
 #define HAVE_MORECORE 1
-#define USE_LOCKS 0
+#define USE_LOCKS 1
+#undef linux
 
 /*
   This is a version (aka dlmalloc) of malloc/free/realloc written by

@@ -30,6 +30,18 @@ void *operator new[](size_t size, size_t alignment)
     return ptr;
 }
 
+void *operator new(size_t size, void *ptr)
+{
+    memset(ptr, 0, size);
+    return ptr;
+}
+
+void *operator new[](size_t size, void *ptr)
+{
+    memset(ptr, 0, size);
+    return ptr;
+}
+
 void operator delete(void *ptr, unsigned int size)
 {
     free(ptr);
@@ -40,6 +52,11 @@ void operator delete(void *ptr)
     free(ptr);
 }
 
+void operator delete(void *ptr, void *place)
+{
+    // do nothing
+}
+
 void operator delete[](void *ptr, unsigned int size)
 {
     free(ptr);
@@ -48,6 +65,11 @@ void operator delete[](void *ptr, unsigned int size)
 void operator delete[](void *ptr)
 {
     free(ptr);
+}
+
+void operator delete[](void *ptr, void *place)
+{
+    // do nothing
 }
 
 void *operator new(size_t size, CustomAllocator allocator)
