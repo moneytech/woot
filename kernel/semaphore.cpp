@@ -4,7 +4,6 @@
 #include <thread.h>
 
 // TODO: make waiters queue arbitrarily long without any heap allocations
-
 #define MAX_WAITERS 32
 
 Semaphore::Semaphore(int count) :

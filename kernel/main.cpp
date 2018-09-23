@@ -7,6 +7,7 @@
 #include <ints.h>
 #include <irqs.h>
 #include <multiboot.h>
+#include <mutex.h>
 #include <paging.h>
 #include <pci.h>
 #include <semaphore.h>
@@ -19,6 +20,7 @@ Stream *debugStream = nullptr; // main debug stream (kernel log)
 static unsigned short *video = (unsigned short *)0xC00B8000;
 static Semaphore *kbdSem = nullptr;
 static byte kbdData = 0;
+static Mutex *vidMtx = nullptr;
 
 static bool kbdTest(Ints::State *state, void *context)
 {
@@ -34,9 +36,10 @@ void kbdThread(uintptr_t arg)
     for(;;)
     {
         kbdSem->Wait(0, false);
+        vidMtx->Acquire(0);
         printf("kbdData: %#.2x\n", kbdData);
 
-        if(kbdData == 0x8B) // 0 release
+        if(kbdData == 0x0B) // 0 press
         {
             Drive *drv = Drive::GetByIndex(0);
             byte *buf = new byte[drv->SectorSize];
@@ -57,6 +60,7 @@ void kbdThread(uintptr_t arg)
             }
             delete[] buf;
         }
+        vidMtx->Release();
     }
 }
 
@@ -65,8 +69,10 @@ void testThread(uintptr_t arg)
     Thread *ct = Thread::GetCurrent();
     for(;;)
     {
+        vidMtx->Acquire(0);
         printf("test: %d\n", arg);
-        ct->Sleep(400 + 150 * ct->ID, false);
+        vidMtx->Release();
+        ct->Sleep(2 * ct->ID, false);
     }
 }
 
@@ -94,10 +100,12 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Drive::Initialize();
     IDEDrive::Initialize();
 
+    kbdSem = new Semaphore(0);
+    vidMtx = new Mutex();
+
     IRQs::RegisterHandler(1, &kbdTestHandler);
     IRQs::Enable(1);
 
-    kbdSem = new Semaphore(0);
     Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
     Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);
     Thread *t3 = new Thread("keyboard thread", nullptr, (void *)kbdThread, 0, 0, 0, nullptr, nullptr);
@@ -116,8 +124,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         double t = Time::GetSystemUpTime();
         Time::DateTime dt;
         Time::FracUnixToDateTime(t, &dt);
+        vidMtx->Acquire(0);
         printf("main (runtime %.2d:%.2d:%.2d.%02d)\n", dt.Hour, dt.Minute, dt.Second, dt.Millisecond);
-        ct->Sleep(250, false);
+        vidMtx->Release();
+        ct->Sleep(2, false);
     }
 
     Drive::Cleaup();

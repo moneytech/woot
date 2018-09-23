@@ -1,18 +1,93 @@
 #include <mutex.h>
+#include <stdio.h>
+#include <thread.h>
+#include <time.h>
 
-Mutex::Mutex()
+// TODO: make waiters queue arbitrarily long without any heap allocations
+#define MAX_WAITERS 32
+
+Mutex::Mutex() :
+    Count(0), Owner(nullptr),
+    Waiters(new Queue<Thread *>(MAX_WAITERS))
 {
 }
 
-bool Mutex::Acquire(uint timeout)
+bool Mutex::Acquire(uint timeout, bool tryAcquire)
 {
-    return true;
+    bool is = cpuDisableInterrupts();
+    Thread *ct = Thread::GetCurrent();
+    if(!Count || Owner == ct)
+    {
+        ++Count;
+        Owner = ct;
+        cpuRestoreInterrupts(is);
+        return true;
+    }
+    if(tryAcquire)
+    {
+        cpuRestoreInterrupts(is);
+        return false;
+    }
+    if(Waiters->Write(ct))
+    {
+        bool r = true;
+
+        if(timeout) r = ct->Sleep(timeout, true) != 0;
+        else ct->Suspend();
+
+        if(!r)
+        {
+            Thread *t = Waiters->Peek();
+            if(ct == t) Waiters->Read(nullptr);
+            else Waiters->ReplaceFirst(ct, nullptr);
+        }
+        else
+        {
+            Owner = ct;
+            Count = 1;
+        }
+
+        cpuRestoreInterrupts(is);
+        return r;
+    }
+    // if no free waiter slots then print message and fail
+    cpuRestoreInterrupts(is);
+    printf("!!! Mutex ran out of free waiter slots !!!\n");
+    return false;
 }
 
 void Mutex::Release()
 {
+    bool is = cpuDisableInterrupts();
+    Thread *ct = Thread::GetCurrent();
+    if(Owner != ct)
+    {
+        printf("[mutex] Mutex::Release(): current thread(%d) != Owner(%d)\n", ct->ID, Owner ? Owner->ID : -1);
+        cpuRestoreInterrupts(is);
+        return;
+    }
+    if(Count > 0)
+        --Count;
+    if(!Count)
+    {
+        Owner = nullptr;
+        bool ok;
+        Thread *t = nullptr;
+        do
+        {
+            t = Waiters->Read(&ok);
+            if(!ok)
+            { // no waiting threads in queue
+                cpuRestoreInterrupts(is);
+                return;
+            }
+        } while(!t);
+        t->Resume(false);
+    }
+    cpuRestoreInterrupts(is);
 }
 
 Mutex::~Mutex()
 {
+    if(Waiters) delete Waiters;
 }

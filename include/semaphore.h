@@ -11,7 +11,7 @@ class Thread;
 
 class Semaphore
 {
-    int Count;
+    volatile int Count;
     Queue<Thread *> *Waiters;
 public:
     Semaphore(int count);
