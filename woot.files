@@ -1,8 +1,10 @@
 hdd-empty-ext2.img.gz
 include/ata.h
+include/bufferedvolume.h
 include/drive.h
 include/idedrive.h
 include/list.h
+include/mbrvolume.h
 include/miscasm.h
 include/mutex.h
 include/objectqueue.h
@@ -14,8 +16,12 @@ include/semaphore.h
 include/sequencer.h
 include/stddef.h
 include/thread.h
+include/volume.h
+include/volumetype.h
+kernel/bufferedvolume.cpp
 kernel/drive.cpp
 kernel/idedrive.cpp
+kernel/mbrvolume.cpp
 kernel/miscasm.asm
 kernel/mutex.cpp
 kernel/objectqueue.cpp
@@ -23,6 +29,8 @@ kernel/pci.cpp
 kernel/process.cpp
 kernel/semaphore.cpp
 kernel/thread.cpp
+kernel/volume.cpp
+kernel/volumetype.cpp
 lib/malloc.c
 lib/sched.cpp
 mnt/placeholder

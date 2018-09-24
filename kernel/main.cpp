@@ -6,6 +6,7 @@
 #include <idt.h>
 #include <ints.h>
 #include <irqs.h>
+#include <mbrvolume.h>
 #include <multiboot.h>
 #include <mutex.h>
 #include <paging.h>
@@ -14,6 +15,8 @@
 #include <stdio.h>
 #include <thread.h>
 #include <time.h>
+#include <volume.h>
+#include <volumetype.h>
 
 Stream *debugStream = nullptr; // main debug stream (kernel log)
 
@@ -31,7 +34,25 @@ static bool kbdTest(Ints::State *state, void *context)
 }
 static Ints::Handler kbdTestHandler = { nullptr, kbdTest, nullptr };
 
-void kbdThread(uintptr_t arg)
+static void bufferDump(void *ptr, size_t n)
+{
+    byte *buf = (byte *)ptr;
+    for(uint j = 0; j < n; j += 16)
+    {
+        printf("%.8x : ", j);
+        for(uint i = 0; i < 16; ++i)
+            printf("%.2x ", buf[i + j]);
+        printf("| ");
+        for(uint i = 0; i < 16; ++i)
+        {
+            byte b = buf[i + j];
+            printf("%c", b < ' ' ? '.' : b);
+        }
+        printf("\n");
+    }
+}
+
+static void kbdThread(uintptr_t arg)
 {
     for(;;)
     {
@@ -45,19 +66,17 @@ void kbdThread(uintptr_t arg)
             byte *buf = new byte[drv->SectorSize];
             int64_t sr = drv->ReadSectors(buf, 0, 1);
             printf("sr = %d\n", sr);
-            for(uint j = 0; j < drv->SectorSize; j += 16)
-            {
-                printf("%.8x : ", j);
-                for(uint i = 0; i < 16; ++i)
-                    printf("%.2x ", buf[i + j]);
-                printf("| ");
-                for(uint i = 0; i < 16; ++i)
-                {
-                    byte b = buf[i + j];
-                    printf("%c", b < ' ' ? '.' : b);
-                }
-                printf("\n");
-            }
+            bufferDump(buf, drv->SectorSize);
+            delete[] buf;
+        }
+        else if(kbdData == 0x0A) // 9 press
+        {
+            Volume *vol = Volume::GetByIndex(0, true);
+            byte *buf = new byte[vol->Drive->SectorSize];
+            int64_t sr = vol->ReadSectors(buf, 2, 1);
+            vol->UnLock();
+            printf("sr = %d\n", sr);
+            bufferDump(buf, vol->Drive->SectorSize);
             delete[] buf;
         }
         vidMtx->Release();
@@ -80,8 +99,6 @@ static uint64_t getRAMSize(multiboot_info_t *mboot_info);
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
-    cpuInitFPU(0x37F);
-    cpuEnableSSE();
     debugStream = new DebugStream(0xE9);
     printf("[main] debugStream initialized\n");
     GDT::Initialize();
@@ -99,6 +116,11 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     PCI::Initialize();
     Drive::Initialize();
     IDEDrive::Initialize();
+    VolumeType::Initialize();
+    Volume::Initialize();
+
+    VolumeType::Add(new MBRVolumeType());
+    VolumeType::AutoDetect();
 
     kbdSem = new Semaphore(0);
     vidMtx = new Mutex();
@@ -130,7 +152,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         ct->Sleep(900, false);
     }
 
-    Drive::Cleaup();
+    Drive::Cleanup();
     PCI::Cleanup();
 
     return 0xD007D007;

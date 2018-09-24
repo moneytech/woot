@@ -5,17 +5,22 @@
 #include <sequencer.h>
 #include <types.h>
 
+class Mutex;
+
 class Drive
 {
     static Sequencer<int> id;
     static List<Drive *> *drives;
+    static Mutex *lock;
 public:
     static void Initialize();
+    static bool LockList();
     static Drive *GetByID(int id);
     static Drive *GetByIndex(uint idx);
     static int Add(Drive *drive);
     static bool Remove(Drive *drive);
-    static void Cleaup();
+    static void UnLockList();
+    static void Cleanup();
 
     int ID;
     size_t SectorSize;

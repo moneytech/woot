@@ -1,20 +1,28 @@
 #include <cpu.h>
 #include <drive.h>
 #include <errno.h>
+#include <mutex.h>
 #include <stdlib.h>
 #include <string.h>
 
 Sequencer<int> Drive::id(0);
 List<Drive *> *Drive::drives;
+Mutex *Drive::lock;
 
 void Drive::Initialize()
 {
     drives = new List<Drive *>();
+    lock = new Mutex();
+}
+
+bool Drive::LockList()
+{
+    return lock->Acquire(0, false);
 }
 
 Drive *Drive::GetByID(int id)
 {
-    bool ints = cpuDisableInterrupts();
+    if(!LockList()) return nullptr;
     Drive *res = nullptr;
     for(auto it : *drives)
     {
@@ -24,44 +32,49 @@ Drive *Drive::GetByID(int id)
             break;
         }
     }
-    cpuRestoreInterrupts(ints);
+    UnLockList();
     return res;
 }
 
 Drive *Drive::GetByIndex(uint idx)
 {
-    bool ints = cpuDisableInterrupts();
+    if(!LockList()) return nullptr;
     Drive *drive = drives->Get(idx);
-    cpuRestoreInterrupts(ints);
+    UnLockList();
     return drive;
 }
 
 int Drive::Add(Drive *drive)
 {
-    bool ints = cpuDisableInterrupts();
+    if(!LockList()) return -1;
     int newId = id.GetNext();
     drives->Append(drive);
     drive->ID = newId;
-    cpuRestoreInterrupts(ints);
+    UnLockList();
     return newId;
 }
 
 bool Drive::Remove(Drive *drive)
 {
-    bool ints = cpuDisableInterrupts();
+    if(!LockList()) return false;
     bool res = drives->Remove(drive, nullptr, false) != 0;
     drive->ID = -1;
-    cpuRestoreInterrupts(ints);
+    UnLockList();
     return res;
 }
 
-void Drive::Cleaup()
+void Drive::UnLockList()
 {
+    lock->Release();
+}
+
+void Drive::Cleanup()
+{
+    LockList();
     for(auto n : *drives)
-    {
-        if(n) delete n;
-    }
+        delete n;
     delete drives;
+    delete lock;
 }
 
 Drive::Drive(size_t sectorSize, size64_t sectorCount, const char *model, const char *serial) :

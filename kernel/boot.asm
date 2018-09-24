@@ -18,6 +18,8 @@ extern __init_array_start
 extern __init_array_end
 extern __fini_array_start
 extern __fini_array_end
+extern cpuEnableSSE
+extern cpuInitFPU
 global _start
 _start:
     cli
@@ -50,6 +52,14 @@ _start:
     mov cr3, eax
 
     lea esp, [stack.end] ; setup stack
+
+    ; init FPU
+    push 0x37F
+    call cpuInitFPU
+    add esp, 4
+
+    ; enable SSE
+    call cpuEnableSSE
 
     ; call global constructors
     push ebx    ; we need ebx register to be preserved over constructors
