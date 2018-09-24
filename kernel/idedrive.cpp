@@ -38,7 +38,7 @@ IDEDrive::IDEDrive(ATAIdentifyResponse *id, bool atapi, class Controller *ctrl, 
     Drive(atapi ? 2048 : 512, // FIXME: Shouldn't be hardcoded
           atapi ? LONG_MAX : (id->CommandSetActive.BigLba ? id->Max48BitLBA : id->UserAddressableSectors),
           nullptr, nullptr),
-    Controller(ctrl), Slave(slave),
+    Controller(ctrl), Slave(slave), ATAPI(atapi),
     PRDTsAllocated(8), // some arbitrary value
     PRDTs(new (64 << 10) PRDTEntry[PRDTsAllocated]),
     TransferDone(new Semaphore(0)),
@@ -256,9 +256,9 @@ void IDEDrive::Initialize()
                 if(!controller->Identify(id, j, atapi[j]))
                     continue;
                 IDEDrive *drive = new IDEDrive(id, atapi[j], controller, j);
-                if(atapi[j]) printf("[idedrive] Found ATAPI drive %s (%s)\n", drive->Model, drive->Serial);
-                else printf("[idedrive] Found %.2fMiB ATA drive %s (%s)\n", (double)(drive->SectorCount * drive->SectorSize) / (double)(1 << 20), drive->Model, drive->Serial);
-                Drive::Add(drive);
+                int id = Drive::Add(drive);
+                if(atapi[j]) printf("[idedrive] Found ATAPI drive %s (sn: %s; id: %d)\n", drive->Model, drive->Serial, id);
+                else printf("[idedrive] Found %.2fMiB ATA drive %s (sn: %s; id: %d)\n", (double)(drive->SectorCount * drive->SectorSize) / (double)(1 << 20), drive->Model, drive->Serial, id);
             }
             delete id;
         }
