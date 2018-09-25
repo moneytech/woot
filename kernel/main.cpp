@@ -1,6 +1,9 @@
 #include <cpu.h>
 #include <debugstream.h>
 #include <drive.h>
+#include <ext2.h>
+#include <filesystem.h>
+#include <filesystemtype.h>
 #include <gdt.h>
 #include <idedrive.h>
 #include <idt.h>
@@ -46,7 +49,7 @@ static void bufferDump(void *ptr, size_t n)
         for(uint i = 0; i < 16; ++i)
         {
             byte b = buf[i + j];
-            printf("%c", b < ' ' ? '.' : b);
+            printf("%c", b >= ' ' && b < '\x7f' ? b : '.');
         }
         printf("\n");
     }
@@ -118,9 +121,13 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     IDEDrive::Initialize();
     VolumeType::Initialize();
     Volume::Initialize();
+    FileSystemType::Initialize();
+    FileSystem::Initialize();
 
     VolumeType::Add(new MBRVolumeType());
     VolumeType::AutoDetect();
+    FileSystemType::Add(new EXT2FileSystemType());
+    FileSystemType::AutoDetect();
 
     kbdSem = new Semaphore(0);
     vidMtx = new Mutex();
@@ -147,7 +154,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         Time::DateTime dt;
         Time::FracUnixToDateTime(t, &dt);
         vidMtx->Acquire(0);
-        printf("main (runtime %.2d:%.2d:%.2d.%02d)\n", dt.Hour, dt.Minute, dt.Second, dt.Millisecond);
+        printf("[main] runtime %.2d:%.2d:%.2d.%02d\n", dt.Hour, dt.Minute, dt.Second, dt.Millisecond);
         vidMtx->Release();
         ct->Sleep(900, false);
     }

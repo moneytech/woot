@@ -2,6 +2,9 @@ hdd-empty-ext2.img.gz
 include/ata.h
 include/bufferedvolume.h
 include/drive.h
+include/ext2.h
+include/filesystem.h
+include/filesystemtype.h
 include/idedrive.h
 include/list.h
 include/mbrvolume.h
@@ -20,6 +23,9 @@ include/volume.h
 include/volumetype.h
 kernel/bufferedvolume.cpp
 kernel/drive.cpp
+kernel/ext2.cpp
+kernel/filesystem.cpp
+kernel/filesystemtype.cpp
 kernel/idedrive.cpp
 kernel/mbrvolume.cpp
 kernel/miscasm.asm

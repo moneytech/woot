@@ -6,6 +6,7 @@
 #include <types.h>
 
 class Drive;
+class FileSystem;
 class Mutex;
 class VolumeType;
 
@@ -22,6 +23,7 @@ public:
     int ID;
     Drive *Drive;
     VolumeType *Type;
+    FileSystem *FS = nullptr;
 
     static void Initialize();
     static bool LockList();
