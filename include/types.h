@@ -41,6 +41,8 @@ typedef intn pid_t;
 typedef intn uid_t;
 typedef intn gid_t;
 
+typedef int64_t ino_t;
+
 #define TRUE true
 #define FALSE false
 #define NULL 0

@@ -5,6 +5,7 @@
 #include <types.h>
 
 class FileSystemType;
+class INode;
 class Mutex;
 class Volume;
 
@@ -13,6 +14,7 @@ class FileSystem
     static List<FileSystem *> *fileSystems;
     static Mutex *listLock;
     Mutex *lock;
+    List<INode *> *inodeCache;
 protected:
     FileSystem(class Volume *vol, FileSystemType *type);
     virtual ~FileSystem();
@@ -28,6 +30,11 @@ public:
     static void Cleanup();
 
     bool Lock();
+    virtual INode *ReadINode(ino_t number);
+    virtual bool WriteINode(INode *inode);
+    virtual bool WriteSuperBlock();
+    INode *GetINode(ino_t number);
+    void PutINode(INode *inode);
     void UnLock();
 };
 

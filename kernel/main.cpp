@@ -82,6 +82,25 @@ static void kbdThread(uintptr_t arg)
             bufferDump(buf, vol->Drive->SectorSize);
             delete[] buf;
         }
+        else if(kbdData == 0x09) // 8 press
+        {
+            FileSystem *fs = FileSystem::GetByIndex(0, true);
+            INode *ino = fs->GetINode(EXT2_ROOT_INO);
+            byte *buf = new byte[ino->GetSize()];
+            EXT2 *ext2 = (EXT2 *)fs;
+            ext2->read((EXT2::FSINode *)ino, buf, 0, ino->GetSize());
+            Time::DateTime dt;
+            Time::UnixToDateTime(ino->GetCreateTime(), &dt);
+            printf("ctime: %.2d-%.2d-%.2dT%.2d:%.2d:%.2d\n", dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
+            Time::UnixToDateTime(ino->GetModifyTime(), &dt);
+            printf("mtime: %.2d-%.2d-%.2dT%.2d:%.2d:%.2d\n", dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
+            Time::UnixToDateTime(ino->GetAccessTime(), &dt);
+            printf("atime: %.2d-%.2d-%.2dT%.2d:%.2d:%.2d\n", dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
+            bufferDump(buf, ino->GetSize());
+            delete[] buf;
+            fs->PutINode(ino);
+            fs->UnLock();
+        }
         vidMtx->Release();
     }
 }

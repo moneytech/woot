@@ -3,6 +3,7 @@
 
 #include <filesystem.h>
 #include <filesystemtype.h>
+#include <inode.h>
 #include <types.h>
 
 #define EXT2_SUPER_MAGIC 0xEF53
@@ -221,9 +222,55 @@ public:
     };
 #pragma pack(pop)
 private:
+public: // public for testing
+    class FSINode : public ::INode
+    {
+        friend class EXT2;
+        EXT2::INode Data;
+        FSINode(ino_t number, FileSystem *fs);
+        virtual size64_t GetSize();
+        virtual time_t GetCreateTime();
+        virtual time_t GetModifyTime();
+        virtual time_t GetAccessTime();
+    };
+private:
+
+    static byte zero1k[];
+
+    SuperBlock *superBlock;
+    bool readOnly;
+    size_t blockSize;
+    size_t fragSize;
+    size64_t totalSize;
+    size_t blockGroupCount;
+    BlockGroupDescriptor *BGDT;
+    size_t BGDTSize;
+    int64_t BGDTOffset;
+    bool initialized;
+    bool superDirty;
+
     EXT2(class Volume *vol, FileSystemType *type, SuperBlock *sblock, bool ro);
+    uint64_t getINodeOffset(ino_t n);
+    uint64_t blockGroupOffset(uint bg);
+    bool hasSuperBlock(uint bg);
+    uint64_t bgdtOffset(uint bg);
+    bool updateBGDT(uint bg, off_t startOffs, size_t n);
+    uint32_t allocINode(uint *group);
+    bool freeINode(uint32_t inode);
+    uint32_t allocBlockInGroup(uint g);
+    uint32_t allocBlock(uint preferredGroup, uint *group);
+    bool freeBlock(uint32_t block);
+public: // public for testing
+    int64_t read(FSINode *inode, void *buffer, uint64_t position, int64_t n);
+private:
+    uint32_t getINodeBlock(FSINode *inode, uint32_t n);
+    bool setINodeBlock(FSINode *inode, uint32_t n, uint32_t block);
+    bool zeroBlock(uint32_t block);
     virtual ~EXT2();
 public:
+    virtual ::INode *ReadINode(ino_t number);
+    virtual bool WriteINode(::INode *inode);
+    virtual bool WriteSuperBlock();
 };
 
 #endif // EXT2_H

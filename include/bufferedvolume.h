@@ -33,6 +33,7 @@ protected:
 public:
     virtual int64_t Read(void *buffer, uint64_t position, int64_t n);
     virtual int64_t Write(const void *buffer, uint64_t position, int64_t n);
+    virtual bool Flush();
 };
 
 #endif // BUFFEREDVOLUME_H
