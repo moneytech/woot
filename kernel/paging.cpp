@@ -3,10 +3,12 @@
 #include <gdt.h>
 #include <malloc.h>
 #include <paging.h>
+#include <process.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sysdefs.h>
+#include <thread.h>
 
 // 4k region is at the end of kernel address and
 // allows for accessing whole physical memory using 4k windows

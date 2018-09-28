@@ -1,3 +1,5 @@
+#include <dentry.h>
+#include <errno.h>
 #include <ext2.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,6 +103,19 @@ EXT2::EXT2(class Volume *vol, FileSystemType *type, EXT2::SuperBlock *sblock, bo
         printf("[ext2] Couldn't read BGDT on volume %d\n", Volume->ID);
         return;
     }
+    initialized = true;
+    ::INode *rootINode = GetINode(EXT2_ROOT_INO);
+    initialized = false;
+    if(!rootINode)
+    {
+        printf("[ext2] Couldn't get root directory inode on volume %d\n", Volume->ID);
+        return;
+    }
+
+    DEntry *root = new DEntry("/", nullptr);
+    root->INode = rootINode;
+    SetRoot(root);
+
     initialized = true;
 }
 
@@ -529,6 +544,7 @@ bool EXT2::zeroBlock(uint32_t block)
 EXT2::~EXT2()
 {
     Lock();
+    if(Root) PutDEntry(Root);
     WriteSuperBlock();
     Volume->Flush();
     delete superBlock;
@@ -628,4 +644,61 @@ time_t EXT2::FSINode::GetModifyTime()
 time_t EXT2::FSINode::GetAccessTime()
 {
     return Data.i_atime;
+}
+
+ino_t EXT2::FSINode::Lookup(const char *name)
+{
+    if(!FS->Lock()) return -1;
+    if(!(Data.i_mode & EXT2_S_IFDIR))
+    { // we can't look for files inside non-directory inode
+        FS->UnLock();
+        return -1;
+    }
+    EXT2 *fs = (EXT2 *)this->FS;
+    uint64_t pos = 0;
+    size64_t size = GetSize();
+    DirectoryEntry de;
+    char nameBuf[256];
+    while(pos < size)
+    {
+        if(fs->read(this, &de, pos, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
+        {
+            FS->UnLock();
+            return -1;
+        }
+
+        if(de.name_len)
+        {
+            memset(nameBuf, 0, sizeof(nameBuf));
+            if(fs->read(this, nameBuf, pos + sizeof(DirectoryEntry), de.name_len) != de.name_len)
+            {
+                FS->UnLock();
+                return -1;
+            }
+
+            if(!strcmp(name, nameBuf))
+            { // found
+                FS->UnLock();
+                return de.inode;
+            }
+        }
+
+        pos += de.rec_len;
+    }
+    FS->UnLock();
+    return -1;
+}
+
+int64_t EXT2::FSINode::Read(void *buffer, int64_t position, int64_t n)
+{
+    if(!FS->Lock()) return -EBUSY;
+    EXT2 *fs = (EXT2 *)FS;
+    int64_t res = fs->read(this, buffer, position, n);
+    FS->UnLock();
+    return res;
+}
+
+int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
+{
+    return -ENOSYS;
 }

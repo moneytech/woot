@@ -3,6 +3,9 @@
 
 #include <types.h>
 
+// TODO: Mutexify
+
+class DEntry;
 class FileSystem;
 
 class INode
@@ -17,6 +20,9 @@ public:
     virtual time_t GetCreateTime();
     virtual time_t GetModifyTime();
     virtual time_t GetAccessTime();
+    virtual ino_t Lookup(const char *name);
+    virtual int64_t Read(void *buffer, int64_t position, int64_t n);
+    virtual int64_t Write(const void *buffer, int64_t position, int64_t n);
     virtual ~INode();
 };
 

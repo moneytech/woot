@@ -218,11 +218,10 @@ public:
             uint8_t file_type;
             uint8_t name_len_high;
         };
-        char name[];
+        //char name[];
     };
 #pragma pack(pop)
 private:
-public: // public for testing
     class FSINode : public ::INode
     {
         friend class EXT2;
@@ -232,6 +231,9 @@ public: // public for testing
         virtual time_t GetCreateTime();
         virtual time_t GetModifyTime();
         virtual time_t GetAccessTime();
+        virtual ino_t Lookup(const char *name);
+        virtual int64_t Read(void *buffer, int64_t position, int64_t n);
+        virtual int64_t Write(const void *buffer, int64_t position, int64_t n);
     };
 private:
 
@@ -260,9 +262,7 @@ private:
     uint32_t allocBlockInGroup(uint g);
     uint32_t allocBlock(uint preferredGroup, uint *group);
     bool freeBlock(uint32_t block);
-public: // public for testing
     int64_t read(FSINode *inode, void *buffer, uint64_t position, int64_t n);
-private:
     uint32_t getINodeBlock(FSINode *inode, uint32_t n);
     bool setINodeBlock(FSINode *inode, uint32_t n, uint32_t block);
     bool zeroBlock(uint32_t block);

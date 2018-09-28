@@ -4,6 +4,8 @@
 #include <list.h>
 #include <types.h>
 
+class DEntry;
+class File;
 class FileSystemType;
 class INode;
 class Mutex;
@@ -15,12 +17,15 @@ class FileSystem
     static Mutex *listLock;
     Mutex *lock;
     List<INode *> *inodeCache;
+    List<DEntry *> *dentryCache;
+    List<File *> *openedFiles;
 protected:
     FileSystem(class Volume *vol, FileSystemType *type);
     virtual ~FileSystem();
 public:
     class Volume *Volume;
     FileSystemType *Type;
+    DEntry *Root;
 
     static void Initialize();
     static bool LockList();
@@ -35,6 +40,9 @@ public:
     virtual bool WriteSuperBlock();
     INode *GetINode(ino_t number);
     void PutINode(INode *inode);
+    void SetRoot(DEntry *dentry);
+    DEntry *GetDEntry(DEntry *parent, const char *name);
+    bool PutDEntry(DEntry *dentry); // returns true if dentry was deleted
     void UnLock();
 };
 

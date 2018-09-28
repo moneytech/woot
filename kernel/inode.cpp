@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <inode.h>
 
 INode::INode(ino_t number, FileSystem *fs) :
@@ -25,6 +26,21 @@ time_t INode::GetModifyTime()
 time_t INode::GetAccessTime()
 {
     return 0;
+}
+
+ino_t INode::Lookup(const char *name)
+{
+    return -1;
+}
+
+int64_t INode::Read(void *buffer, int64_t position, int64_t n)
+{
+    return -ENOSYS;
+}
+
+int64_t INode::Write(const void *buffer, int64_t position, int64_t n)
+{
+    return -ENOSYS;
 }
 
 INode::~INode()

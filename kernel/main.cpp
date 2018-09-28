@@ -2,6 +2,7 @@
 #include <debugstream.h>
 #include <drive.h>
 #include <ext2.h>
+#include <file.h>
 #include <filesystem.h>
 #include <filesystemtype.h>
 #include <gdt.h>
@@ -14,6 +15,7 @@
 #include <mutex.h>
 #include <paging.h>
 #include <pci.h>
+#include <process.h>
 #include <semaphore.h>
 #include <stdio.h>
 #include <thread.h>
@@ -85,20 +87,16 @@ static void kbdThread(uintptr_t arg)
         else if(kbdData == 0x09) // 8 press
         {
             FileSystem *fs = FileSystem::GetByIndex(0, true);
-            INode *ino = fs->GetINode(EXT2_ROOT_INO);
-            byte *buf = new byte[ino->GetSize()];
-            EXT2 *ext2 = (EXT2 *)fs;
-            ext2->read((EXT2::FSINode *)ino, buf, 0, ino->GetSize());
-            Time::DateTime dt;
-            Time::UnixToDateTime(ino->GetCreateTime(), &dt);
-            printf("ctime: %.2d-%.2d-%.2dT%.2d:%.2d:%.2d\n", dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
-            Time::UnixToDateTime(ino->GetModifyTime(), &dt);
-            printf("mtime: %.2d-%.2d-%.2dT%.2d:%.2d:%.2d\n", dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
-            Time::UnixToDateTime(ino->GetAccessTime(), &dt);
-            printf("atime: %.2d-%.2d-%.2dT%.2d:%.2d:%.2d\n", dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second);
-            bufferDump(buf, ino->GetSize());
-            delete[] buf;
-            fs->PutINode(ino);
+
+            DEntry *boot = fs->GetDEntry(fs->Root, "boot");
+            DEntry *grub = fs->GetDEntry(boot, "grub");
+
+            File *f = File::Open(grub, "grub.cfg", O_RDONLY);
+            {
+                for(byte b = 0; f->Read(&b, 1) > 0; printf("%c", b));
+                delete f;
+            }
+
             fs->UnLock();
         }
         vidMtx->Release();
@@ -131,6 +129,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 
     Paging::Initialize(ramSize);
     Thread::Initialize();
+    Process::Initialize();
     IRQs::Initialize();
     cpuEnableInterrupts();
     Time::Initialize();
