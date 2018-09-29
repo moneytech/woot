@@ -10,20 +10,20 @@ class Volume;
 
 class FileSystemType
 {
-    static List<FileSystemType *> *types;
-    static Mutex *listLock;
+    static List<FileSystemType *> fsTypes;
+    static Mutex listLock;
 protected:
 public:
     char *Name;
 
     static void Initialize();
-    static bool LockList();
+    static bool Lock();
     static bool Add(FileSystemType *type);
     static FileSystemType *GetByName(const char *name);
     static FileSystemType *GetByIndex(uint idx);
     static void Remove(FileSystemType *type);
     static int AutoDetect();
-    static void UnLockList();
+    static void UnLock();
     static void Cleanup();
 
     FileSystemType(const char *name);

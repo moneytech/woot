@@ -7,63 +7,61 @@
 #include <string.h>
 #include <volume.h>
 
-List<FileSystemType *> *FileSystemType::types;
-Mutex *FileSystemType::listLock;
+List<FileSystemType *> FileSystemType::fsTypes;
+Mutex FileSystemType::listLock;
 
 void FileSystemType::Initialize()
 {
-    types = new List<FileSystemType *>();
-    listLock = new Mutex();
 }
 
-bool FileSystemType::LockList()
+bool FileSystemType::Lock()
 {
-    return listLock->Acquire(0, false);
+    return listLock.Acquire(0, false);
 }
 
 bool FileSystemType::Add(FileSystemType *type)
 {
-    if(!LockList()) return false;
+    if(!Lock()) return false;
     FileSystemType *t = GetByName(type->Name);
     if(t)
     {
         printf("[filesystemtype] Type '%s' already exists\n", type->Name);
-        UnLockList();
+        UnLock();
         return false;
     }
-    types->Prepend(type);
-    UnLockList();
+    fsTypes.Prepend(type);
+    UnLock();
     return true;
 }
 
 FileSystemType *FileSystemType::GetByName(const char *name)
 {
-    if(!LockList()) return nullptr;
-    for(auto type : *types)
+    if(!Lock()) return nullptr;
+    for(FileSystemType *type : fsTypes)
     {
         if(!strcmp(name, type->Name))
         {
-            UnLockList();
+            UnLock();
             return type;
         }
     }
-    UnLockList();
+    UnLock();
     return nullptr;
 }
 
 FileSystemType *FileSystemType::GetByIndex(uint idx)
 {
-    if(!LockList()) return nullptr;
-    auto res = types->Get(idx);
-    UnLockList();
+    if(!Lock()) return nullptr;
+    FileSystemType *res = fsTypes[idx];
+    UnLock();
     return res;
 }
 
 void FileSystemType::Remove(FileSystemType *type)
 {
-    if(!LockList()) return;
-    types->Remove(type, nullptr, false);
-    UnLockList();
+    if(!Lock()) return;
+    fsTypes.Remove(type, nullptr, false);
+    UnLock();
 }
 
 int FileSystemType::AutoDetect()
@@ -74,8 +72,8 @@ int FileSystemType::AutoDetect()
     {
         Volume *vol = Volume::GetByIndex(i);
         if(!vol) break;
-        LockList();
-        for(auto fst : *types)
+        Lock();
+        for(FileSystemType *fst : fsTypes)
         {
             if(vol->FS) continue;
             FileSystem *fs = fst->Detect(vol);
@@ -84,24 +82,23 @@ int FileSystemType::AutoDetect()
             FileSystem::Add(fs);
             ++res;
         }
-        UnLockList();
-        vol->UnLock();
+        UnLock();
     }
     Volume::UnLock();
     return res;
 }
 
-void FileSystemType::UnLockList()
+void FileSystemType::UnLock()
 {
-    listLock->Release();
+    listLock.Release();
 }
 
 void FileSystemType::Cleanup()
 {
-    LockList();
-    for(auto v : *types)
-        delete v;
-    delete listLock;
+    Lock();
+    for(FileSystemType *fst : fsTypes)
+        delete fst;
+    UnLock();
 }
 
 FileSystemType::FileSystemType(const char *name) :

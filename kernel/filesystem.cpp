@@ -79,6 +79,8 @@ void FileSystem::SynchronizeAll()
         inode->FS->WriteINode(inode);
         INode::UnLock();
     }
+    for(FileSystem *fs : fileSystems)
+        fs->WriteSuperBlock();
     UnLock();
 }
 

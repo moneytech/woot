@@ -23,8 +23,6 @@
 #include <volume.h>
 #include <volumetype.h>
 
-Stream *debugStream = nullptr; // main debug stream (kernel log)
-
 static unsigned short *video = (unsigned short *)0xC00B8000;
 static Semaphore kbdSem(0);
 static byte kbdData = 0;
@@ -121,13 +119,12 @@ static uint64_t getRAMSize(multiboot_info_t *mboot_info);
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
-    debugStream = new DebugStream(0xE9);
-    printf("[main] debugStream initialized\n");
+    printf("[main] Starting woot...\n");
     GDT::Initialize();
     IDT::Initialize();
 
     uint64_t ramSize = getRAMSize(mbootInfo);
-    printf("[main] found %.2f MiB of usable memory\n", (double)ramSize / (double)(1 << 20));
+    printf("[main] Found %.2f MiB of usable memory\n", (double)ramSize / (double)(1 << 20));
 
     Paging::Initialize(ramSize);
     Thread::Initialize();
@@ -176,16 +173,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         ct->Sleep(900, false);
     }
 
-    t1->Finished->Wait(100, false);
-    t2->Finished->Wait(100, false);
-    t3->Finished->Wait(100, false);
-
-    if(t1->State != Thread::State::Finalized)
-        Thread::Finalize(t1, 0xb001);
-    if(t2->State != Thread::State::Finalized)
-        Thread::Finalize(t2, 0xb002);
-    if(t3->State != Thread::State::Finalized)
-        Thread::Finalize(t3, 0xb003);
+    t1->Finished->Wait(0, false);
+    t2->Finished->Wait(0, false);
+    t3->Finished->Wait(0, false);
 
     delete t1;
     delete t2;
@@ -198,6 +188,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Drive::Cleanup();
     PCI::Cleanup();
 
+    printf("[main] System closed.\n");
     return 0xD007D007;
 }
 
