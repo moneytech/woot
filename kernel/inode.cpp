@@ -1,5 +1,18 @@
 #include <errno.h>
 #include <inode.h>
+#include <mutex.h>
+
+Mutex INode::lock;
+
+bool INode::Lock()
+{
+    return lock.Acquire(0, false);
+}
+
+void INode::UnLock()
+{
+    lock.Release();
+}
 
 INode::INode(ino_t number, FileSystem *fs) :
     Number(number), FS(fs),
@@ -26,6 +39,21 @@ time_t INode::GetModifyTime()
 time_t INode::GetAccessTime()
 {
     return 0;
+}
+
+bool INode::SetCreateTime(time_t t)
+{
+    return false;
+}
+
+bool INode::SetModifyTime(time_t t)
+{
+    return false;
+}
+
+bool INode::SetAccessTime(time_t t)
+{
+    return false;
 }
 
 ino_t INode::Lookup(const char *name)

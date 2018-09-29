@@ -38,7 +38,7 @@ public:
     // thread info
     pid_t ID;
     char *Name;
-    Process *Process;
+    ::Process *Process;
     void *EntryPoint;
     uintptr_t Argument;
 

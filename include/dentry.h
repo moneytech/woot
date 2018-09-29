@@ -9,13 +9,16 @@ class Mutex;
 
 class DEntry
 {
+    static Mutex lock;
 public:
     DEntry *Parent;
     List<DEntry *> *Children;
     char *Name;
     ::INode *INode;
     int ReferenceCount;
-    Mutex *Lock;
+
+    static bool Lock();
+    static void UnLock();
 
     DEntry(const char *name, DEntry *parent);
     ~DEntry();

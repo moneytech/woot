@@ -6,15 +6,14 @@
 #include <string.h>
 #include <volume.h>
 
-List<FileSystem *> *FileSystem::fileSystems;
-Mutex *FileSystem::listLock;
+List<FileSystem *> FileSystem::fileSystems;
+List<INode *> FileSystem::inodeCache;
+List<DEntry *> FileSystem::dentryCache;
+Mutex FileSystem::lock;
 
 FileSystem::FileSystem(class Volume *vol, FileSystemType *type) :
     Volume(vol),
     Type(type),
-    lock(new Mutex()),
-    inodeCache(new List<INode *>()),
-    dentryCache(new List<DEntry *>()),
     openedFiles(new List<File *>())
 {
 }
@@ -24,67 +23,57 @@ FileSystem::~FileSystem()
     Lock();
     for(File *f : *openedFiles)
         delete f;
-    for(DEntry *d : *dentryCache)
+    for(DEntry *d : dentryCache)
         delete d;
-    for(INode *i : *inodeCache)
+    for(INode *i : inodeCache)
         delete i;
-    delete inodeCache;
-    delete dentryCache;
     delete openedFiles;
-    delete lock;
 }
 
 void FileSystem::Initialize()
 {
-    fileSystems = new List<FileSystem *>();    
-    listLock = new Mutex();
-}
-
-bool FileSystem::LockList()
-{
-    return listLock->Acquire(0, false);
 }
 
 void FileSystem::Add(FileSystem *fs)
 {
-    LockList();
-    fileSystems->Append(fs);
-    UnLockList();
+    Lock();
+    fileSystems.Append(fs);
+    UnLock();
 }
 
 FileSystem *FileSystem::GetByIndex(uint idx, bool lock)
 {
-    if(!LockList()) return nullptr;
-    auto res = fileSystems->Get(idx);
+    if(!Lock())
+        return nullptr;
+    FileSystem *res = fileSystems[idx];
     if(res && lock)
     {
         if(!res->Lock())
             res = nullptr;
     }
-    UnLockList();
+    UnLock();
     return res;
-}
-
-void FileSystem::UnLockList()
-{
-    listLock->Release();
-}
-
-void FileSystem::Cleanup()
-{
-    LockList();
-    for(auto v : *fileSystems)
-    {
-        if(v->Volume)
-            v->Volume->FS = nullptr;
-        delete v;
-    }
-    delete listLock;
 }
 
 bool FileSystem::Lock()
 {
-    return lock->Acquire(0, false);
+    return lock.Acquire(0, false);
+}
+
+void FileSystem::UnLock()
+{
+    lock.Release();
+}
+
+void FileSystem::Cleanup()
+{
+    Lock();
+    for(FileSystem *fs : fileSystems)
+    {
+        if(fs->Volume)
+            fs->Volume->FS = nullptr;
+        delete fs;
+    }
 }
 
 INode *FileSystem::ReadINode(ino_t number)
@@ -104,8 +93,9 @@ bool FileSystem::WriteSuperBlock()
 
 INode *FileSystem::GetINode(ino_t number)
 {
-    if(!Lock()) return nullptr;
-    for(INode *inode : *inodeCache)
+    if(!Lock())
+        return nullptr;
+    for(INode *inode : inodeCache)
     {
         if(inode->Number == number)
         {
@@ -120,7 +110,7 @@ INode *FileSystem::GetINode(ino_t number)
         UnLock();
         return nullptr;
     }
-    inodeCache->Prepend(inode);
+    inodeCache.Prepend(inode);
     ++inode->ReferenceCount;
     UnLock();
     return inode;
@@ -131,7 +121,7 @@ void FileSystem::PutINode(INode *inode)
     Lock();
     if(!--inode->ReferenceCount)
     {
-        inodeCache->Remove(inode, nullptr, false);
+        inodeCache.Remove(inode, nullptr, false);
         if(inode->Dirty)
             WriteINode(inode);
         delete inode;
@@ -142,78 +132,54 @@ void FileSystem::PutINode(INode *inode)
 void FileSystem::SetRoot(DEntry *dentry)
 {
     Lock();
-    if(!dentryCache->Contains(dentry, nullptr))
-        dentryCache->Prepend(dentry);
-    dentry->Lock->Acquire(0, false);
+    if(!dentryCache.Contains(dentry, nullptr))
+        dentryCache.Prepend(dentry);
+    DEntry::Lock();
     ++dentry->ReferenceCount;
     Root = dentry;
-    dentry->Lock->Release();
+    DEntry::UnLock();
     UnLock();
 }
 
 DEntry *FileSystem::GetDEntry(DEntry *parent, const char *name)
 {
-    if(!Lock() || !parent || !parent->INode || !name || !parent->Lock->Acquire(0, false))
+    if(!Lock() || !parent || !parent->INode || !name || !DEntry::Lock())
         return nullptr;
-    for(DEntry *dentry : *dentryCache)
+    for(DEntry *dentry : dentryCache)
     {
-        if(!dentry->Lock->Acquire(0, false))
-        {
-            parent->Lock->Release();
-            UnLock();
-            return nullptr;
-        }
         if(parent == dentry->Parent && !strcmp(name, dentry->Name))
         {
             ++dentry->ReferenceCount;
-            dentry->Lock->Release();
-            parent->Lock->Release();
+            DEntry::UnLock();
             UnLock();
             return dentry;
         }
-        dentry->Lock->Release();
     }
     ino_t ino = parent->INode->Lookup(name);
     if(ino < 0)
     {
-        parent->Lock->Release();
+        DEntry::UnLock();
         UnLock();
         return nullptr;
     }
     DEntry *dentry = new DEntry(name, parent);
-    if(!dentry->Lock->Acquire(0, false))
-    {
-        delete dentry;
-        parent->Lock->Release();
-        UnLock();
-        return nullptr;
-    }
     dentry->INode = GetINode(ino);
-    dentryCache->Prepend(dentry);
+    dentryCache.Prepend(dentry);
     ++dentry->ReferenceCount;
-    dentry->Lock->Release();
-    parent->Lock->Release();
+    DEntry::UnLock();
     UnLock();
     return dentry;
 }
 
-bool FileSystem::PutDEntry(DEntry *dentry)
+void FileSystem::PutDEntry(DEntry *dentry)
 {
     Lock();
-    dentry->Lock->Acquire(0, false);
+    DEntry::Lock();
     if(!--dentry->ReferenceCount)
     {
-        dentryCache->Remove(dentry, nullptr, false);
+        dentryCache.Remove(dentry, nullptr, false);
         delete dentry;
-        UnLock();
-        return true;
     }
-    dentry->Lock->Release();
+    DEntry::UnLock();
     UnLock();
-    return false;
-}
-
-void FileSystem::UnLock()
-{
-    return lock->Release();
 }

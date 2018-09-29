@@ -619,39 +619,86 @@ EXT2::FSINode::FSINode(ino_t number, FileSystem *fs) :
 
 size64_t EXT2::FSINode::GetSize()
 {
-    FS->Lock();
-    EXT2 *fs = (EXT2 *)FS;
+    if(!INode::Lock()) return 0;
+    if(!FileSystem::Lock())
+    {
+        INode::UnLock();
+        return 0;
+    }
     FSINode *inode = (FSINode *)this;
-    size64_t size = fs->superBlock->s_rev_level < 1 ?
+    size64_t size = ((EXT2 *)FS)->superBlock->s_rev_level < 1 ?
                 inode->Data.i_size :
                 (inode->Data.i_size | ((inode->Data.i_mode & 0xF000) == EXT2_S_IFREG ?
                                            ((uint64_t)inode->Data.i_dir_acl << 32) :
                                            0));
-    FS->UnLock();
+    FileSystem::UnLock();
+    INode::UnLock();
     return size;
 }
 
 time_t EXT2::FSINode::GetCreateTime()
 {
-    return Data.i_ctime;
+    if(!INode::Lock()) return 0;
+    time_t res = Data.i_ctime;
+    INode::UnLock();
+    return res;
 }
 
 time_t EXT2::FSINode::GetModifyTime()
 {
-    return Data.i_mtime;
+    if(!INode::Lock()) return 0;
+    time_t res = Data.i_mtime;
+    INode::UnLock();
+    return res;
 }
 
 time_t EXT2::FSINode::GetAccessTime()
 {
-    return Data.i_atime;
+    if(!INode::Lock()) return 0;
+    time_t res = Data.i_atime;
+    INode::UnLock();
+    return res;
+}
+
+bool EXT2::FSINode::SetCreateTime(time_t t)
+{
+    if(!INode::Lock()) return false;
+    Data.i_ctime = t;
+    Dirty = true;
+    INode::UnLock();
+    return true;
+}
+
+bool EXT2::FSINode::SetModifyTime(time_t t)
+{
+    if(!INode::Lock()) return false;
+    Data.i_mtime = t;
+    Dirty = true;
+    INode::UnLock();
+    return true;
+}
+
+bool EXT2::FSINode::SetAccessTime(time_t t)
+{
+    if(!INode::Lock()) return false;
+    Data.i_atime = t;
+    Dirty = true;
+    INode::UnLock();
+    return true;
 }
 
 ino_t EXT2::FSINode::Lookup(const char *name)
 {
-    if(!FS->Lock()) return -1;
+    if(!INode::Lock()) return -EBUSY;
+    if(!FileSystem::Lock())
+    {
+        INode::UnLock();
+        return -EBUSY;
+    }
     if(!(Data.i_mode & EXT2_S_IFDIR))
     { // we can't look for files inside non-directory inode
-        FS->UnLock();
+        INode::UnLock();
+        FileSystem::UnLock();
         return -1;
     }
     EXT2 *fs = (EXT2 *)this->FS;
@@ -663,7 +710,8 @@ ino_t EXT2::FSINode::Lookup(const char *name)
     {
         if(fs->read(this, &de, pos, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
         {
-            FS->UnLock();
+            INode::UnLock();
+            FileSystem::UnLock();
             return -1;
         }
 
@@ -672,29 +720,37 @@ ino_t EXT2::FSINode::Lookup(const char *name)
             memset(nameBuf, 0, sizeof(nameBuf));
             if(fs->read(this, nameBuf, pos + sizeof(DirectoryEntry), de.name_len) != de.name_len)
             {
-                FS->UnLock();
+                INode::UnLock();
+                FileSystem::UnLock();
                 return -1;
             }
 
             if(!strcmp(name, nameBuf))
             { // found
-                FS->UnLock();
+                INode::UnLock();
+                FileSystem::UnLock();
                 return de.inode;
             }
         }
 
         pos += de.rec_len;
     }
-    FS->UnLock();
+    INode::UnLock();
+    FileSystem::UnLock();
     return -1;
 }
 
 int64_t EXT2::FSINode::Read(void *buffer, int64_t position, int64_t n)
 {
-    if(!FS->Lock()) return -EBUSY;
-    EXT2 *fs = (EXT2 *)FS;
-    int64_t res = fs->read(this, buffer, position, n);
-    FS->UnLock();
+    if(!Lock()) return -EBUSY;
+    if(!FileSystem::Lock())
+    {
+        UnLock();
+        return -EBUSY;
+    }
+    int64_t res = ((EXT2 *)FS)->read(this, buffer, position, n);
+    FileSystem::UnLock();
+    UnLock();
     return res;
 }
 

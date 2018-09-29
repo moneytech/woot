@@ -114,6 +114,11 @@ public:
         return T(0);
     }
 
+    T operator[](uint idx)
+    {
+        return Get(idx);
+    }
+
     T Find(T value, Comparer comparer)
     {
         for(Node *prev = nullptr, *node = First; node; prev = node, node = node->Next)

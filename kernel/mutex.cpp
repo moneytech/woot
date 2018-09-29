@@ -6,6 +6,9 @@
 // TODO: make waiters queue arbitrarily long without any heap allocations
 #define MAX_WAITERS 32
 
+// global kernel lock mutex
+Mutex Mutex::GlobalLock;
+
 Mutex::Mutex() :
     Count(0), Owner(nullptr),
     Waiters(new Queue<Thread *>(MAX_WAITERS))

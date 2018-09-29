@@ -12,6 +12,8 @@ class Mutex
     volatile Thread *Owner;
     Queue<Thread *> *Waiters;
 public:
+    static Mutex GlobalLock;
+
     Mutex();
     bool Acquire(uint timeout, bool tryAcquire = false);
     void Release();

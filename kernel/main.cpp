@@ -26,15 +26,15 @@
 Stream *debugStream = nullptr; // main debug stream (kernel log)
 
 static unsigned short *video = (unsigned short *)0xC00B8000;
-static Semaphore *kbdSem = nullptr;
+static Semaphore kbdSem(0);
 static byte kbdData = 0;
-static Mutex *vidMtx = nullptr;
+static Mutex vidMtx;
 
 static bool kbdTest(Ints::State *state, void *context)
 {
     kbdData = _inb(0x60);
     video[1] = 0x2F00 | kbdData;
-    kbdSem->Signal(state);
+    kbdSem.Signal(state);
     return true;
 }
 static Ints::Handler kbdTestHandler = { nullptr, kbdTest, nullptr };
@@ -61,8 +61,8 @@ static void kbdThread(uintptr_t arg)
 {
     for(;;)
     {
-        kbdSem->Wait(0, false);
-        vidMtx->Acquire(0);
+        kbdSem.Wait(0, false);
+        vidMtx.Acquire(0);
         printf("kbdData: %#.2x\n", kbdData);
 
         if(kbdData == 0x0B) // 0 press
@@ -96,10 +96,8 @@ static void kbdThread(uintptr_t arg)
                 for(byte b = 0; f->Read(&b, 1) > 0; printf("%c", b));
                 delete f;
             }
-
-            fs->UnLock();
         }
-        vidMtx->Release();
+        vidMtx.Release();
     }
 }
 
@@ -108,9 +106,9 @@ void testThread(uintptr_t arg)
     Thread *ct = Thread::GetCurrent();
     for(;;)
     {
-        vidMtx->Acquire(0);
+        vidMtx.Acquire(0);
         printf("test: %d\n", arg);
-        vidMtx->Release();
+        vidMtx.Release();
         ct->Sleep(1000 * ct->ID, false);
     }
 }
@@ -147,9 +145,6 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     FileSystemType::Add(new EXT2FileSystemType());
     FileSystemType::AutoDetect();
 
-    kbdSem = new Semaphore(0);
-    vidMtx = new Mutex();
-
     IRQs::RegisterHandler(1, &kbdTestHandler);
     IRQs::Enable(1);
 
@@ -171,9 +166,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         double t = Time::GetSystemUpTime();
         Time::DateTime dt;
         Time::FracUnixToDateTime(t, &dt);
-        vidMtx->Acquire(0);
+        vidMtx.Acquire(0);
         printf("[main] runtime %.2d:%.2d:%.2d.%02d\n", dt.Hour, dt.Minute, dt.Second, dt.Millisecond);
-        vidMtx->Release();
+        vidMtx.Release();
         ct->Sleep(900, false);
     }
 

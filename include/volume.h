@@ -21,7 +21,7 @@ protected:
     virtual ~Volume();
 public:
     int ID;
-    Drive *Drive;
+    ::Drive *Drive;
     VolumeType *Type;
     FileSystem *FS = nullptr;
 

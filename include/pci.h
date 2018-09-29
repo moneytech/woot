@@ -111,7 +111,7 @@ public:
     class Device
     {
     public:
-        Address Address;
+        PCI::Address Address;
         uint16_t VendorID;
         uint16_t DeviceID;
         uint8_t Class;

@@ -18,6 +18,7 @@ extern __init_array_start
 extern __init_array_end
 extern __fini_array_start
 extern __fini_array_end
+extern __cxa_finalize
 extern cpuEnableSSE
 extern cpuInitFPU
 global _start
@@ -86,6 +87,10 @@ _start:
     ; call global destructors
     push eax    ; we want return value from kmain to be put in eax register
                 ; after system halt so we save it on the stack
+    push 0
+    call __cxa_finalize
+    add esp, 4
+
     mov edx, __fini_array_start
     mov ecx, __fini_array_end
 .next_destructor:

@@ -5,21 +5,31 @@
 #include <stdlib.h>
 #include <string.h>
 
+Mutex DEntry::lock;
+
+bool DEntry::Lock()
+{
+    return lock.Acquire(0, false);
+}
+
+void DEntry::UnLock()
+{
+    lock.Release();
+}
+
 DEntry::DEntry(const char *name, DEntry *parent) :
     Parent(parent),
-    Children(nullptr),
+    Children(nullptr), // not used for now
     Name(strdup(name)),
     INode(nullptr),
-    ReferenceCount(0),
-    Lock(new Mutex())
+    ReferenceCount(0)
 {
-
 }
 
 DEntry::~DEntry()
 {
-    Lock->Acquire(0, false);
+    Lock();
     if(Name) free(Name);
     if(INode && INode->FS) INode->FS->PutINode(INode);
-    delete Lock;
+    UnLock();
 }

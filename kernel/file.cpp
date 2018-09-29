@@ -40,14 +40,21 @@ int64_t File::Read(void *buffer, int64_t n)
         Lock->Release();
         return -EINVAL;
     }
-    if(!DEntry->Lock->Acquire(0, false))
+    if(!DEntry::Lock())
     {
         Lock->Release();
         return -EBUSY;
     }
-    int64_t res = DEntry->INode->Read(buffer, Position, n);
+    if(!INode::Lock())
+    {
+        DEntry::UnLock();
+        Lock->Release();
+        return -EBUSY;
+    }
+    int64_t res = DEntry->INode ? DEntry->INode->Read(buffer, Position, n) : -EINVAL;
+    INode::UnLock();
     if(res > 0) Position += res;
-    DEntry->Lock->Release();
+    DEntry::UnLock();
     Lock->Release();
     return res;
 }
@@ -56,19 +63,26 @@ int64_t File::Write(const void *buffer, int64_t n)
 {
     if(!DEntry || !Lock->Acquire(0, false))
         return -EBUSY;
-    if((Flags & O_ACCMODE) == O_RDONLY)
+    if((Flags & O_ACCMODE) == O_WRONLY)
     {
         Lock->Release();
         return -EINVAL;
     }
-    if(!DEntry->Lock->Acquire(0, false))
+    if(!DEntry::Lock())
     {
         Lock->Release();
         return -EBUSY;
     }
-    int64_t res = DEntry->INode->Write(buffer, Position, n);
+    if(!INode::Lock())
+    {
+        DEntry::UnLock();
+        Lock->Release();
+        return -EBUSY;
+    }
+    int64_t res = DEntry->INode ? DEntry->INode->Write(buffer, Position, n) : -EINVAL;
+    INode::UnLock();
     if(res > 0) Position += res;
-    DEntry->Lock->Release();
+    DEntry::UnLock();
     Lock->Release();
     return res;
 }
@@ -76,14 +90,10 @@ int64_t File::Write(const void *buffer, int64_t n)
 File::~File()
 {
     Lock->Acquire(0, false);
-    if(DEntry)
-    {
-        DEntry->Lock->Acquire(0, false);
-        FileSystem *FS = DEntry->INode->FS;
-        FS->Lock();
-        bool deleted = FS->PutDEntry(DEntry);
-        FS->UnLock();
-        if(!deleted) DEntry->Lock->Release();
-    }
+    DEntry::Lock();
+    INode::Lock();
+    DEntry->INode->FS->PutDEntry(DEntry);
+    INode::UnLock();
+    DEntry::UnLock();
     delete Lock;
 }
