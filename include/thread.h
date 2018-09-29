@@ -7,6 +7,7 @@
 #include <sequencer.h>
 #include <types.h>
 
+class Mutex;
 class Process;
 class Semaphore;
 
@@ -71,8 +72,14 @@ public:
     // finalize stuff
     int *ReturnCodePtr;
     Semaphore *Finished;
+    bool DeleteFinished;
+
+    // locking
+    Mutex *WaitingMutex;
+    Semaphore *WaitingSemaphore;
 
     static void Initialize();
+    static void Finalize(Thread *thread, int returnValue);
 
     Thread(const char *name, class Process *process, void *entryPoint, uintptr_t argument, size_t kernelStackSize, size_t userStackSize, int *returnCodePtr, Semaphore *finished);
     static Thread *GetNext(bool doTick);

@@ -17,6 +17,7 @@ public:
     Semaphore(int count);
     bool Wait(uint timeout, bool tryWait);
     void Signal(Ints::State *state); // passing state != 0 makes this method usable in ISRs
+    void Cancel(Thread *t);
     ~Semaphore();
 };
 

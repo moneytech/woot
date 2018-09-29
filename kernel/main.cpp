@@ -29,6 +29,7 @@ static unsigned short *video = (unsigned short *)0xC00B8000;
 static Semaphore kbdSem(0);
 static byte kbdData = 0;
 static Mutex vidMtx;
+static volatile bool quit = false;
 
 static bool kbdTest(Ints::State *state, void *context)
 {
@@ -57,15 +58,17 @@ static void bufferDump(void *ptr, size_t n)
     }
 }
 
-static void kbdThread(uintptr_t arg)
+static int kbdThread(uintptr_t arg)
 {
-    for(;;)
+    for(; !quit;)
     {
         kbdSem.Wait(0, false);
         vidMtx.Acquire(0);
         printf("kbdData: %#.2x\n", kbdData);
 
-        if(kbdData == 0x0B) // 0 press
+        if(kbdData == 0x90) // q released
+            quit = true;
+        else if(kbdData == 0x0B) // 0 press
         {
             Drive *drv = Drive::GetByIndex(0);
             byte *buf = new byte[drv->SectorSize];
@@ -76,10 +79,9 @@ static void kbdThread(uintptr_t arg)
         }
         else if(kbdData == 0x0A) // 9 press
         {
-            Volume *vol = Volume::GetByIndex(0, true);
+            Volume *vol = Volume::GetByIndex(0);
             byte *buf = new byte[vol->Drive->SectorSize];
             int64_t sr = vol->ReadSectors(buf, 2, 1);
-            vol->UnLock();
             printf("sr = %d\n", sr);
             bufferDump(buf, vol->Drive->SectorSize);
             delete[] buf;
@@ -99,18 +101,20 @@ static void kbdThread(uintptr_t arg)
         }
         vidMtx.Release();
     }
+    return 0x11223344;
 }
 
-void testThread(uintptr_t arg)
+int testThread(uintptr_t arg)
 {
     Thread *ct = Thread::GetCurrent();
-    for(;;)
+    for(; !quit;)
     {
         vidMtx.Acquire(0);
         printf("test: %d\n", arg);
         vidMtx.Release();
         ct->Sleep(1000 * ct->ID, false);
     }
+    return 0x11 * arg;
 }
 
 static uint64_t getRAMSize(multiboot_info_t *mboot_info);
@@ -161,7 +165,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     t3->Resume(false);
 
     Thread *ct = Thread::GetCurrent();
-    for(;;)
+    for(; !quit;)
     {
         double t = Time::GetSystemUpTime();
         Time::DateTime dt;
@@ -172,6 +176,25 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         ct->Sleep(900, false);
     }
 
+    t1->Finished->Wait(100, false);
+    t2->Finished->Wait(100, false);
+    t3->Finished->Wait(100, false);
+
+    if(t1->State != Thread::State::Finalized)
+        Thread::Finalize(t1, 0xb001);
+    if(t2->State != Thread::State::Finalized)
+        Thread::Finalize(t2, 0xb002);
+    if(t3->State != Thread::State::Finalized)
+        Thread::Finalize(t3, 0xb003);
+
+    delete t1;
+    delete t2;
+    delete t3;
+
+    printf("[main] Closing system\n");
+
+    FileSystem::SynchronizeAll();
+    Volume::FlushAll();
     Drive::Cleanup();
     PCI::Cleanup();
 

@@ -35,8 +35,10 @@ bool Mutex::Acquire(uint timeout, bool tryAcquire)
     {
         bool r = true;
 
+        ct->WaitingMutex = this;
         if(timeout) r = ct->Sleep(timeout, true) != 0;
         else ct->Suspend();
+        ct->WaitingMutex = nullptr;
 
         if(!r)
         {
@@ -87,6 +89,13 @@ void Mutex::Release()
         } while(!t);
         t->Resume(false);
     }
+    cpuRestoreInterrupts(is);
+}
+
+void Mutex::Cancel(Thread *t)
+{
+    bool is = cpuDisableInterrupts();
+    Waiters->ReplaceAll(t, nullptr);
     cpuRestoreInterrupts(is);
 }
 

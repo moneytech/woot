@@ -7,7 +7,7 @@ extern threadFinalize
 extern printf
 threadReturn:
   push eax
-  push 0
+  push dword [esp + 8]
   call threadFinalize
   push .failMsg
   call printf

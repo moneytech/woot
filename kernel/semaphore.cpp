@@ -31,8 +31,10 @@ bool Semaphore::Wait(uint timeout, bool tryWait)
     {
         bool r = true;
 
+        ct->WaitingSemaphore = this;
         if(timeout) r = ct->Sleep(timeout, true) != 0;
         else ct->Suspend();
+        ct->WaitingSemaphore = nullptr;
 
         if(!r)
         {
@@ -70,6 +72,13 @@ void Semaphore::Signal(Ints::State *state)
     if(state) t->QuickResume(state);
     else t->Resume(false);
 
+    cpuRestoreInterrupts(is);
+}
+
+void Semaphore::Cancel(Thread *t)
+{
+    bool is = cpuDisableInterrupts();
+    Waiters->ReplaceAll(t, nullptr);
     cpuRestoreInterrupts(is);
 }
 

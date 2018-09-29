@@ -3,42 +3,37 @@
 #include <volume.h>
 
 Sequencer<int> Volume::id(0);
-List<Volume *> *Volume::volumes;
-Mutex *Volume::listLock;
+List<Volume *> Volume::volumes;
+Mutex Volume::lock;
 
 Volume::Volume(class Drive *drive, VolumeType *type) :
     Drive(drive),
-    Type(type),
-    lock(new Mutex())
+    Type(type)
 {
 }
 
 Volume::~Volume()
 {
-    Lock();
-    delete lock;
 }
 
 void Volume::Initialize()
 {
-    volumes = new List<Volume *>();
-    listLock = new Mutex();
 }
 
-bool Volume::LockList()
+bool Volume::Lock()
 {
-    return listLock->Acquire(0);
+    return lock.Acquire(0);
 }
 
 Volume *Volume::GetByID(int id, bool lock)
 {
-    if(!LockList()) return nullptr;
+    if(!Lock()) return nullptr;
     Volume *res = nullptr;
-    for(auto it : *volumes)
+    for(Volume *vol : volumes)
     {
-        if(it->ID == id)
+        if(vol->ID == id)
         {
-            res = it;
+            res = vol;
             break;
         }
     }
@@ -47,60 +42,60 @@ Volume *Volume::GetByID(int id, bool lock)
         if(!res->Lock())
             res = nullptr;
     }
-    UnLockList();
+    UnLock();
     return res;
 }
 
-Volume *Volume::GetByIndex(uint idx, bool lock)
+Volume *Volume::GetByIndex(uint idx)
 {
-    if(!LockList()) return nullptr;
-    auto res = volumes->Get(idx);
-    if(res && lock)
-    {
-        if(!res->Lock())
-            res = nullptr;
-    }
-    UnLockList();
+    if(!Lock())
+        return nullptr;
+    Volume *res = volumes[idx];
+    UnLock();
     return res;
 }
 
 int Volume::Add(Volume *vol)
 {
-    if(!LockList()) return -1;
+    if(!Lock())
+        return -1;
     int newId = id.GetNext();
-    volumes->Append(vol);
+    volumes.Append(vol);
     vol->ID = newId;
-    UnLockList();
+    UnLock();
     return newId;
 }
 
 bool Volume::Remove(Volume *vol)
 {
-    if(!LockList()) return false;
-    bool res = volumes->Remove(vol, nullptr, false) != 0;
+    if(!Lock()) return false;
+    bool res = volumes.Remove(vol, nullptr, false) != 0;
     vol->ID = -1;
-    UnLockList();
+    UnLock();
     return res;
 }
 
-void Volume::UnLockList()
+void Volume::UnLock()
 {
-    listLock->Release();
+    lock.Release();
+}
+
+void Volume::FlushAll()
+{
+    Lock();
+
+    UnLock();
 }
 
 void Volume::Cleanup()
 {
-    LockList();
-    if(volumes) return;
-    for(Volume *v : *volumes)
+    Lock();
+    for(Volume *v : volumes)
+    {
+        v->Flush();
         delete v;
-    delete volumes;
-    delete listLock;
-}
-
-bool Volume::Lock()
-{
-    return lock->Acquire(0, false);
+    }
+    UnLock();
 }
 
 int64_t Volume::Read(void *buffer, uint64_t position, int64_t n)
@@ -126,9 +121,4 @@ int64_t Volume::WriteSectors(const void *buffer, uint64_t start, int64_t count)
 bool Volume::Flush()
 {
     return false;
-}
-
-void Volume::UnLock()
-{
-    lock->Release();
 }

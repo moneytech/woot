@@ -2,6 +2,8 @@
 #include <gdt.h>
 #include <malloc.h>
 #include <miscasm.h>
+#include <mutex.h>
+#include <process.h>
 #include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,8 +16,7 @@ extern "C" void *kmain;
 
 extern "C" void threadFinalize(Thread *thread, int returnValue)
 {
-    printf("[thread] threadFinalize not implemented");
-    cpuSystemHalt(0x654321AA);
+    Thread::Finalize(thread, returnValue);
 }
 
 static void idleThreadProc()
@@ -77,6 +78,33 @@ void Thread::Initialize()
     cpuRestoreInterrupts(ints);
 }
 
+void Thread::Finalize(Thread *thread, int returnValue)
+{
+    bool is = cpuDisableInterrupts();
+    if(thread->ReturnCodePtr)
+        *thread->ReturnCodePtr = returnValue;
+    if(thread->Finished)
+        thread->Finished->Signal(nullptr);
+    thread->State = State::Finalized;
+    if(thread->WaitingMutex)
+        thread->WaitingMutex->Cancel(thread);
+    if(thread->WaitingSemaphore)
+        thread->WaitingSemaphore->Cancel(thread);
+    if(thread->Process)
+        thread->Process->RemoveThread(thread);
+    readyThreads.Remove(thread, nullptr);
+    suspendedThreads.Remove(thread, nullptr);
+    sleepingThreads.Remove(thread, nullptr);
+    if(lastVectorStateThread == thread)
+        lastVectorStateThread = nullptr;
+    if(currentThread == thread)
+    {
+        currentThread = nullptr;
+        Time::FakeTick();
+    }
+    cpuRestoreInterrupts(is);
+}
+
 Thread::Thread(const char *name, class Process *process, void *entryPoint, uintptr_t argument, size_t kernelStackSize, size_t userStackSize, int *returnCodePtr, Semaphore *finished) :
     ID(id.GetNext()),
     Name(strdup(name)),
@@ -99,11 +127,13 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     SignalQueue(nullptr),
     CurrentSignal(-1),
     ReturnCodePtr(returnCodePtr),
-    Finished(finished)
+    Finished(finished ? finished : new Semaphore(0)),
+    DeleteFinished(finished)
 {
     cpuFXSave(FXSaveData);  // FIXME: should be initialized to known good state
 
     // initialize stack
+    kernelPush((uintptr_t)this);
     kernelPush(argument);                // argument
     kernelPush((uintptr_t)threadReturn); // return address
 
@@ -195,8 +225,10 @@ void Thread::Switch(Ints::State *state, Thread *thread)
         return; // nothing to be done here
 
     if(currentThread)
+    {
         currentThread->StackPointer = state->ESP;
-    currentThread->State = State::Ready;
+        currentThread->State = State::Ready;
+    }
 
     GDT::MainTSS.ESP0 = (uintptr_t)thread->KernelStack +
             thread->KernelStackSize; // initial thread->StackPointer;
@@ -345,5 +377,5 @@ Thread::~Thread()
     if(SignalStack) free(SignalStack);
     if(FXSaveData) free(FXSaveData);
     if(SignalQueue) delete SignalQueue;
-    if(Finished) delete Finished;
+    if(DeleteFinished && Finished) delete Finished;
 }

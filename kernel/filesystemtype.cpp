@@ -68,11 +68,11 @@ void FileSystemType::Remove(FileSystemType *type)
 
 int FileSystemType::AutoDetect()
 {
-    if(!Volume::LockList()) return -EBUSY;
+    if(!Volume::Lock()) return -EBUSY;
     int res = 0;
     for(uint i = 0;; ++i)
     {
-        Volume *vol = Volume::GetByIndex(i, true);
+        Volume *vol = Volume::GetByIndex(i);
         if(!vol) break;
         LockList();
         for(auto fst : *types)
@@ -87,7 +87,7 @@ int FileSystemType::AutoDetect()
         UnLockList();
         vol->UnLock();
     }
-    Volume::UnLockList();
+    Volume::UnLock();
     return res;
 }
 

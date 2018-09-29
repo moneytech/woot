@@ -16,7 +16,7 @@ public:
     FileSystem *FS;
     int ReferenceCount;
     bool Dirty;
-    List<DEntry *> DEntries;
+    //List<DEntry *> DEntries;
 
     static bool Lock();
     static void UnLock();

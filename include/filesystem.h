@@ -32,11 +32,13 @@ public:
     static FileSystem *GetByIndex(uint idx, bool lock);
     static bool Lock();
     static void UnLock();
+    static void SynchronizeAll();
     static void Cleanup();
 
     virtual INode *ReadINode(ino_t number);
     virtual bool WriteINode(INode *inode);
     virtual bool WriteSuperBlock();
+
     INode *GetINode(ino_t number);
     void PutINode(INode *inode);
     void SetRoot(DEntry *dentry);

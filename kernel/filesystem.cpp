@@ -65,6 +65,23 @@ void FileSystem::UnLock()
     lock.Release();
 }
 
+void FileSystem::SynchronizeAll()
+{
+    Lock();
+    for(INode *inode : inodeCache)
+    {
+        INode::Lock();
+        if(!inode->Dirty)
+        {
+            INode::UnLock();
+            continue;
+        }
+        inode->FS->WriteINode(inode);
+        INode::UnLock();
+    }
+    UnLock();
+}
+
 void FileSystem::Cleanup()
 {
     Lock();

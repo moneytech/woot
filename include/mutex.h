@@ -17,6 +17,7 @@ public:
     Mutex();
     bool Acquire(uint timeout, bool tryAcquire = false);
     void Release();
+    void Cancel(Thread *t);
     ~Mutex();
 };
 
