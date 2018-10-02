@@ -12,6 +12,9 @@
 #define DEFAULT_STACK_SIZE          65536
 #define DEFAULT_SIGNAL_STACK_SIZE   16386
 
+#define PATH_SEPARATORS "/\\"
+#define VOLUME_SEPARATOR ':'
+
 // syscalls
 #define SYSCALLS_INT_VECTOR 128
 

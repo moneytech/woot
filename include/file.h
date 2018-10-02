@@ -40,6 +40,7 @@ public:
     Mutex *Lock;
 
     static File *Open(::DEntry *parent, const char *name, int flags);
+    static File *Open(const char *name, int flags);
 
     int64_t Read(void *buffer, int64_t n);
     int64_t Write(const void *buffer, int64_t n);

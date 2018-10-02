@@ -76,13 +76,10 @@ FileSystem *EXT2FileSystemType::Detect(Volume *vol)
     }
 
     printf("[ext2] Found valid filesystem on volume %d\n", vol->ID);
-
     EXT2 *fs = new EXT2(vol, this, sblock, readOnly);
-    FileSystem::Add(fs);
-
     vol->UnLock();
     delete sblock;
-    return nullptr;
+    return fs;
 }
 
 EXT2::EXT2(class Volume *vol, FileSystemType *type, EXT2::SuperBlock *sblock, bool ro) :

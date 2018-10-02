@@ -4,6 +4,10 @@
 #include <filesystem.h>
 #include <inode.h>
 #include <mutex.h>
+#include <string.h>
+#include <sysdefs.h>
+#include <tokenizer.h>
+#include <volume.h>
 
 File::File(::DEntry *dentry, int flags) :
     DEntry(dentry),
@@ -28,6 +32,50 @@ File *File::Open(::DEntry *parent, const char *name, int flags)
     }
     File *file = new File(dentry, flags);
     FS->UnLock();
+    return file;
+}
+
+File *File::Open(const char *name, int flags)
+{
+    Tokenizer path(name, PATH_SEPARATORS, 0);
+    bool hasVolumeId = path[0] && strchr(path[0], VOLUME_SEPARATOR);
+    uint volumeId = hasVolumeId ? strtoul(path[0], nullptr, 0) : 0;
+    Volume::Lock();
+    Volume *vol = Volume::GetByID(volumeId);
+    if(!vol || !vol->FS)
+    {
+        Volume::UnLock();
+        return nullptr;
+    }
+    DEntry::Lock();
+    FileSystem::Lock();
+    ::DEntry *dentry = FileSystem::GetDEntry(vol->FS->Root);
+    if(!dentry)
+    {
+        FileSystem::UnLock();
+        DEntry::UnLock();
+        Volume::UnLock();
+        return nullptr;
+    }
+    for(Tokenizer::Token t : path.Tokens)
+    {
+        if(hasVolumeId && !t.Offset)
+            continue;
+        ::DEntry *nextDe = FileSystem::GetDEntry(dentry, t.String);
+        FileSystem::PutDEntry(dentry);
+        if(!nextDe)
+        {
+            FileSystem::UnLock();
+            DEntry::UnLock();
+            Volume::UnLock();
+            return nullptr;
+        }
+        dentry = nextDe;
+    }
+    File *file = new File(dentry, flags);
+    FileSystem::UnLock();
+    DEntry::UnLock();
+    Volume::UnLock();
     return file;
 }
 

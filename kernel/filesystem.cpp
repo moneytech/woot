@@ -162,7 +162,7 @@ void FileSystem::SetRoot(DEntry *dentry)
 
 DEntry *FileSystem::GetDEntry(DEntry *parent, const char *name)
 {
-    if(!Lock() || !parent || !parent->INode || !name || !DEntry::Lock())
+    if(!Lock() || !parent || !parent->INode || !parent->INode->FS || !name || !DEntry::Lock())
         return nullptr;
     for(DEntry *dentry : dentryCache)
     {
@@ -182,12 +182,28 @@ DEntry *FileSystem::GetDEntry(DEntry *parent, const char *name)
         return nullptr;
     }
     DEntry *dentry = new DEntry(name, parent);
-    dentry->INode = GetINode(ino);
+    dentry->INode = parent->INode->FS->GetINode(ino);
     dentryCache.Prepend(dentry);
     ++dentry->ReferenceCount;
     DEntry::UnLock();
     UnLock();
     return dentry;
+}
+
+DEntry *FileSystem::GetDEntry(DEntry *dentry)
+{
+    if(!FileSystem::Lock())
+        return nullptr;
+    if(!DEntry::Lock())
+    {
+        FileSystem::UnLock();
+        return nullptr;
+    }
+    DEntry *res = dentryCache.Find(dentry, nullptr);
+    if(res) ++res->ReferenceCount;
+    DEntry::UnLock();
+    FileSystem::UnLock();
+    return res;
 }
 
 void FileSystem::PutDEntry(DEntry *dentry)

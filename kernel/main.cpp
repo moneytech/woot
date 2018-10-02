@@ -86,12 +86,7 @@ static int kbdThread(uintptr_t arg)
         }
         else if(kbdData == 0x09) // 8 press
         {
-            FileSystem *fs = FileSystem::GetByIndex(0, true);
-
-            DEntry *boot = fs->GetDEntry(fs->Root, "boot");
-            DEntry *grub = fs->GetDEntry(boot, "grub");
-
-            File *f = File::Open(grub, "grub.cfg", O_RDONLY);
+            if(File *f = File::Open("0:/boot/grub/grub.cfg", O_RDONLY))
             {
                 for(byte b = 0; f->Read(&b, 1) > 0; printf("%c", b));
                 delete f;

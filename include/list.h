@@ -111,7 +111,7 @@ public:
             if(idx == i)
                 return node->Value;
         }
-        return T(0);
+        return T();
     }
 
     T operator[](uint idx)
@@ -121,6 +121,7 @@ public:
 
     T Find(T value, Comparer comparer)
     {
+        if(!comparer) comparer = defaultComparer;
         for(Node *prev = nullptr, *node = First; node; prev = node, node = node->Next)
         {
             if(comparer(node->Value, value))

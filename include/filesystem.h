@@ -42,8 +42,9 @@ public:
     INode *GetINode(ino_t number);
     void PutINode(INode *inode);
     void SetRoot(DEntry *dentry);
-    DEntry *GetDEntry(DEntry *parent, const char *name);
-    void PutDEntry(DEntry *dentry);
+    static DEntry *GetDEntry(DEntry *parent, const char *name);
+    static DEntry *GetDEntry(DEntry *dentry); // used to make reference counter (great again)
+    static void PutDEntry(DEntry *dentry);
 };
 
 #endif // FILESYSTEM_H

@@ -25,7 +25,7 @@ bool Volume::Lock()
     return lock.Acquire(0);
 }
 
-Volume *Volume::GetByID(int id, bool lock)
+Volume *Volume::GetByID(int id)
 {
     if(!Lock()) return nullptr;
     Volume *res = nullptr;
@@ -36,11 +36,6 @@ Volume *Volume::GetByID(int id, bool lock)
             res = vol;
             break;
         }
-    }
-    if(res && lock)
-    {
-        if(!res->Lock())
-            res = nullptr;
     }
     UnLock();
     return res;

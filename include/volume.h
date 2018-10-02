@@ -26,7 +26,7 @@ public:
 
     static void Initialize();
     static bool Lock();
-    static Volume *GetByID(int id, bool lock);
+    static Volume *GetByID(int id);
     static Volume *GetByIndex(uint idx);
     static int Add(Volume *vol);
     static bool Remove(Volume *vol);

@@ -22,6 +22,7 @@ include/semaphore.h
 include/sequencer.h
 include/stddef.h
 include/thread.h
+include/tokenizer.h
 include/volume.h
 include/volumetype.h
 kernel/bufferedvolume.cpp
@@ -41,6 +42,7 @@ kernel/pci.cpp
 kernel/process.cpp
 kernel/semaphore.cpp
 kernel/thread.cpp
+kernel/tokenizer.cpp
 kernel/volume.cpp
 kernel/volumetype.cpp
 lib/malloc.c
