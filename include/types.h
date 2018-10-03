@@ -42,6 +42,7 @@ typedef intn uid_t;
 typedef intn gid_t;
 
 typedef int64_t ino_t;
+typedef uint32_t mode_t;
 
 #define TRUE true
 #define FALSE false

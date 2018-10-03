@@ -1,5 +1,6 @@
 #include <cpu.h>
 #include <debugstream.h>
+#include <directoryentry.h>
 #include <drive.h>
 #include <ext2.h>
 #include <file.h>
@@ -17,6 +18,7 @@
 #include <pci.h>
 #include <process.h>
 #include <semaphore.h>
+#include <stat.h>
 #include <stdio.h>
 #include <thread.h>
 #include <time.h>
@@ -87,8 +89,26 @@ static int kbdThread(uintptr_t arg)
         else if(kbdData == 0x09) // 8 press
         {
             if(File *f = File::Open("0:/boot/grub/grub.cfg", O_RDONLY))
+            //if(File *f = File::Open("0:/testfile.txt", O_RDONLY))
             {
                 for(byte b = 0; f->Read(&b, 1) > 0; printf("%c", b));
+                delete f;
+            }
+        }
+        else if(kbdData == 0x08) // 7 press
+        {
+            if(File *f = File::Open("0:/boot/grub", O_DIRECTORY))
+            {
+                while(DirectoryEntry *de = f->ReadDir())
+                {
+                    Time::DateTime mtime;
+                    Time::UnixToDateTime(de->ModifyTime, &mtime);
+                    printf("%-16s %s %8lu %.2d-%.2d-%.2d %.2d:%.2d\n",
+                           de->Name, S_ISDIR(de->Mode) ? "<DIR> " : "      ", de->Size,
+                           mtime.Year, mtime.Month, mtime.Day,
+                           mtime.Hour, mtime.Minute);
+                    delete de;
+                }
                 delete f;
             }
         }

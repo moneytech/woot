@@ -5,6 +5,7 @@
 #include <types.h>
 
 class DEntry;
+class DirectoryEntry;
 class FileSystem;
 class Mutex;
 
@@ -23,6 +24,7 @@ public:
 
     INode(ino_t number, FileSystem *fs);
     virtual size64_t GetSize();
+    virtual mode_t GetMode();
     virtual time_t GetCreateTime();
     virtual time_t GetModifyTime();
     virtual time_t GetAccessTime();
@@ -32,6 +34,7 @@ public:
     virtual ino_t Lookup(const char *name);
     virtual int64_t Read(void *buffer, int64_t position, int64_t n);
     virtual int64_t Write(const void *buffer, int64_t position, int64_t n);
+    virtual DirectoryEntry *ReadDir(int64_t position, int64_t *newPosition);
     virtual ~INode();
 };
 

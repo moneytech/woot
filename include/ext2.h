@@ -41,6 +41,7 @@
 #define EXT2_FEATURE_RO_COMPAT_BTREE_DIR    0x0004
 #define EXTx_FEATURE_RO_COMPAT_FUTURE       0xFFF8
 
+#define EXT2_S_IFTYPE 0xF000 // type mask
 #define EXT2_S_IFSOCK 0xC000 // socket
 #define EXT2_S_IFLNK  0xA000 // symbolic link
 #define EXT2_S_IFREG  0x8000 // regular file
@@ -63,13 +64,13 @@
 #define EXT2_S_IWOTH  0x0002 // others write
 #define EXT2_S_IXOTH  0x0001 // others execute
 
-#define EXT2_S_ISDIR(mode)	(((mode) & 0x0f000) == 0x04000)
-#define EXT2_S_ISLINK(mode)	(((mode) & 0x0f000) == 0x0a000)
-#define EXT2_S_ISBLK(mode)	(((mode) & 0x0f000) == 0x06000)
-#define EXT2_S_ISSOCK(mode)	(((mode) & 0x0f000) == 0x0c000)
-#define EXT2_S_ISREG(mode)	(((mode) & 0x0f000) == 0x08000)
-#define EXT2_S_ISCHAR(mode)	(((mode) & 0x0f000) == 0x02000)
-#define EXT2_S_ISFIFO(mode)	(((mode) & 0x0f000) == 0x01000)
+#define EXT2_S_ISDIR(mode)	(((mode) & EXT2_S_IFTYPE) == EXT2_S_IFDIR)
+#define EXT2_S_ISLINK(mode)	(((mode) & EXT2_S_IFTYPE) == EXT2_S_IFLNK)
+#define EXT2_S_ISBLK(mode)	(((mode) & EXT2_S_IFTYPE) == EXT2_S_IFBLK)
+#define EXT2_S_ISSOCK(mode)	(((mode) & EXT2_S_IFTYPE) == EXT2_S_IFSOCK)
+#define EXT2_S_ISREG(mode)	(((mode) & EXT2_S_IFTYPE) == EXT2_S_IFREG)
+#define EXT2_S_ISCHAR(mode)	(((mode) & EXT2_S_IFTYPE) == EXT2_S_IFCHR)
+#define EXT2_S_ISFIFO(mode)	(((mode) & EXT2_S_IFTYPE) == EXT2_S_IFIFO)
 
 class EXT2FileSystemType : public FileSystemType
 {
@@ -228,6 +229,7 @@ private:
         EXT2::INode Data;
         FSINode(ino_t number, FileSystem *fs);
         virtual size64_t GetSize();
+        virtual mode_t GetMode();
         virtual time_t GetCreateTime();
         virtual time_t GetModifyTime();
         virtual time_t GetAccessTime();
@@ -237,6 +239,7 @@ private:
         virtual ino_t Lookup(const char *name);
         virtual int64_t Read(void *buffer, int64_t position, int64_t n);
         virtual int64_t Write(const void *buffer, int64_t position, int64_t n);
+        virtual ::DirectoryEntry *ReadDir(int64_t position, int64_t *newPosition);
     };
 private:
 

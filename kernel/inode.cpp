@@ -26,6 +26,11 @@ size64_t INode::GetSize()
     return 0;
 }
 
+mode_t INode::GetMode()
+{
+    return 0;
+}
+
 time_t INode::GetCreateTime()
 {
     return 0;
@@ -69,6 +74,11 @@ int64_t INode::Read(void *buffer, int64_t position, int64_t n)
 int64_t INode::Write(const void *buffer, int64_t position, int64_t n)
 {
     return -ENOSYS;
+}
+
+DirectoryEntry *INode::ReadDir(int64_t position, int64_t *newPosition)
+{
+    return nullptr;
 }
 
 INode::~INode()

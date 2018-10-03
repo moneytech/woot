@@ -28,6 +28,7 @@
 #define O_NDELAY    O_NONBLOCK
 
 class DEntry;
+class DirectoryEntry;
 class Mutex;
 
 class File
@@ -44,6 +45,7 @@ public:
 
     int64_t Read(void *buffer, int64_t n);
     int64_t Write(const void *buffer, int64_t n);
+    DirectoryEntry *ReadDir();
     ~File(); // used as close
 };
 

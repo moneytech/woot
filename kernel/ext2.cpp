@@ -1,4 +1,5 @@
 #include <dentry.h>
+#include <directoryentry.h>
 #include <errno.h>
 #include <ext2.h>
 #include <stdio.h>
@@ -633,6 +634,14 @@ size64_t EXT2::FSINode::GetSize()
     return size;
 }
 
+mode_t EXT2::FSINode::GetMode()
+{
+    if(!INode::Lock()) return 0;
+    time_t res = Data.i_mode;
+    INode::UnLock();
+    return res;
+}
+
 time_t EXT2::FSINode::GetCreateTime()
 {
     if(!INode::Lock()) return 0;
@@ -754,4 +763,65 @@ int64_t EXT2::FSINode::Read(void *buffer, int64_t position, int64_t n)
 int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
 {
     return -ENOSYS;
+}
+
+::DirectoryEntry *EXT2::FSINode::ReadDir(int64_t position, int64_t *newPosition)
+{
+    if(!INode::Lock()) return nullptr;
+    if(!FileSystem::Lock())
+    {
+        INode::UnLock();
+        return nullptr;
+    }
+    if(!(Data.i_mode & EXT2_S_IFDIR))
+    { // we can't do ReadDir for non-directory
+        INode::UnLock();
+        FileSystem::UnLock();
+        return nullptr;
+    }
+
+    EXT2 *fs = (EXT2 *)this->FS;
+    EXT2::DirectoryEntry de;
+    char nameBuf[256];
+    size64_t size = GetSize();
+    ::DirectoryEntry *res = nullptr;
+
+    while(position < size)
+    {
+        if(fs->read(this, &de, position, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
+            break;
+
+        if(!de.name_len)
+        {
+            position += de.rec_len;
+            continue;
+        }
+
+        memset(nameBuf, 0, sizeof(nameBuf));
+        if(fs->read(this, nameBuf, position + sizeof(DirectoryEntry), de.name_len) != de.name_len)
+            break;
+
+        ::INode *inode = fs->ReadINode(de.inode);
+        if(!inode)
+            break;
+
+        res = new ::DirectoryEntry(
+                    inode->GetMode(),
+                    inode->GetAccessTime(),
+                    inode->GetCreateTime(),
+                    inode->GetModifyTime(),
+                    inode->GetSize(),
+                    inode->Number,
+                    nameBuf);
+
+        delete inode;
+
+        position += de.rec_len;
+        break;
+    }
+
+    if(newPosition) *newPosition = position;
+    FileSystem::UnLock();
+    INode::UnLock();
+    return res;
 }

@@ -135,6 +135,35 @@ int64_t File::Write(const void *buffer, int64_t n)
     return res;
 }
 
+DirectoryEntry *File::ReadDir()
+{
+    if(!DEntry || !Lock->Acquire(0, false))
+        return nullptr;
+    if((Flags & O_ACCMODE) == O_WRONLY)
+    {
+        Lock->Release();
+        return nullptr;
+    }
+    if(!DEntry::Lock())
+    {
+        Lock->Release();
+        return nullptr;
+    }
+    if(!INode::Lock())
+    {
+        DEntry::UnLock();
+        Lock->Release();
+        return nullptr;
+    }
+    int64_t newPos = Position;
+    DirectoryEntry *res = DEntry->INode ? DEntry->INode->ReadDir(Position, &newPos) : nullptr;
+    INode::UnLock();
+    if(res) Position = newPos;
+    DEntry::UnLock();
+    Lock->Release();
+    return res;
+}
+
 File::~File()
 {
     Lock->Acquire(0, false);
