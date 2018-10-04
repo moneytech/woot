@@ -25,8 +25,10 @@ public:
     UUID();
     UUID(void *data);
     UUID(const char *str);
-    UUID(UUID &src);
+    UUID(const UUID &src);
     void ToString(char *buffer);
+    bool operator ==(UUID &uuid);
+    bool operator !=(UUID &uuid);
 };
 
 #endif // UUID_H

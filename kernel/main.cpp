@@ -98,7 +98,8 @@ static int kbdThread(uintptr_t arg)
         }
         else if(kbdData == 0x08) // 7 press
         {
-            if(File *f = File::Open("WOOT_OS:/boot/grub", O_DIRECTORY))
+            //if(File *f = File::Open("WOOT_OS:/boot/grub", O_DIRECTORY))
+            if(File *f = File::Open("{16393ccb-173f-4c23-8f6f-0f62c6025259}:/boot/grub", O_DIRECTORY))
             {
                 while(DirectoryEntry *de = f->ReadDir())
                 {

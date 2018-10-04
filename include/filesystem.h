@@ -3,6 +3,7 @@
 
 #include <list.h>
 #include <types.h>
+#include <uuid.h>
 
 class DEntry;
 class File;
@@ -36,6 +37,7 @@ public:
     static void Cleanup();
 
     virtual bool GetLabel(char *buffer, size_t num);
+    virtual UUID GetUUID();
     virtual INode *ReadINode(ino_t number);
     virtual bool WriteINode(INode *inode);
     virtual bool WriteSuperBlock();

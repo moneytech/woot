@@ -100,6 +100,11 @@ bool FileSystem::GetLabel(char *buffer, size_t num)
     return false;
 }
 
+UUID FileSystem::GetUUID()
+{
+    return UUID::nil;
+}
+
 INode *FileSystem::ReadINode(ino_t number)
 {
     return nullptr;

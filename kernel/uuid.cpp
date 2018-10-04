@@ -37,7 +37,7 @@ UUID::UUID(const char *str)
     }
 }
 
-UUID::UUID(UUID &src)
+UUID::UUID(const UUID &src)
 {
     memcpy(Data, src.Data, sizeof(Data));
 }
@@ -52,4 +52,14 @@ void UUID::ToString(char *buffer)
         buffer[j] = hexTable[(Data[i >> 1] >> (4 * (~i & 1))) & 0x0F];
     }
     buffer[36] = 0;
+}
+
+bool UUID::operator ==(UUID &uuid)
+{
+    return !memcmp(Data, uuid.Data, sizeof(Data));
+}
+
+bool UUID::operator !=(UUID &uuid)
+{
+    return memcmp(Data, uuid.Data, sizeof(Data));
 }

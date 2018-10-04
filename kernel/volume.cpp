@@ -77,6 +77,29 @@ Volume *Volume::GetByLabel(const char *label)
     return res;
 }
 
+Volume *Volume::GetByUUID(UUID uuid)
+{
+    if(!Lock()) return nullptr;
+    if(!FileSystem::Lock())
+    {
+        UnLock();
+        return nullptr;
+    }
+    Volume *res = nullptr;
+    for(Volume *v : volumes)
+    {
+        if(!v->FS) continue;
+        UUID fsuuid = v->FS->GetUUID();
+        if(fsuuid == UUID::nil || uuid != fsuuid)
+            continue;
+        res = v;
+        break;
+    }
+    FileSystem::UnLock();
+    UnLock();
+    return res;
+}
+
 int Volume::Add(Volume *vol)
 {
     if(!Lock())

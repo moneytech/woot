@@ -275,6 +275,7 @@ private:
     virtual ~EXT2();
 public:
     virtual bool GetLabel(char *buffer, size_t num);
+    virtual UUID GetUUID();
     virtual ::INode *ReadINode(ino_t number);
     virtual bool WriteINode(::INode *inode);
     virtual bool WriteSuperBlock();

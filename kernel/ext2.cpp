@@ -563,6 +563,14 @@ bool EXT2::GetLabel(char *buffer, size_t num)
     return true;
 }
 
+UUID EXT2::GetUUID()
+{
+    if(!Lock()) return UUID::nil;
+    UUID uuid(superBlock->s_uuid);
+    UnLock();
+    return uuid;
+}
+
 ::INode *EXT2::ReadINode(ino_t number)
 {
     if(!Lock() || !initialized) return nullptr;

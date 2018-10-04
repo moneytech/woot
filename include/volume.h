@@ -8,6 +8,7 @@
 class Drive;
 class FileSystem;
 class Mutex;
+class UUID;
 class VolumeType;
 
 class Volume
@@ -29,6 +30,7 @@ public:
     static Volume *GetByID(int id);
     static Volume *GetByIndex(uint idx);
     static Volume *GetByLabel(const char *label);
+    static Volume *GetByUUID(UUID uuid);
     static int Add(Volume *vol);
     static bool Remove(Volume *vol);
     static void UnLock();

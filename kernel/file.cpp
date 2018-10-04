@@ -39,11 +39,15 @@ File *File::Open(const char *name, int flags)
 {
     Tokenizer path(name, PATH_SEPARATORS, 0);
     char *volumeSep = path[0] ? strchr(path[0], VOLUME_SEPARATOR) : nullptr;
+    if(volumeSep) *volumeSep = 0;
+
     bool hasVolumeId = path[0] && isdigit(path[0][0]) && volumeSep;
-    uint volumeId = hasVolumeId ? strtoul(path[0], nullptr, 0) : 0;    
-    bool hasLabel = !hasVolumeId && volumeSep;
-    if(hasLabel) *volumeSep = 0;
-    Volume *vol = hasLabel ? Volume::GetByLabel(path[0]) : Volume::GetByID(volumeId);
+    uint volumeId = hasVolumeId ? strtoul(path[0], nullptr, 0) : 0;
+    bool hasUUID = path[0] && path[0][0] == '{';
+    UUID uuid = hasUUID ? UUID(path[0]) : UUID::nil;
+    bool hasLabel = !hasVolumeId && !hasUUID && volumeSep;
+
+    Volume *vol = hasLabel ? Volume::GetByLabel(path[0]) : (hasUUID ? Volume::GetByUUID(uuid) : Volume::GetByID(volumeId));
     Volume::Lock();
     if(!vol || !vol->FS)
     {
@@ -62,7 +66,7 @@ File *File::Open(const char *name, int flags)
     }
     for(Tokenizer::Token t : path.Tokens)
     {
-        if((hasVolumeId || hasLabel) && !t.Offset)
+        if((hasVolumeId || hasUUID || hasLabel) && !t.Offset)
             continue;
         ::DEntry *nextDe = FileSystem::GetDEntry(dentry, t.String);
         FileSystem::PutDEntry(dentry);
