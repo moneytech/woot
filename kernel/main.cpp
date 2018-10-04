@@ -20,6 +20,7 @@
 #include <semaphore.h>
 #include <stat.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <thread.h>
 #include <time.h>
 #include <volume.h>
@@ -134,6 +135,7 @@ static uint64_t getRAMSize(multiboot_info_t *mboot_info);
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
+    srand(time(nullptr));
     printf("[main] Starting woot...\n");
     GDT::Initialize();
     IDT::Initialize();

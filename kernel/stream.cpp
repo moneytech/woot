@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stream.h>
 #include <string.h>
+#include <uuid.h>
 
 const static char *decTable = "0123456789";
 const static uint64_t pow10Table[] =
@@ -403,6 +404,19 @@ int64_t Stream::VWriteFmt(const char *fmt, va_list args)
                     ai = ai < 0 ? - ai : ai;
                     bw += WriteDec(ai, precision, -1, false, false, false);
                 }
+                specifier = false;
+            }
+            else if(c == 'U') // UUID
+            {
+                UUID *uuid = va_arg(args, UUID *);
+                if(!uuid) uuid = &UUID::nil;
+                char uuidStr[40];
+                uuid->ToString(uuidStr);
+                if(hashFlag)
+                    bw += WriteByte('{');
+                bw += WriteStr(uuidStr);
+                if(hashFlag)
+                    bw += WriteByte('}');
                 specifier = false;
             }
             else
