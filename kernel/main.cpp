@@ -97,7 +97,7 @@ static int kbdThread(uintptr_t arg)
         }
         else if(kbdData == 0x08) // 7 press
         {
-            if(File *f = File::Open("DUPOS:/boot/grub", O_DIRECTORY))
+            if(File *f = File::Open("WOOT_OS:/boot/grub", O_DIRECTORY))
             {
                 while(DirectoryEntry *de = f->ReadDir())
                 {
