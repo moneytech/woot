@@ -28,6 +28,7 @@ public:
     static bool Lock();
     static Volume *GetByID(int id);
     static Volume *GetByIndex(uint idx);
+    static Volume *GetByLabel(const char *label);
     static int Add(Volume *vol);
     static bool Remove(Volume *vol);
     static void UnLock();

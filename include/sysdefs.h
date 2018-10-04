@@ -12,8 +12,10 @@
 #define DEFAULT_STACK_SIZE          65536
 #define DEFAULT_SIGNAL_STACK_SIZE   16386
 
+// filesystems
 #define PATH_SEPARATORS "/\\"
 #define VOLUME_SEPARATOR ':'
+#define MAX_FS_LABEL_LENGTH 127
 
 // syscalls
 #define SYSCALLS_INT_VECTOR 128

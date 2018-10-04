@@ -549,6 +549,20 @@ EXT2::~EXT2()
     delete[] BGDT;
 }
 
+bool EXT2::GetLabel(char *buffer, size_t num)
+{
+    if(!Lock()) return false;
+    if(!superBlock->s_volume_name[0])
+    {
+        UnLock();
+        return false;
+    }
+    memset(buffer, 0, num);
+    strncpy(buffer, superBlock->s_volume_name, min(16, num));
+    UnLock();
+    return true;
+}
+
 ::INode *EXT2::ReadINode(ino_t number)
 {
     if(!Lock() || !initialized) return nullptr;

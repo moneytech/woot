@@ -35,6 +35,7 @@ public:
     static void SynchronizeAll();
     static void Cleanup();
 
+    virtual bool GetLabel(char *buffer, size_t num);
     virtual INode *ReadINode(ino_t number);
     virtual bool WriteINode(INode *inode);
     virtual bool WriteSuperBlock();

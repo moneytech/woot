@@ -274,6 +274,7 @@ private:
     bool zeroBlock(uint32_t block);
     virtual ~EXT2();
 public:
+    virtual bool GetLabel(char *buffer, size_t num);
     virtual ::INode *ReadINode(ino_t number);
     virtual bool WriteINode(::INode *inode);
     virtual bool WriteSuperBlock();

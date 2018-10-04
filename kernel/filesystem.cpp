@@ -95,6 +95,11 @@ void FileSystem::Cleanup()
     }
 }
 
+bool FileSystem::GetLabel(char *buffer, size_t num)
+{
+    return false;
+}
+
 INode *FileSystem::ReadINode(ino_t number)
 {
     return nullptr;

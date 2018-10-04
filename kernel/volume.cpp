@@ -1,5 +1,8 @@
 #include <errno.h>
+#include <filesystem.h>
 #include <mutex.h>
+#include <string.h>
+#include <sysdefs.h>
 #include <volume.h>
 
 Sequencer<int> Volume::id(0);
@@ -46,6 +49,30 @@ Volume *Volume::GetByIndex(uint idx)
     if(!Lock())
         return nullptr;
     Volume *res = volumes[idx];
+    UnLock();
+    return res;
+}
+
+Volume *Volume::GetByLabel(const char *label)
+{
+    if(!Lock()) return nullptr;
+    if(!FileSystem::Lock())
+    {
+        UnLock();
+        return nullptr;
+    }
+    Volume *res = nullptr;
+    char labelBuf[MAX_FS_LABEL_LENGTH + 1];
+    for(Volume *v : volumes)
+    {
+        if(!v->FS) continue;
+        bool hasLabel = v->FS->GetLabel(labelBuf, sizeof(labelBuf));
+        if(!hasLabel || strcmp(label, labelBuf))
+            continue;
+        res = v;
+        break;
+    }
+    FileSystem::UnLock();
     UnLock();
     return res;
 }
