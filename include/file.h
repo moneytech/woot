@@ -27,6 +27,10 @@
 #define O_TMPFILE   020200000
 #define O_NDELAY    O_NONBLOCK
 
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
+
 class DEntry;
 class DirectoryEntry;
 class Mutex;
@@ -43,8 +47,10 @@ public:
     static File *Open(::DEntry *parent, const char *name, int flags);
     static File *Open(const char *name, int flags);
 
+    int64_t Seek(int64_t offs, int loc);
     int64_t Read(void *buffer, int64_t n);
     int64_t Write(const void *buffer, int64_t n);
+    int64_t Rewind();
     DirectoryEntry *ReadDir();
     ~File(); // used as close
 };

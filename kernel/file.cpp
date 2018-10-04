@@ -82,6 +82,45 @@ File *File::Open(const char *name, int flags)
     return file;
 }
 
+int64_t File::Seek(int64_t offs, int loc)
+{
+    if(!Lock->Acquire(0, false))
+        return -EBUSY;
+    switch(loc)
+    {
+    case SEEK_SET:
+        Position = offs;
+        break;
+    case SEEK_CUR:
+        Position += offs;
+        break;
+    case SEEK_END:
+    {
+        if(!DEntry::Lock())
+        {
+            Lock->Release();
+            return -EBUSY;
+        }
+        if(!INode::Lock())
+        {
+            DEntry::UnLock();
+            Lock->Release();
+            return -EBUSY;
+        }
+        Position = DEntry->INode->GetSize() - offs;
+        INode::UnLock();
+        DEntry::UnLock();
+        break;
+    }
+    default:
+        break;
+    }
+    if(Position < 0) Position = 0;
+    int64_t res = Position;
+    Lock->Release();
+    return res;
+}
+
 int64_t File::Read(void *buffer, int64_t n)
 {
     if(!DEntry || !Lock->Acquire(0, false))
@@ -136,6 +175,11 @@ int64_t File::Write(const void *buffer, int64_t n)
     DEntry::UnLock();
     Lock->Release();
     return res;
+}
+
+int64_t File::Rewind()
+{
+    return Seek(0, SEEK_SET);
 }
 
 DirectoryEntry *File::ReadDir()
