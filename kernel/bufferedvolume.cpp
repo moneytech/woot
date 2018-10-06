@@ -134,7 +134,11 @@ int64_t BufferedVolume::access(byte *buffer, int64_t n, int64_t position, bool w
         b->Time = lru.GetNext();
         if(buffer)
         {
-            if(write) memcpy(b->Buffer + inBlockOffset, buffer, bytesToXfer);
+            if(write)
+            {
+                memcpy(b->Buffer + inBlockOffset, buffer, bytesToXfer);
+                b->Dirty = true;
+            }
             else memcpy(buffer, b->Buffer + inBlockOffset, bytesToXfer);
             buffer += bytesToXfer;
         }

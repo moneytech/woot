@@ -128,7 +128,8 @@ void Volume::UnLock()
 void Volume::FlushAll()
 {
     Lock();
-
+    for(Volume *v : volumes)
+        v->Flush();
     UnLock();
 }
 

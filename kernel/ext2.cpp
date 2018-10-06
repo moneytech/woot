@@ -334,13 +334,45 @@ int64_t EXT2::read(FSINode *inode, void *buffer, uint64_t position, int64_t n)
         int64_t inBlockOffset = position % blockSize;
         int64_t blockOffset = blockIdx * blockSize;
         int64_t bytesToRead = min(bytesLeft, blockSize - inBlockOffset);
-        int64_t bRead = Volume->Read(buf, blockOffset + inBlockOffset, bytesToRead);
-        if(bRead < 0)
-            return bRead;
-        position += bRead;
-        bytesLeft -= bRead;
-        buf += bRead;
-        if(bRead != bytesToRead)
+        int64_t bytesRead = Volume->Read(buf, blockOffset + inBlockOffset, bytesToRead);
+        if(bytesRead < 0)
+            return bytesRead;
+        position += bytesRead;
+        bytesLeft -= bytesRead;
+        buf += bytesRead;
+        if(bytesRead != bytesToRead)
+            break;
+    }
+    return n - bytesLeft;
+}
+
+int64_t EXT2::write(EXT2::FSINode *inode, const void *buffer, uint64_t position, int64_t n)
+{
+    // TODO: add file resizing
+
+    size64_t size = inode->GetSize();
+    if((position + n) > size)
+        n = size - position;
+    if(!n) return 0;
+
+    int64_t bytesLeft = n;
+    byte *buf = (byte *)buffer;
+    while(bytesLeft > 0)
+    {
+        int64_t blockIdx = getINodeBlock(inode, position / blockSize);
+        if(!blockIdx)
+            break;
+
+        int64_t inBlockOffset = position % blockSize;
+        int64_t blockOffset = blockIdx * blockSize;
+        int64_t bytesToWrite = min(bytesLeft, blockSize - inBlockOffset);
+        int64_t bytesWritten = Volume->Write(buf, blockOffset + inBlockOffset, bytesToWrite);
+        if(bytesWritten < 0)
+            return bytesWritten;
+        position += bytesWritten;
+        bytesLeft -= bytesWritten;
+        buf += bytesWritten;
+        if(bytesWritten != bytesToWrite)
             break;
     }
     return n - bytesLeft;
@@ -784,7 +816,16 @@ int64_t EXT2::FSINode::Read(void *buffer, int64_t position, int64_t n)
 
 int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
 {
-    return -ENOSYS;
+    if(!Lock()) return -EBUSY;
+    if(!FileSystem::Lock())
+    {
+        UnLock();
+        return -EBUSY;
+    }
+    int64_t res = ((EXT2 *)FS)->write(this, buffer, position, n);
+    FileSystem::UnLock();
+    UnLock();
+    return res;
 }
 
 ::DirectoryEntry *EXT2::FSINode::ReadDir(int64_t position, int64_t *newPosition)

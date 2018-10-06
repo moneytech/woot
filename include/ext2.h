@@ -269,6 +269,7 @@ private:
     uint32_t allocBlock(uint preferredGroup, uint *group);
     bool freeBlock(uint32_t block);
     int64_t read(FSINode *inode, void *buffer, uint64_t position, int64_t n);
+    int64_t write(FSINode *inode, const void *buffer, uint64_t position, int64_t n);
     uint32_t getINodeBlock(FSINode *inode, uint32_t n);
     bool setINodeBlock(FSINode *inode, uint32_t n, uint32_t block);
     bool zeroBlock(uint32_t block);

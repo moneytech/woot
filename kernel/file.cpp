@@ -43,7 +43,7 @@ File *File::Open(const char *name, int flags)
 
     bool hasVolumeId = path[0] && isdigit(path[0][0]) && volumeSep;
     uint volumeId = hasVolumeId ? strtoul(path[0], nullptr, 0) : 0;
-    bool hasUUID = path[0] && path[0][0] == '{';
+    bool hasUUID = path[0] && path[0][0] == '{' && volumeSep;
     UUID uuid = hasUUID ? UUID(path[0]) : UUID::nil;
     bool hasLabel = !hasVolumeId && !hasUUID && volumeSep;
 
@@ -157,7 +157,7 @@ int64_t File::Write(const void *buffer, int64_t n)
 {
     if(!DEntry || !Lock->Acquire(0, false))
         return -EBUSY;
-    if((Flags & O_ACCMODE) == O_WRONLY)
+    if((Flags & O_ACCMODE) == O_RDONLY)
     {
         Lock->Release();
         return -EINVAL;

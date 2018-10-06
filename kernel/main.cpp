@@ -21,6 +21,7 @@
 #include <stat.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <thread.h>
 #include <time.h>
 #include <volume.h>
@@ -69,6 +70,8 @@ static int kbdThread(uintptr_t arg)
 
         if(kbdData == 0x90) // q released
             quit = true;
+        else if(kbdData == 0x93) // r released
+            _outb(0x64, 0xFE);   // reset
         else if(kbdData == 0x0B) // 0 press
         {
             Drive *drv = Drive::GetByIndex(0);
@@ -89,8 +92,7 @@ static int kbdThread(uintptr_t arg)
         }
         else if(kbdData == 0x09) // 8 press
         {
-            if(File *f = File::Open("0:/boot/grub/grub.cfg", O_RDONLY))
-            //if(File *f = File::Open("0:/testfile.txt", O_RDONLY))
+            if(File *f = File::Open("0:/testfile.txt", O_RDONLY))
             {
                 for(byte b = 0; f->Read(&b, 1) > 0; printf("%c", b));
                 delete f;
@@ -111,6 +113,21 @@ static int kbdThread(uintptr_t arg)
                            mtime.Hour, mtime.Minute);
                     delete de;
                 }
+                delete f;
+            }
+        }
+        else if(kbdData == 0x07) // 6 press
+        {
+            static const char *loremIpsum =
+                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+                    "Donec volutpat nec neque tempus pellentesque. "
+                    "Nullam sit amet tellus et nunc efficitur faucibus. "
+                    "Duis egestas pretium sapien. "
+                    "Phasellus molestie convallis iaculis. "
+                    "Proin venenatis tellus eu quam sed.";
+            if(File *f = File::Open("0:/testfile.txt", O_WRONLY))
+            {
+                printf("bw: %ld\n", f->Write(loremIpsum, strlen(loremIpsum)));
                 delete f;
             }
         }
@@ -138,6 +155,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
     srand(time(nullptr));
     printf("[main] Starting woot...\n");
+    printf("[main] Kernel version: v%d.%d %s\n",
+           KERNEL_VERSION_MAJOR,
+           KERNEL_VERSION_MINOR,
+           KERNEL_VERSION_DESCRIPTION);
     GDT::Initialize();
     IDT::Initialize();
 
