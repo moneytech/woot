@@ -228,6 +228,7 @@ private:
         friend class EXT2;
         EXT2::INode Data;
         FSINode(ino_t number, FileSystem *fs);
+        void setSize(size64_t size);
         virtual size64_t GetSize();
         virtual mode_t GetMode();
         virtual time_t GetCreateTime();
@@ -243,8 +244,6 @@ private:
     };
 private:
 
-    static byte zero1k[];
-
     SuperBlock *superBlock;
     bool readOnly;
     size_t blockSize;
@@ -256,6 +255,7 @@ private:
     int64_t BGDTOffset;
     bool initialized;
     bool superDirty;
+    byte *blockOfZeros;
 
     EXT2(class Volume *vol, FileSystemType *type, SuperBlock *sblock, bool ro);
     uint64_t getINodeOffset(ino_t n);

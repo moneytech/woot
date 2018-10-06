@@ -17,6 +17,7 @@ Volume::Volume(class Drive *drive, VolumeType *type) :
 
 Volume::~Volume()
 {
+    // TODO: add filesystem invalidation code
 }
 
 void Volume::Initialize()

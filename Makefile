@@ -95,4 +95,7 @@ try-unmount:
 	-sudo umount mnt
 	-sudo losetup -d /dev/loop1
 
+# alias for try-unmount
+try-umount: try-unmount
+
 .PHONY: subdirs clean distclean iso clean-img setup-grub try-mount try-unmount

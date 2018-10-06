@@ -127,7 +127,12 @@ static int kbdThread(uintptr_t arg)
                     "Proin venenatis tellus eu quam sed.";
             if(File *f = File::Open("0:/testfile.txt", O_WRONLY))
             {
-                printf("bw: %ld\n", f->Write(loremIpsum, strlen(loremIpsum)));
+                f->Seek(6 << 10, SEEK_SET);
+                for(int i = 0; i < 1; ++i)
+                {
+                    printf("bw: %ld\n", f->Write(loremIpsum, strlen(loremIpsum)));
+                    f->Write("\n", 1);
+                }
                 delete f;
             }
         }
@@ -211,6 +216,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         vidMtx.Release();
         ct->Sleep(900, false);
     }
+    printf("[main] Closing system\n");
+
 
     t1->Finished->Wait(0, false);
     t2->Finished->Wait(0, false);
@@ -220,10 +227,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     delete t2;
     delete t3;
 
-    printf("[main] Closing system\n");
-
     FileSystem::SynchronizeAll();
     Volume::FlushAll();
+    Volume::Cleanup();
     Drive::Cleanup();
     PCI::Cleanup();
 
