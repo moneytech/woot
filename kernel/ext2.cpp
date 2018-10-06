@@ -113,6 +113,9 @@ EXT2::EXT2(class Volume *vol, FileSystemType *type, EXT2::SuperBlock *sblock, bo
     DEntry *root = new DEntry("/", nullptr);
     root->INode = rootINode;
     SetRoot(root);
+    superBlock->s_mtime = time(nullptr);
+    ++superBlock->s_mnt_count;
+    superDirty = true;
 
     initialized = true;
 }
@@ -203,7 +206,6 @@ uint32_t EXT2::allocINode(uint *group)
 bool EXT2::freeINode(uint32_t inode)
 {
     if(!inode) return false;
-
     --inode; // inode indices are 1 based
 
     int iGroup = inode / superBlock->s_blocks_per_group;
@@ -290,6 +292,7 @@ uint32_t EXT2::allocBlock(uint preferredGroup, uint *group)
 bool EXT2::freeBlock(uint32_t block)
 {
     if(!block) return false;
+    --block;
 
     int bGroup = block / superBlock->s_blocks_per_group;
     int bOffs = (block % superBlock->s_blocks_per_group) / 8;
@@ -313,6 +316,7 @@ bool EXT2::freeBlock(uint32_t block)
         return false;
     // update superblock
     ++superBlock->s_free_blocks_count;
+    superDirty = true;
     return true;
 }
 
@@ -380,6 +384,8 @@ int64_t EXT2::write(EXT2::FSINode *inode, const void *buffer, uint64_t position,
                 return bytesWritten;
             curPos += bytesWritten;
             inode->Data.i_mtime = time(nullptr);
+            ((EXT2 *)inode->FS)->superBlock->s_wtime = inode->Data.i_mtime;
+            ((EXT2 *)inode->FS)->superDirty = true;
             inode->setSize(max(curPos, inode->GetSize()));
             inode->Dirty = true;
             bytesLeft -= bytesWritten;
@@ -418,6 +424,8 @@ int64_t EXT2::write(EXT2::FSINode *inode, const void *buffer, uint64_t position,
             return bytesWritten;
         position += bytesWritten;
         inode->Data.i_mtime = time(nullptr);
+        ((EXT2 *)inode->FS)->superBlock->s_wtime = inode->Data.i_mtime;
+        ((EXT2 *)inode->FS)->superDirty = true;
         inode->setSize(max(position, inode->GetSize()));
         inode->Dirty = true;
         bytesLeft -= bytesWritten;
