@@ -118,7 +118,7 @@ static int kbdThread(uintptr_t arg)
         }
         else if(kbdData == 0x07) // 6 press
         {
-            static const char *loremIpsum =
+            static const char loremIpsum[] =
                     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
                     "Donec volutpat nec neque tempus pellentesque. "
                     "Nullam sit amet tellus et nunc efficitur faucibus. "
@@ -130,9 +130,17 @@ static int kbdThread(uintptr_t arg)
                 f->Seek(6 << 10, SEEK_SET);
                 for(int i = 0; i < 1; ++i)
                 {
-                    printf("bw: %ld\n", f->Write(loremIpsum, strlen(loremIpsum)));
+                    printf("bw: %ld\n", f->Write(loremIpsum, sizeof(loremIpsum) - 1));
                     f->Write("\n", 1);
                 }
+                delete f;
+            }
+        }
+        else if(kbdData == 0x0C) // - press
+        {
+            if(File *f = File::Open("0:/testfile.txt", O_WRONLY | O_TRUNC))
+            {
+                printf("new file size: %ld\n", f->GetSize());
                 delete f;
             }
         }

@@ -81,6 +81,11 @@ DirectoryEntry *INode::ReadDir(int64_t position, int64_t *newPosition)
     return nullptr;
 }
 
+int64_t INode::Resize(int64_t size)
+{
+    return -ENOSYS;
+}
+
 INode::~INode()
 {
 }

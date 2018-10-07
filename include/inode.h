@@ -35,6 +35,7 @@ public:
     virtual int64_t Read(void *buffer, int64_t position, int64_t n);
     virtual int64_t Write(const void *buffer, int64_t position, int64_t n);
     virtual DirectoryEntry *ReadDir(int64_t position, int64_t *newPosition);
+    virtual int64_t Resize(int64_t size);
     virtual ~INode();
 };
 

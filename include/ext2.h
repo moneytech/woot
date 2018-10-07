@@ -241,6 +241,7 @@ private:
         virtual int64_t Read(void *buffer, int64_t position, int64_t n);
         virtual int64_t Write(const void *buffer, int64_t position, int64_t n);
         virtual ::DirectoryEntry *ReadDir(int64_t position, int64_t *newPosition);
+        virtual int64_t Resize(int64_t size);
     };
 private:
 
@@ -271,6 +272,7 @@ private:
     int64_t read(FSINode *inode, void *buffer, uint64_t position, int64_t n);
     int64_t write(FSINode *inode, const void *buffer, uint64_t position, int64_t n);
     uint32_t getINodeBlock(FSINode *inode, uint32_t n);
+    bool isBlockZeroed(uint32_t block);
     bool setINodeBlock(FSINode *inode, uint32_t n, uint32_t block);
     bool zeroBlock(uint32_t block);
     virtual ~EXT2();

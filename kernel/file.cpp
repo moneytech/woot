@@ -79,11 +79,54 @@ File *File::Open(const char *name, int flags)
         }
         dentry = nextDe;
     }
+    if((flags & O_ACCMODE) != O_RDONLY && flags & O_TRUNC)
+    {
+        if(!INode::Lock())
+        {
+            FileSystem::UnLock();
+            DEntry::UnLock();
+            Volume::UnLock();
+            return nullptr;
+        }
+        if(dentry->INode->Resize(0) != 0)
+        {
+            INode::UnLock();
+            FileSystem::UnLock();
+            DEntry::UnLock();
+            Volume::UnLock();
+            return nullptr;
+        }
+        INode::UnLock();
+    }
     File *file = new File(dentry, flags);
+    if(flags & O_APPEND)
+        file->Position = file->GetSize();
     FileSystem::UnLock();
     DEntry::UnLock();
     Volume::UnLock();
     return file;
+}
+
+int64_t File::GetSize()
+{
+    if(!Lock->Acquire(0, false))
+        return -EBUSY;
+    if(!DEntry::Lock())
+    {
+        Lock->Release();
+        return -EBUSY;
+    }
+    if(!INode::Lock())
+    {
+        DEntry::UnLock();
+        Lock->Release();
+        return -EBUSY;
+    }
+    int64_t size = DEntry && DEntry->INode ? DEntry->INode->GetSize() : -EINVAL;
+    INode::UnLock();
+    DEntry::UnLock();
+    Lock->Release();
+    return size;
 }
 
 int64_t File::Seek(int64_t offs, int loc)
@@ -100,20 +143,7 @@ int64_t File::Seek(int64_t offs, int loc)
         break;
     case SEEK_END:
     {
-        if(!DEntry::Lock())
-        {
-            Lock->Release();
-            return -EBUSY;
-        }
-        if(!INode::Lock())
-        {
-            DEntry::UnLock();
-            Lock->Release();
-            return -EBUSY;
-        }
-        Position = DEntry->INode->GetSize() - offs;
-        INode::UnLock();
-        DEntry::UnLock();
+        Position = GetSize() - offs;
         break;
     }
     default:

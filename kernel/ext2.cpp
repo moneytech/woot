@@ -327,6 +327,8 @@ int64_t EXT2::read(FSINode *inode, void *buffer, uint64_t position, int64_t n)
         n = size - position;
     if(!n) return 0;
 
+    time_t curTime = time(nullptr);
+
     int64_t bytesLeft = n;
     byte *buf = (byte *)buffer;
     while(bytesLeft > 0)
@@ -341,6 +343,7 @@ int64_t EXT2::read(FSINode *inode, void *buffer, uint64_t position, int64_t n)
         int64_t bytesRead = Volume->Read(buf, blockOffset + inBlockOffset, bytesToRead);
         if(bytesRead < 0)
             return bytesRead;
+        inode->SetAccessTime(curTime);
         position += bytesRead;
         bytesLeft -= bytesRead;
         buf += bytesRead;
@@ -356,45 +359,13 @@ int64_t EXT2::write(EXT2::FSINode *inode, const void *buffer, uint64_t position,
 
     if(position > size)
     {   // writing past end of file; zero padding required
-        int64_t bytesLeft = position - size;
-        int64_t curPos = size;
-        while(bytesLeft > 0)
-        {
-            int64_t blockNum = curPos / blockSize;
-            int64_t blockIdx = getINodeBlock(inode, blockNum);
-            if(!blockIdx)
-            {
-                blockIdx = allocBlock(~0, nullptr); // TODO: add preferred block group to reduce head seek times
-                if(!blockIdx)
-                    break;
-                if(!setINodeBlock(inode, blockNum, blockIdx))
-                {
-                    freeBlock(blockIdx);
-                    break;
-                }
-                inode->setSize(min((blockNum + 1) * blockSize, inode->Data.i_size + bytesLeft));
-                inode->Data.i_blocks += align(blockSize, 512) / 512; // i_blocks uses fixed size 512 byte units
-                inode->Dirty = true;
-            }
-            int64_t inBlockOffset = curPos % blockSize;
-            int64_t blockOffset = blockIdx * blockSize;
-            int64_t bytesToWrite = min(bytesLeft, blockSize - inBlockOffset);
-            int64_t bytesWritten = Volume->Write(blockOfZeros, blockOffset + inBlockOffset, bytesToWrite);
-            if(bytesWritten < 0)
-                return bytesWritten;
-            curPos += bytesWritten;
-            inode->Data.i_mtime = time(nullptr);
-            ((EXT2 *)inode->FS)->superBlock->s_wtime = inode->Data.i_mtime;
-            ((EXT2 *)inode->FS)->superDirty = true;
-            inode->setSize(max(curPos, inode->GetSize()));
-            inode->Dirty = true;
-            bytesLeft -= bytesWritten;
-            if(bytesWritten != bytesToWrite)
-                return -EIO;
-        }
+        int64_t newSize = inode->Resize(position);
+        if(newSize < 0)
+            return newSize;
     }
 
-    // now to write actual data
+    time_t curTime = time(nullptr);
+
     int64_t bytesLeft = n;
     byte *buf = (byte *)buffer;
     while(bytesLeft > 0)
@@ -423,8 +394,8 @@ int64_t EXT2::write(EXT2::FSINode *inode, const void *buffer, uint64_t position,
         if(bytesWritten < 0)
             return bytesWritten;
         position += bytesWritten;
-        inode->Data.i_mtime = time(nullptr);
-        ((EXT2 *)inode->FS)->superBlock->s_wtime = inode->Data.i_mtime;
+        inode->SetModifyTime(curTime);
+        ((EXT2 *)inode->FS)->superBlock->s_wtime = curTime;
         ((EXT2 *)inode->FS)->superDirty = true;
         inode->setSize(max(position, inode->GetSize()));
         inode->Dirty = true;
@@ -481,6 +452,19 @@ uint32_t EXT2::getINodeBlock(FSINode *inode, uint32_t n)
     return 0;
 }
 
+bool EXT2::isBlockZeroed(uint32_t block)
+{
+    byte buf[16];
+    for(uint i = 0; i < blockSize; i += sizeof(buf))
+    {
+        if(Volume->Read(buf, blockSize * block, sizeof(buf)) != sizeof(buf))
+            return false; // we couldn't properly read block data so assume that it is not zeroed
+        if(memcmp(buf, blockOfZeros, sizeof(buf)))
+            return false;
+    }
+    return true;
+}
+
 bool EXT2::setINodeBlock(FSINode *inode, uint32_t n, uint32_t block)
 {
     uint32_t blocksPerBlock = blockSize / 4;
@@ -489,6 +473,7 @@ bool EXT2::setINodeBlock(FSINode *inode, uint32_t n, uint32_t block)
     if(n < 12)
     { // direct
         inode->Data.i_block[n] = block;
+        inode->Dirty = true;
         return true;
     }
     else if(n < (12 + blocksPerBlock))
@@ -503,11 +488,17 @@ bool EXT2::setINodeBlock(FSINode *inode, uint32_t n, uint32_t block)
                 return false;
             }
             inode->Data.i_block[12] = l1Blk;
+            inode->Dirty = true;
         }
 
         off_t offs = 4 * (n - 12);
         if(Volume->Write(&block, offs + (int64_t)blockSize * inode->Data.i_block[12], 4) < 0)
             return false;
+        if(isBlockZeroed(inode->Data.i_block[12]))
+        { // free unused indirect block
+            freeBlock(inode->Data.i_block[12]);
+            inode->Data.i_block[12] = 0;
+        }
         return true;
     }
     else if(n < (12 + square))
@@ -522,11 +513,13 @@ bool EXT2::setINodeBlock(FSINode *inode, uint32_t n, uint32_t block)
                 return false;
             }
             inode->Data.i_block[13] = l1Blk;
+            inode->Dirty = true;
         }
 
         uint32_t r = 0;
         off_t diff = (n - (12 + blocksPerBlock));
         off_t offs = 4 * (diff / blocksPerBlock);
+        off_t l1offs = offs;
         if(Volume->Read(&r, offs + (int64_t)blockSize * inode->Data.i_block[13], 4) < 0)
             return false;
 
@@ -550,6 +543,17 @@ bool EXT2::setINodeBlock(FSINode *inode, uint32_t n, uint32_t block)
         offs = 4 * (diff % blocksPerBlock);
         if(Volume->Write(&block, offs + (int64_t)blockSize * r, 4) < 0)
             return false;
+        if(isBlockZeroed(r))
+        { // free unused indirect block
+            freeBlock(r);
+            if(Volume->Write(blockOfZeros, l1offs + (int64_t)blockSize * inode->Data.i_block[13], 4) < 0)
+                return false;
+        }
+        if(isBlockZeroed(inode->Data.i_block[13]))
+        { // free unused indirect block
+            freeBlock(inode->Data.i_block[13]);
+            inode->Data.i_block[13] = 0;
+        }
         return true;
     }
     else if(n < (12 + cube))
@@ -564,17 +568,20 @@ bool EXT2::setINodeBlock(FSINode *inode, uint32_t n, uint32_t block)
                 return false;
             }
             inode->Data.i_block[14] = l1Blk;
+            inode->Dirty = true;
         }
 
         uint32_t r = 0;
         off_t diff = (n - (12 + square));
         off_t offs = 4 * (diff / square);
+        off_t l1offs = offs;
         if(Volume->Read(&r, offs + (int64_t)blockSize * inode->Data.i_block[14], 4) < 0)
             return false;
 
+        uint32_t l2Blk = 0;
         if(!r)
         { // allocate 2nd level indirect block if needed
-            uint32_t l2Blk = allocBlock(~0, nullptr);
+            l2Blk = allocBlock(~0, nullptr);
             if(!l2Blk) return false;
             if(!zeroBlock(l2Blk))
             {
@@ -590,13 +597,15 @@ bool EXT2::setINodeBlock(FSINode *inode, uint32_t n, uint32_t block)
         }
 
         offs = 4 * ((diff % square) / blocksPerBlock);
+        off_t l2offs = offs;
         uint32_t r2 = r;
         if(Volume->Read(&r, offs + (int64_t)blockSize * r, 4) < 0)
             return false;
 
+        uint32_t l3Blk = 0;
         if(!r)
         { // allocate 3rd level indirect block if needed
-            uint32_t l3Blk = allocBlock(~0, nullptr);
+            l3Blk = allocBlock(~0, nullptr);
             if(!l3Blk) return false;
             if(!zeroBlock(l3Blk))
             {
@@ -614,6 +623,24 @@ bool EXT2::setINodeBlock(FSINode *inode, uint32_t n, uint32_t block)
         offs = 4 * (diff / blocksPerBlock);
         if(Volume->Write(&block, offs + (int64_t)blockSize * r, 4) < 0)
             return false;
+
+        if(isBlockZeroed(l3Blk))
+        { // free unused indirect block
+            freeBlock(l3Blk);
+            if(Volume->Write(blockOfZeros, l2offs + (int64_t)blockSize * l2Blk, 4) < 0)
+                return false;
+        }
+        if(isBlockZeroed(l2Blk))
+        { // free unused indirect block
+            freeBlock(l2Blk);
+            if(Volume->Write(blockOfZeros, l1offs + (int64_t)blockSize * inode->Data.i_block[14], 4) < 0)
+                return false;
+        }
+        if(isBlockZeroed(inode->Data.i_block[14]))
+        { // free unused indirect block
+            freeBlock(inode->Data.i_block[14]);
+            inode->Data.i_block[14] = 0;
+        }
         return true;
     }
     return false;
@@ -964,4 +991,91 @@ int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
     FileSystem::UnLock();
     INode::UnLock();
     return res;
+}
+
+int64_t EXT2::FSINode::Resize(int64_t size)
+{
+    if(!INode::Lock())
+        return -EBUSY;
+    if(!FileSystem::Lock())
+    {
+        INode::UnLock();
+        return -EBUSY;
+    }
+    EXT2 *fs = (EXT2 *)FS;
+    time_t curTime = time(nullptr);
+
+    size_t currentSize = GetSize();
+    if(size < currentSize)
+    {  // shrink file
+        uint32_t startBlk = align(size, fs->blockSize) / fs->blockSize;
+        size_t blkCount = align(currentSize, fs->blockSize) / fs->blockSize;
+        for(uint32_t blk = startBlk; blk < blkCount; ++blk)
+        {
+            uint32_t blkIdx = fs->getINodeBlock(this, blk);
+            if(!blkIdx)
+            {
+                printf("[ext2] Something went wrong in FSINode::Resize()\n"
+                       "       Filesystem may be inconsistent. Run fsck.\n");
+                INode::UnLock();
+                FileSystem::UnLock();
+                return -EIO;
+            }
+            fs->freeBlock(blkIdx);
+            fs->setINodeBlock(this, blk, 0);
+        }
+        Data.i_blocks = align(size, 512) / 512;
+        setSize(size);
+    }
+    else if(size > currentSize)
+    { // grow file
+        int64_t bytesLeft = size - currentSize;
+        int64_t curPos = currentSize;
+        while(bytesLeft > 0)
+        {
+            int64_t blockNum = curPos / fs->blockSize;
+            int64_t blockIdx = fs->getINodeBlock(this, blockNum);
+            if(!blockIdx)
+            {
+                blockIdx = fs->allocBlock(~0, nullptr); // TODO: add preferred block group to reduce head seek times
+                if(!blockIdx)
+                    break;
+                if(!fs->setINodeBlock(this, blockNum, blockIdx))
+                {
+                    fs->freeBlock(blockIdx);
+                    break;
+                }
+                setSize(min((blockNum + 1) * fs->blockSize, Data.i_size + bytesLeft));
+                Data.i_blocks += align(fs->blockSize, 512) / 512; // i_blocks uses fixed size 512 byte units
+                Dirty = true;
+            }
+            int64_t inBlockOffset = curPos % fs->blockSize;
+            int64_t blockOffset = blockIdx * fs->blockSize;
+            int64_t bytesToWrite = min(bytesLeft, fs->blockSize - inBlockOffset);
+            int64_t bytesWritten = fs->Volume->Write(fs->blockOfZeros, blockOffset + inBlockOffset, bytesToWrite);
+            if(bytesWritten < 0)
+            {
+                FileSystem::UnLock();
+                INode::UnLock();
+                return bytesWritten;
+            }
+            curPos += bytesWritten;
+            SetModifyTime(curTime);
+            fs->superBlock->s_wtime = curTime;
+            fs->superDirty = true;
+            setSize(max(curPos, GetSize()));
+            Dirty = true;
+            bytesLeft -= bytesWritten;
+            if(bytesWritten != bytesToWrite)
+            {
+                FileSystem::UnLock();
+                INode::UnLock();
+                return -EIO;
+            }
+        }
+    }
+    currentSize = GetSize();
+    FileSystem::UnLock();
+    INode::UnLock();
+    return currentSize;
 }
