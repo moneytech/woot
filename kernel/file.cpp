@@ -4,6 +4,7 @@
 #include <filesystem.h>
 #include <inode.h>
 #include <mutex.h>
+#include <stat.h>
 #include <string.h>
 #include <sysdefs.h>
 #include <tokenizer.h>
@@ -15,23 +16,38 @@ File::File(::DEntry *dentry, int flags) :
     Position(0),
     Lock(new Mutex())
 {
+    DEntry::Lock(); // Exceptions would do nicely here
+    INode::Lock();
+    if(dentry && dentry->INode) // make sure reference count is ok
+        dentry->INode->FS->GetDEntry(dentry);
+    INode::UnLock();
+    DEntry::UnLock();
 }
 
 File *File::Open(::DEntry *parent, const char *name, int flags)
 {
+    if(!INode::Lock())
+        return nullptr;
     if(!parent || !parent->INode || !parent->INode->FS || !name)
+    {
+        INode::UnLock();
         return nullptr;
+    }
     FileSystem *FS = parent->INode->FS;
-    if(!FS->Lock())
+    INode::UnLock();
+
+    if(!FileSystem::Lock())
+    {
         return nullptr;
+    }
     ::DEntry *dentry = FS->GetDEntry(parent, name);
     if(!dentry)
     {
-        FS->UnLock();
+        FileSystem::UnLock();
         return nullptr;
     }
     File *file = new File(dentry, flags);
-    FS->UnLock();
+    FileSystem::UnLock();
     return file;
 }
 
@@ -83,6 +99,7 @@ File *File::Open(const char *name, int flags)
     {
         if(!INode::Lock())
         {
+            FileSystem::PutDEntry(dentry);
             FileSystem::UnLock();
             DEntry::UnLock();
             Volume::UnLock();
@@ -90,6 +107,7 @@ File *File::Open(const char *name, int flags)
         }
         if(dentry->INode->Resize(0) != 0)
         {
+            FileSystem::PutDEntry(dentry);
             INode::UnLock();
             FileSystem::UnLock();
             DEntry::UnLock();
@@ -98,7 +116,16 @@ File *File::Open(const char *name, int flags)
         }
         INode::UnLock();
     }
+    if(flags & O_DIRECTORY && !S_ISDIR(dentry->INode->GetMode()))
+    {
+        FileSystem::PutDEntry(dentry);
+        FileSystem::UnLock();
+        DEntry::UnLock();
+        Volume::UnLock();
+        return nullptr;
+    }
     File *file = new File(dentry, flags);
+    FileSystem::PutDEntry(dentry);
     if(flags & O_APPEND)
         file->Position = file->GetSize();
     FileSystem::UnLock();
@@ -116,17 +143,25 @@ int64_t File::GetSize()
         Lock->Release();
         return -EBUSY;
     }
-    if(!INode::Lock())
-    {
-        DEntry::UnLock();
-        Lock->Release();
-        return -EBUSY;
-    }
     int64_t size = DEntry && DEntry->INode ? DEntry->INode->GetSize() : -EINVAL;
-    INode::UnLock();
     DEntry::UnLock();
     Lock->Release();
     return size;
+}
+
+bool File::Create(const char *name, mode_t mode)
+{
+    if(!Lock->Acquire(0, false))
+        return false;
+    if(!DEntry::Lock())
+    {
+        Lock->Release();
+        return false;
+    }
+    bool res = DEntry && DEntry->INode ? DEntry->INode->Create(name, mode) : false;
+    DEntry::UnLock();
+    Lock->Release();
+    return res;
 }
 
 int64_t File::Seek(int64_t offs, int loc)
@@ -142,10 +177,8 @@ int64_t File::Seek(int64_t offs, int loc)
         Position += offs;
         break;
     case SEEK_END:
-    {
         Position = GetSize() - offs;
         break;
-    }
     default:
         break;
     }

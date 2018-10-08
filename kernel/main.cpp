@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stringbuilder.h>
 #include <thread.h>
 #include <time.h>
 #include <volume.h>
@@ -101,7 +102,7 @@ static int kbdThread(uintptr_t arg)
         else if(kbdData == 0x08) // 7 press
         {
             //if(File *f = File::Open("WOOT_OS:/boot/grub", O_DIRECTORY))
-            if(File *f = File::Open("{16393ccb-173f-4c23-8f6f-0f62c6025259}:/boot/grub", O_DIRECTORY))
+            if(File *f = File::Open("{16393ccb-173f-4c23-8f6f-0f62c6025259}:/", O_DIRECTORY))
             {
                 while(DirectoryEntry *de = f->ReadDir())
                 {
@@ -141,6 +142,21 @@ static int kbdThread(uintptr_t arg)
             if(File *f = File::Open("0:/testfile.txt", O_WRONLY | O_TRUNC))
             {
                 printf("new file size: %ld\n", f->GetSize());
+                delete f;
+            }
+        }
+        else if(kbdData == 0x0D) // = press
+        {
+            if(File *f = File::Open("0:/", O_DIRECTORY))
+            {
+                StringBuilder sb(256);
+                for(int i = 0; i < 100; ++i)
+                {
+                    sb.Clear();
+                    sb.WriteFmt("szturchenpupen%d.txt", i);
+                    bool ok = f->Create(sb.GetString(), S_IFREG | 0666);
+                    printf("file %s creation %s\n", sb.GetString(), ok ? "succeeded" : "failed");
+                }
                 delete f;
             }
         }

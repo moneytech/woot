@@ -1,12 +1,15 @@
+#include <cpu.h>
 #include <dentry.h>
 #include <directoryentry.h>
 #include <errno.h>
 #include <ext2.h>
+#include <process.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <volume.h>
+#include <thread.h>
 
 // these 2 functions were taken from linux ext2 driver (balloc.c)
 static inline int test_root(int a, int b)
@@ -80,6 +83,41 @@ FileSystem *EXT2FileSystemType::Detect(Volume *vol)
     vol->UnLock();
     delete sblock;
     return fs;
+}
+
+uint8_t EXT2::modeToFileType(uint32_t mode)
+{
+    switch(mode & EXT2_S_IFTYPE)
+    {
+    default:
+        return EXT2_FT_UNKNOWN;
+    case EXT2_S_IFIFO:
+        return EXT2_FT_FIFO;
+    case EXT2_S_IFCHR:
+        return EXT2_FT_CHRDEV;
+    case EXT2_S_IFDIR:
+        return EXT2_FT_DIR;
+    case EXT2_S_IFBLK:
+        return EXT2_FT_BLKDEV;
+    case EXT2_S_IFREG:
+        return EXT2_FT_REG_FILE;
+    case EXT2_S_IFLNK:
+        return EXT2_FT_SYMLINK;
+    case EXT2_S_IFSOCK:
+        return EXT2_FT_SOCK;
+    }
+}
+
+bool EXT2::isValidFileName(const char *name)
+{
+    int nameLen = strlen(name);
+    if(nameLen > 255)
+        return false; // name too long
+    if(!strcmp(name, ".") || !strcmp(name, ".."))
+        return false; // . and .. are reserved
+    if(strchr(name, '/'))
+        return false; // / is reserved as separator
+    return true;
 }
 
 EXT2::EXT2(class Volume *vol, FileSystemType *type, EXT2::SuperBlock *sblock, bool ro) :
@@ -847,6 +885,181 @@ bool EXT2::FSINode::SetAccessTime(time_t t)
     if(!INode::Lock()) return false;
     Data.i_atime = t;
     Dirty = true;
+    INode::UnLock();
+    return true;
+}
+
+bool EXT2::FSINode::Create(const char *name, mode_t mode)
+{
+    if(!isValidFileName(name))
+        return false;
+    int nameLen = strlen(name);
+    DirectoryEntry de = { 0, (uint16_t)align(sizeof(DirectoryEntry) + nameLen, 4),
+                          (uint8_t)nameLen, 0 };
+    DirectoryEntry cde;
+    int64_t readRes = 0, position = 0;
+
+    if(!INode::Lock())
+        return false;
+
+    if(!EXT2_S_ISDIR(Data.i_mode))
+    {   // we can't create files in non-dirs
+        INode::UnLock();
+        return false;
+    }
+
+    // check if file/directory with that name already exists
+    readRes = 0;
+    position = 0;
+    while((readRes = Read(&cde, position, sizeof(cde))) == sizeof(cde))
+    {
+        char nameBuf[256];
+        memset(nameBuf, 0, sizeof(nameBuf));
+        if(Read(nameBuf, position + sizeof(cde), cde.name_len) != cde.name_len)
+        {
+            INode::UnLock();
+            return false;
+        }
+
+        if(!strcmp(name, nameBuf))
+        {   // filename alredy used
+            INode::UnLock();
+            return false;
+        }
+
+        if(cde.rec_len < sizeof(cde))
+        {   // broken directory entry;
+            INode::UnLock();
+            return false;
+        }
+        position += cde.rec_len;
+    }
+    if(readRes < 0)
+    {
+        INode::UnLock();
+        return false;
+    }
+
+    // get fs revision, new inode, upd, gid and block size
+    if(!FileSystem::Lock())
+    {
+        INode::UnLock();
+        return false;
+    }
+    EXT2 *fs = (EXT2 *)FS;
+    size_t blockSize = fs->blockSize;
+    uint32_t fsRev = fs->superBlock->s_rev_level;
+    uint32_t ino = fs->allocINode(nullptr);
+    bool ints = cpuDisableInterrupts(); // FIXME: I don't like this here
+    Thread *ct = Thread::GetCurrent();
+    if(!ino || !ct || !ct->Process)
+    {
+        cpuRestoreInterrupts(ints);
+        INode::UnLock();
+        FileSystem::UnLock();
+        return false;
+    }
+    uid_t uid = ct->Process->UID;
+    gid_t gid = ct->Process->GID;
+    cpuRestoreInterrupts(ints);
+
+    FSINode *inode = new FSINode(ino, fs);
+    inode->Data.i_mode = mode;
+    inode->Data.i_uid = uid;
+    inode->Data.i_ctime = time(nullptr);
+    inode->Data.i_mtime = inode->Data.i_ctime;
+    inode->Data.i_gid = gid;
+    inode->Data.i_links_count = 1;
+    if(!fs->WriteINode(inode))
+    {
+        fs->freeINode(ino);
+        INode::UnLock();
+        FileSystem::UnLock();
+        return false;
+    }
+    FileSystem::UnLock();
+
+    de.inode = ino;
+    if(fsRev >= 1) de.file_type = modeToFileType(mode);
+
+    // look for empty entry
+    readRes = 0;
+    position = 0;
+    while((readRes = Read(&cde, position, sizeof(cde))) == sizeof(cde))
+    {
+        size_t cdeMinSize = align(sizeof(cde) + cde.name_len, 4);
+        int64_t cdeMinEnd = position + cdeMinSize;
+        int64_t origCdeEnd = position + cde.rec_len;
+        if((cde.rec_len - cdeMinSize) >= de.name_len)
+        {   // new entry will fit here
+            // shrink current entry
+            cde.rec_len = cdeMinSize;
+            if(Write(&cde, position, sizeof(cde)) != sizeof(cde))
+            {
+                INode::UnLock();
+                return false;
+            }
+
+            // write new entry
+            de.rec_len = origCdeEnd - cdeMinEnd;
+            if(Write(&de, cdeMinEnd, sizeof(de)) != sizeof(de))
+            {
+                INode::UnLock();
+                return false;
+            }
+
+            // write new filename
+            if(Write(name, cdeMinEnd + sizeof(de), nameLen) != nameLen)
+            {
+                INode::UnLock();
+                return false;
+            }
+            INode::UnLock();
+            return true;
+        }
+
+
+        if(!cde.inode)
+        {   // unused entry
+            if(cde.rec_len >= de.rec_len)
+            {   // new entry will fit in here
+                de.rec_len = cde.rec_len;
+                if(Write(&de, position, sizeof(de)) != sizeof(de))
+                {
+                    INode::UnLock();
+                    return false;
+                }
+                if(Write(name, position + sizeof(de), nameLen) != nameLen)
+                {
+                    INode::UnLock();
+                    return false;
+                }
+                INode::UnLock();
+                return true;
+            }
+        }
+        position += cde.rec_len;
+    }
+
+    // new block must be allocated
+    size64_t cSize = align(GetSize(), blockSize);
+    size64_t newSize = cSize + blockSize;
+    if(Resize(newSize) != newSize)
+    {
+        INode::UnLock();
+        return false;
+    }
+    de.rec_len = blockSize;
+    if(Write(&de, cSize, sizeof(de)) != sizeof(de))
+    {
+        INode::UnLock();
+        return false;
+    }
+    if(Write(name, cSize + sizeof(de), nameLen) != nameLen)
+    {
+        INode::UnLock();
+        return false;
+    }
     INode::UnLock();
     return true;
 }

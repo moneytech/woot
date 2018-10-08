@@ -130,6 +130,12 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     Finished(finished ? finished : new Semaphore(0)),
     DeleteFinished(finished)
 {
+    if(!process)
+    {
+        Thread *ct = GetCurrent();
+        if(ct) Process = ct->Process;
+    }
+
     cpuFXSave(FXSaveData);  // FIXME: should be initialized to known good state
 
     // initialize stack

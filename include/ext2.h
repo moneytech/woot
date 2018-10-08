@@ -72,6 +72,15 @@
 #define EXT2_S_ISCHAR(mode)	(((mode) & EXT2_S_IFTYPE) == EXT2_S_IFCHR)
 #define EXT2_S_ISFIFO(mode)	(((mode) & EXT2_S_IFTYPE) == EXT2_S_IFIFO)
 
+#define EXT2_FT_UNKNOWN     0   // Unknown File Type
+#define EXT2_FT_REG_FILE    1   // Regular File
+#define EXT2_FT_DIR         2   // Directory File
+#define EXT2_FT_CHRDEV      3   // Character Device
+#define EXT2_FT_BLKDEV      4   // Block Device
+#define EXT2_FT_FIFO        5   // Buffer File
+#define EXT2_FT_SOCK        6   // Socket File
+#define EXT2_FT_SYMLINK     7   // Symbolic Link
+
 class EXT2FileSystemType : public FileSystemType
 {
 public:
@@ -237,6 +246,7 @@ private:
         virtual bool SetCreateTime(time_t t);
         virtual bool SetModifyTime(time_t t);
         virtual bool SetAccessTime(time_t t);
+        virtual bool Create(const char *name, mode_t mode);
         virtual ino_t Lookup(const char *name);
         virtual int64_t Read(void *buffer, int64_t position, int64_t n);
         virtual int64_t Write(const void *buffer, int64_t position, int64_t n);
@@ -257,6 +267,9 @@ private:
     bool initialized;
     bool superDirty;
     byte *blockOfZeros;
+
+    static uint8_t modeToFileType(uint32_t mode);
+    static bool isValidFileName(const char *name);
 
     EXT2(class Volume *vol, FileSystemType *type, SuperBlock *sblock, bool ro);
     uint64_t getINodeOffset(ino_t n);

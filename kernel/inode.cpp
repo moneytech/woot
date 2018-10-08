@@ -61,6 +61,11 @@ bool INode::SetAccessTime(time_t t)
     return false;
 }
 
+bool INode::Create(const char *name, mode_t mode)
+{
+    return false;
+}
+
 ino_t INode::Lookup(const char *name)
 {
     return -1;
