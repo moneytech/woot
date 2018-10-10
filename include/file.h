@@ -51,6 +51,7 @@ public:
     bool SetAccessTime(time_t time);
     bool SetModifyTime(time_t time);
     bool Create(const char *name, mode_t mode);
+    int Remove(const char *name);
     int64_t Seek(int64_t offs, int loc);
     int64_t Read(void *buffer, int64_t n);
     int64_t Write(const void *buffer, int64_t n);

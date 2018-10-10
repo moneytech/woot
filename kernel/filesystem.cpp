@@ -153,6 +153,7 @@ void FileSystem::PutINode(INode *inode)
         inodeCache.Remove(inode, nullptr, false);
         if(inode->Dirty)
             WriteINode(inode);
+        inode->Release();
         delete inode;
     }
     UnLock();

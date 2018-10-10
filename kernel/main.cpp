@@ -139,9 +139,9 @@ static int kbdThread(uintptr_t arg)
         }
         else if(kbdData == 0x0C) // - press
         {
-            if(File *f = File::Open("0:/testfile.txt", O_WRONLY | O_TRUNC))
+            if(File *f = File::Open("0:/", O_DIRECTORY))
             {
-                printf("new file size: %ld\n", f->GetSize());
+                printf("file delete result: %d\n", f->Remove("testfile2.txt"));
                 delete f;
             }
         }
@@ -149,9 +149,9 @@ static int kbdThread(uintptr_t arg)
         {
             if(File *f = File::Open("0:/", O_DIRECTORY))
             {
-                bool ok = f->Create("newfil", S_IFREG | 0666);
+                bool ok = f->Create("testfile2.txt", S_IFREG | 0664);
                 //bool ok = f->Create("newdir", S_IFDIR | 0755);
-                printf("create dir %s\n", ok ? "success" : "fail");
+                printf("create %s\n", ok ? "success" : "fail");
                 delete f;
             }
         }

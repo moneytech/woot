@@ -743,8 +743,9 @@ UUID EXT2::GetUUID()
 bool EXT2::WriteINode(::INode *inode)
 {
     if(!Lock() || !initialized) return false;
+    FSINode *i = (FSINode *)inode;
     int64_t btw = min(sizeof(EXT2::INode), superBlock->s_inode_size);
-    int64_t bw = Volume->Write(&((FSINode *)inode)->Data, getINodeOffset(inode->Number), btw);
+    int64_t bw = Volume->Write(&i->Data, getINodeOffset(inode->Number), btw);
     UnLock();
     return bw == btw;
 }
@@ -832,16 +833,16 @@ bool EXT2::FSINode::buildDirectory(EXT2::FSINode *parentINode, FSINode *newINode
         return false;
     }
 
-    struct DIRE
+    struct DirInitializer
     {
-        DirectoryEntry dotDE = { 0, sizeof(EXT2::DirectoryEntry) + sizeof(DIRE::dot), 1, EXT2_FT_DIR};
+        DirectoryEntry dotDE = { 0, sizeof(EXT2::DirectoryEntry) + sizeof(DirInitializer::dot), 1, EXT2_FT_DIR};
         char dot[4] = { '.' };
-        DirectoryEntry dotDotDE = { 0, sizeof(EXT2::DirectoryEntry) + sizeof(DIRE::dotDot), 2, EXT2_FT_DIR};
+        DirectoryEntry dotDotDE = { 0, sizeof(EXT2::DirectoryEntry) + sizeof(DirInitializer::dotDot), 2, EXT2_FT_DIR};
         char dotDot[4] = { '.', '.' };
     } dirInitializer;
     dirInitializer.dotDE.inode = newINode->Number;
     dirInitializer.dotDotDE.inode = parentINode->Number;
-    dirInitializer.dotDotDE.rec_len = blockSize - offsetof(DIRE, dotDotDE);
+    dirInitializer.dotDotDE.rec_len = blockSize - offsetof(DirInitializer, dotDotDE);
 
     if(newINode->Write(&dirInitializer, 0, sizeof(dirInitializer)) != sizeof(dirInitializer))
     {
@@ -956,32 +957,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     }
 
     // check if file/directory with that name already exists
-    readRes = 0;
-    position = 0;
-    while((readRes = Read(&cde, position, sizeof(cde))) == sizeof(cde))
-    {
-        char nameBuf[256];
-        memset(nameBuf, 0, sizeof(nameBuf));
-        if(Read(nameBuf, position + sizeof(cde), cde.name_len) != cde.name_len)
-        {
-            INode::UnLock();
-            return false;
-        }
-
-        if(!strcmp(name, nameBuf))
-        {   // filename alredy used
-            INode::UnLock();
-            return false;
-        }
-
-        if(cde.rec_len < sizeof(cde))
-        {   // broken directory entry;
-            INode::UnLock();
-            return false;
-        }
-        position += cde.rec_len;
-    }
-    if(readRes < 0)
+    if(Lookup(name))
     {
         INode::UnLock();
         return false;
@@ -1160,46 +1136,37 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
 
 ino_t EXT2::FSINode::Lookup(const char *name)
 {
-    if(!INode::Lock()) return -EBUSY;
-    if(!FileSystem::Lock())
-    {
-        INode::UnLock();
+    if(!INode::Lock())
         return -EBUSY;
-    }
     if(!(Data.i_mode & EXT2_S_IFDIR))
     { // we can't look for files inside non-directory inode
         INode::UnLock();
-        FileSystem::UnLock();
-        return -1;
+        return -EBUSY;
     }
-    EXT2 *fs = (EXT2 *)this->FS;
     uint64_t pos = 0;
     size64_t size = GetSize();
     DirectoryEntry de;
     char nameBuf[256];
     while(pos < size)
     {
-        if(fs->read(this, &de, pos, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
+        if(Read(&de, pos, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
         {
             INode::UnLock();
-            FileSystem::UnLock();
-            return -1;
+            return -EIO;
         }
 
         if(de.name_len && de.inode)
         {
             memset(nameBuf, 0, sizeof(nameBuf));
-            if(fs->read(this, nameBuf, pos + sizeof(DirectoryEntry), de.name_len) != de.name_len)
+            if(Read(nameBuf, pos + sizeof(DirectoryEntry), de.name_len) != de.name_len)
             {
                 INode::UnLock();
-                FileSystem::UnLock();
-                return -1;
+                return -EIO;
             }
 
             if(!strcmp(name, nameBuf))
             { // found
                 INode::UnLock();
-                FileSystem::UnLock();
                 return de.inode;
             }
         }
@@ -1207,8 +1174,7 @@ ino_t EXT2::FSINode::Lookup(const char *name)
         pos += de.rec_len;
     }
     INode::UnLock();
-    FileSystem::UnLock();
-    return -1;
+    return 0;
 }
 
 int64_t EXT2::FSINode::Read(void *buffer, int64_t position, int64_t n)
@@ -1242,19 +1208,12 @@ int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
 ::DirectoryEntry *EXT2::FSINode::ReadDir(int64_t position, int64_t *newPosition)
 {
     if(!INode::Lock()) return nullptr;
-    if(!FileSystem::Lock())
-    {
-        INode::UnLock();
-        return nullptr;
-    }
     if(!(Data.i_mode & EXT2_S_IFDIR))
     { // we can't do ReadDir for non-directory
         INode::UnLock();
-        FileSystem::UnLock();
         return nullptr;
     }
 
-    EXT2 *fs = (EXT2 *)this->FS;
     EXT2::DirectoryEntry de;
     char nameBuf[256];
     size64_t size = GetSize();
@@ -1262,7 +1221,7 @@ int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
 
     while(position < size)
     {
-        if(fs->read(this, &de, position, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
+        if(Read(&de, position, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
             break;
 
         if(!de.inode || !de.name_len)
@@ -1272,10 +1231,10 @@ int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
         }
 
         memset(nameBuf, 0, sizeof(nameBuf));
-        if(fs->read(this, nameBuf, position + sizeof(DirectoryEntry), de.name_len) != de.name_len)
+        if(Read(nameBuf, position + sizeof(DirectoryEntry), de.name_len) != de.name_len)
             break;
 
-        ::INode *inode = fs->ReadINode(de.inode);
+        ::INode *inode = FS->ReadINode(de.inode);
         if(!inode)
             break;
 
@@ -1294,8 +1253,8 @@ int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
         break;
     }
 
-    if(newPosition) *newPosition = position;
-    FileSystem::UnLock();
+    if(newPosition)
+        *newPosition = position;
     INode::UnLock();
     return res;
 }
@@ -1385,4 +1344,136 @@ int64_t EXT2::FSINode::Resize(int64_t size)
     FileSystem::UnLock();
     INode::UnLock();
     return currentSize;
+}
+
+int EXT2::FSINode::Remove(const char *name)
+{
+    if(!INode::Lock())
+        return -EBUSY;
+
+    if(!(Data.i_mode & EXT2_S_IFDIR))
+    { // there are no files in non-directory
+        INode::UnLock();
+        return -ENOTDIR;
+    }
+
+    EXT2::DirectoryEntry de, prevDe;
+    char nameBuf[256];
+    size64_t size = GetSize();
+    int64_t position = 0, prevPos = 0;
+    while(position < size)
+    {
+        if(Read(&de, position, sizeof(de)) != sizeof(de) || de.rec_len < sizeof(de))
+        {
+            INode::UnLock();
+            return -EIO;
+        }
+
+        if(!de.inode || !de.name_len)
+        {   // skip empty entry
+            prevDe = de;
+            prevPos = position;
+            position += max(de.rec_len, sizeof(de));
+            continue;
+        }
+
+        // read filename
+        memset(nameBuf, 0, sizeof(nameBuf));
+        if(Read(nameBuf, position + sizeof(DirectoryEntry), de.name_len) != de.name_len)
+        {
+            INode::UnLock();
+            return -EIO;
+        }
+
+        if(strcmp(name, nameBuf))
+        {   // check next entry
+            prevDe = de;
+            prevPos = position;
+            position += de.rec_len;
+            continue;
+        }
+
+        EXT2 *fs = (EXT2 *)FS;
+        FSINode *inode = (FSINode *)fs->GetINode(de.inode);
+        if(!inode)
+        {
+            INode::UnLock();
+            return -EIO;
+        }
+
+        if(!FileSystem::Lock())
+        {
+            INode::UnLock();
+            return -EBUSY;
+        }
+        size_t blockSize = ((EXT2 *)FS)->blockSize;
+        FileSystem::UnLock();
+
+
+        if(EXT2_S_ISDIR(inode->GetMode()))
+        {
+            // TODO: add directory removing
+            INode::UnLock();
+            return -ENOTEMPTY;
+        }
+        else
+        {
+            // erase file contents
+            if(int64_t newSize = inode->Resize(0))
+            {
+                INode::UnLock();
+                return newSize < 0 ? newSize : -EIO;
+            }
+            if(inode->Data.i_links_count)
+                --inode->Data.i_links_count;
+            FS->PutINode(inode);
+
+            // clear directory entry
+            if(!(position % blockSize))
+            {   // first entry in a block
+                de.inode = 0;
+                if(Write(&de, position, sizeof(de)) != sizeof(de))
+                {
+                    INode::UnLock();
+                    return -EIO;
+                }
+            }
+            else
+            {
+                prevDe.rec_len += de.rec_len;
+                if(Write(&prevDe, prevPos, sizeof(prevDe)) != sizeof(prevDe))
+                {
+                    INode::UnLock();
+                    return -EIO;
+                }
+            }
+
+            INode::UnLock();
+            return 0;
+        }
+    }
+
+    INode::UnLock();
+    return -ENOENT;
+}
+
+int EXT2::FSINode::Release()
+{
+    if(!INode::Lock())
+        return -EBUSY;
+    if(!Data.i_links_count)
+    {
+        Data.i_dtime = time(nullptr);
+        if(!FileSystem::Lock())
+        {
+            INode::UnLock();
+            return -EBUSY;
+        }
+        EXT2 *fs = (EXT2 *)FS;
+        fs->WriteINode(this);
+        fs->freeINode(Number);
+        FileSystem::UnLock();
+    }
+    INode::UnLock();
+    return 0;
 }

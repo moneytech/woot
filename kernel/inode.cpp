@@ -91,6 +91,16 @@ int64_t INode::Resize(int64_t size)
     return -ENOSYS;
 }
 
+int INode::Remove(const char *name)
+{
+    return -ENOSYS;
+}
+
+int INode::Release()
+{
+    return -ENOSYS;
+}
+
 INode::~INode()
 {
 }

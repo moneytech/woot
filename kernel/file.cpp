@@ -194,6 +194,21 @@ bool File::Create(const char *name, mode_t mode)
     return res;
 }
 
+int File::Remove(const char *name)
+{
+    if(!Lock->Acquire(0, false))
+        return false;
+    if(!DEntry::Lock())
+    {
+        Lock->Release();
+        return false;
+    }
+    int res = DEntry && DEntry->INode ? DEntry->INode->Remove(name) : -EINVAL;
+    DEntry::UnLock();
+    Lock->Release();
+    return res;
+}
+
 int64_t File::Seek(int64_t offs, int loc)
 {
     if(!Lock->Acquire(0, false))
