@@ -48,6 +48,8 @@ public:
     static File *Open(const char *name, int flags);
 
     int64_t GetSize();
+    bool SetAccessTime(time_t time);
+    bool SetModifyTime(time_t time);
     bool Create(const char *name, mode_t mode);
     int64_t Seek(int64_t offs, int loc);
     int64_t Read(void *buffer, int64_t n);

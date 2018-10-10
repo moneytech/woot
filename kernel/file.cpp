@@ -149,6 +149,36 @@ int64_t File::GetSize()
     return size;
 }
 
+bool File::SetAccessTime(time_t time)
+{
+    if(!Lock->Acquire(0, false))
+        return -EBUSY;
+    if(!DEntry::Lock())
+    {
+        Lock->Release();
+        return -EBUSY;
+    }
+    bool res = DEntry && DEntry->INode ? DEntry->INode->SetAccessTime(time) : -EINVAL;
+    DEntry::UnLock();
+    Lock->Release();
+    return res;
+}
+
+bool File::SetModifyTime(time_t time)
+{
+    if(!Lock->Acquire(0, false))
+        return -EBUSY;
+    if(!DEntry::Lock())
+    {
+        Lock->Release();
+        return -EBUSY;
+    }
+    bool res = DEntry && DEntry->INode ? DEntry->INode->SetModifyTime(time) : -EINVAL;
+    DEntry::UnLock();
+    Lock->Release();
+    return res;
+}
+
 bool File::Create(const char *name, mode_t mode)
 {
     if(!Lock->Acquire(0, false))
