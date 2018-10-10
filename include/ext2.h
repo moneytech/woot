@@ -238,6 +238,7 @@ private:
         EXT2::INode Data;
         FSINode(ino_t number, FileSystem *fs);
         void setSize(size64_t size);
+        bool buildDirectory(FSINode *parentINode, FSINode *newINode);
         virtual size64_t GetSize();
         virtual mode_t GetMode();
         virtual time_t GetCreateTime();
