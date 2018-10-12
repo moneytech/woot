@@ -43,6 +43,12 @@ void IRQs::Disable(uint irq)
     cpuRestoreInterrupts(ints);
 }
 
+void IRQs::TryDisable(uint irq)
+{
+    if(!Ints::HandlerCount(irq + IRQS_BASE))
+        Disable(irq);
+}
+
 bool IRQs::IsEnabled(uint irq)
 {
     bool ints = cpuDisableInterrupts();
@@ -97,5 +103,5 @@ void IRQs::RegisterHandler(uint irq, Ints::Handler *handler)
 
 void IRQs::UnRegisterHandler(uint irq, Ints::Handler *handler)
 {
-    return Ints::RegisterHandler(irq + IRQS_BASE, handler);
+    return Ints::UnRegisterHandler(irq + IRQS_BASE, handler);
 }

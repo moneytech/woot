@@ -13,6 +13,7 @@ public:
     static void Initialize();
     static void Enable(uint irq);
     static void Disable(uint irq);
+    static void TryDisable(uint irq); // disable irq only if there are no more handlers left
     static bool IsEnabled(uint irq);
     static void SendEOI(uint irq);
     static bool IsSpurious(uint irq);

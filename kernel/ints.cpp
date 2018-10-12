@@ -126,6 +126,17 @@ void Ints::UnRegisterHandler(uint intNo, Ints::Handler *handler)
     cpuRestoreInterrupts(ints);
 }
 
+uint Ints::HandlerCount(uint intNo)
+{
+    if(intNo >= VECTOR_COUNT)
+        return 0;
+    bool ints = cpuDisableInterrupts();
+    uint res = 0;
+    for(Handler *h = Handlers[intNo]; h; h = h->Next, ++res);
+    cpuRestoreInterrupts(ints);
+    return res;
+}
+
 void Ints::DumpState(Ints::State *state)
 {
     printf("EAX: %.8X EBX: %.8X ECX: %.8X EDX: %.8X\n",
