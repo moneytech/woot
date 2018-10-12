@@ -46,11 +46,6 @@ bool Mutex::Acquire(uint timeout, bool tryAcquire)
             if(ct == t) Waiters->Read(nullptr);
             else Waiters->ReplaceFirst(ct, nullptr);
         }
-        else
-        {
-            Owner = ct;
-            Count = 1;
-        }
 
         cpuRestoreInterrupts(is);
         return r;
@@ -87,6 +82,10 @@ void Mutex::Release()
                 return;
             }
         } while(!t);
+
+        // make last unqueued thread an owner
+        Owner = t;
+        Count = 1;
         t->Resume(false);
     }
     cpuRestoreInterrupts(is);
