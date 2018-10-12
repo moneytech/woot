@@ -6,6 +6,7 @@
 
 class INode;
 class Mutex;
+class StringBuilder;
 
 class DEntry
 {

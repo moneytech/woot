@@ -1,3 +1,4 @@
+#include <cpu.h>
 #include <mutex.h>
 #include <process.h>
 #include <paging.h>
@@ -16,6 +17,26 @@ void Process::Initialize()
     listLock = new Mutex();
     Thread *ct = Thread::GetCurrent();
     new Process("Main kernel process", ct, Paging::GetAddressSpace());
+}
+
+DEntry *Process::GetCurrentDir()
+{
+    bool ints = cpuDisableInterrupts();
+    Thread *ct = Thread::GetCurrent();
+    if(!ct)
+    {
+        cpuRestoreInterrupts(ints);
+        return nullptr;
+    }
+    Process *cp = ct->Process;
+    if(!cp)
+    {
+        cpuRestoreInterrupts(ints);
+        return nullptr;
+    }
+    DEntry *de = cp->CurrentDirectory;
+    cpuRestoreInterrupts(ints);
+    return de;
 }
 
 uintptr_t Process::NewAddressSpace()

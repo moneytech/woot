@@ -4,6 +4,7 @@
 #include <mutex.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stringbuilder.h>
 
 Mutex DEntry::lock;
 
@@ -28,8 +29,8 @@ DEntry::DEntry(const char *name, DEntry *parent) :
 
 DEntry::~DEntry()
 {
-    Lock();
+    DEntry::Lock();
     if(Name) free(Name);
     if(INode && INode->FS) INode->FS->PutINode(INode);
-    UnLock();
+    DEntry::UnLock();
 }

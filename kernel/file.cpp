@@ -4,6 +4,7 @@
 #include <filesystem.h>
 #include <inode.h>
 #include <mutex.h>
+#include <process.h>
 #include <stat.h>
 #include <string.h>
 #include <sysdefs.h>
@@ -26,71 +27,25 @@ File::File(::DEntry *dentry, int flags) :
 
 File *File::Open(::DEntry *parent, const char *name, int flags)
 {
-    if(!INode::Lock())
+    if(!DEntry::Lock())
         return nullptr;
-    if(!parent || !parent->INode || !parent->INode->FS || !name)
-    {
-        INode::UnLock();
-        return nullptr;
-    }
-    FileSystem *FS = parent->INode->FS;
-    INode::UnLock();
 
-    if(!FileSystem::Lock())
+    if(!parent || !parent->INode || !name)
     {
-        return nullptr;
-    }
-    ::DEntry *dentry = FS->GetDEntry(parent, name);
-    if(!dentry)
-    {
-        FileSystem::UnLock();
-        return nullptr;
-    }
-    File *file = new File(dentry, flags);
-    FileSystem::UnLock();
-    return file;
-}
-
-File *File::Open(const char *name, int flags)
-{
-    Tokenizer path(name, PATH_SEPARATORS, 0);
-    char *volumeSep = path[0] ? strchr(path[0], VOLUME_SEPARATOR) : nullptr;
-    if(volumeSep) *volumeSep = 0;
-
-    bool hasVolumeId = path[0] && isdigit(path[0][0]) && volumeSep;
-    uint volumeId = hasVolumeId ? strtoul(path[0], nullptr, 0) : 0;
-    bool hasUUID = path[0] && path[0][0] == '{' && volumeSep;
-    UUID uuid = hasUUID ? UUID(path[0]) : UUID::nil;
-    bool hasLabel = !hasVolumeId && !hasUUID && volumeSep;
-
-    Volume *vol = hasLabel ? Volume::GetByLabel(path[0]) : (hasUUID ? Volume::GetByUUID(uuid) : Volume::GetByID(volumeId));
-    Volume::Lock();
-    if(!vol || !vol->FS)
-    {
-        Volume::UnLock();
-        return nullptr;
-    }
-    DEntry::Lock();
-    FileSystem::Lock();
-    ::DEntry *dentry = FileSystem::GetDEntry(vol->FS->Root);
-    if(!dentry)
-    {
-        FileSystem::UnLock();
         DEntry::UnLock();
-        Volume::UnLock();
         return nullptr;
     }
+
+    Tokenizer path(name, PATH_SEPARATORS, 0);
+
+    ::DEntry *dentry = FileSystem::GetDEntry(parent);
     for(Tokenizer::Token t : path.Tokens)
     {
-        if((hasVolumeId || hasUUID || hasLabel) && !t.Offset)
-            continue;
         ::DEntry *nextDe = FileSystem::GetDEntry(dentry, t.String);
         FileSystem::PutDEntry(dentry);
         if(!nextDe)
         {
-            FileSystem::UnLock();
             DEntry::UnLock();
-            Volume::UnLock();
             return nullptr;
         }
         dentry = nextDe;
@@ -100,37 +55,82 @@ File *File::Open(const char *name, int flags)
         if(!INode::Lock())
         {
             FileSystem::PutDEntry(dentry);
-            FileSystem::UnLock();
             DEntry::UnLock();
-            Volume::UnLock();
             return nullptr;
         }
         if(dentry->INode->Resize(0) != 0)
         {
             FileSystem::PutDEntry(dentry);
             INode::UnLock();
-            FileSystem::UnLock();
             DEntry::UnLock();
-            Volume::UnLock();
             return nullptr;
         }
         INode::UnLock();
     }
-    if(flags & O_DIRECTORY && !S_ISDIR(dentry->INode->GetMode()))
+    mode_t mode = dentry->INode->GetMode();
+    if((flags & O_DIRECTORY && !S_ISDIR(mode)) || (!(flags & O_DIRECTORY) && S_ISDIR(mode)))
     {
         FileSystem::PutDEntry(dentry);
-        FileSystem::UnLock();
         DEntry::UnLock();
-        Volume::UnLock();
         return nullptr;
     }
     File *file = new File(dentry, flags);
     FileSystem::PutDEntry(dentry);
     if(flags & O_APPEND)
         file->Position = file->GetSize();
-    FileSystem::UnLock();
     DEntry::UnLock();
+    return file;
+}
+
+File *File::Open(const char *name, int flags)
+{
+    if(!name || !strlen(name))
+        name = ".";
+    Tokenizer path(name, PATH_SEPARATORS, 0);
+    if(!path[0]) return nullptr;
+    char *volumeSep = path[0] ? strchr(path[0], VOLUME_SEPARATOR) : nullptr;
+    if(volumeSep) *volumeSep = 0;
+
+    bool hasVolumeId = path[0] && isdigit(path[0][0]) && volumeSep;
+    uint volumeId = hasVolumeId ? strtoul(path[0], nullptr, 0) : 0;
+    bool hasUUID = path[0] && path[0][0] == '{' && volumeSep;
+    UUID uuid = hasUUID ? UUID(path[0]) : UUID::nil;
+    bool hasLabel = !hasVolumeId && !hasUUID && volumeSep;
+
+    if(!Volume::Lock())
+        return nullptr;
+    Volume *vol = hasLabel ? Volume::GetByLabel(path[0]) : (hasUUID ? Volume::GetByUUID(uuid) : Volume::GetByID(volumeId));
+    if(!vol || !vol->FS)
+    {
+        Volume::UnLock();
+        return nullptr;
+    }
+    if(!DEntry::Lock())
+    {
+        Volume::UnLock();
+        return nullptr;
+    };
+    if(!FileSystem::Lock())
+    {
+        Volume::UnLock();
+        DEntry::UnLock();
+        return nullptr;
+    }
+    bool hasVolume = hasVolumeId || hasUUID || hasLabel;
+    bool absolute = !hasVolume && path[0][0] == '/';
+    ::DEntry *dentry = hasVolume || absolute ? vol->FS->Root : Process::GetCurrentDir();
+    FileSystem::UnLock();
     Volume::UnLock();
+
+    if(!dentry)
+    {
+        DEntry::UnLock();
+        return nullptr;
+    }
+
+    File *file = Open(dentry, name + (hasVolume ? path.Tokens[1].Offset : 0), flags);
+
+    DEntry::UnLock();
     return file;
 }
 

@@ -10,6 +10,7 @@ include/filesystem.h
 include/filesystemtype.h
 include/idedrive.h
 include/inode.h
+include/inputdevice.h
 include/list.h
 include/mbrvolume.h
 include/memorystream.h
@@ -18,6 +19,7 @@ include/mutex.h
 include/objectqueue.h
 include/pci.h
 include/process.h
+include/ps2keyboard.h
 include/queue.h
 include/sched.h
 include/semaphore.h
@@ -28,6 +30,7 @@ include/stringbuilder.h
 include/thread.h
 include/tokenizer.h
 include/uuid.h
+include/virtualkey.h
 include/volume.h
 include/volumetype.h
 kernel/bufferedvolume.cpp
@@ -40,6 +43,7 @@ kernel/filesystem.cpp
 kernel/filesystemtype.cpp
 kernel/idedrive.cpp
 kernel/inode.cpp
+kernel/inputdevice.cpp
 kernel/mbrvolume.cpp
 kernel/memorystream.cpp
 kernel/miscasm.asm
@@ -47,6 +51,7 @@ kernel/mutex.cpp
 kernel/objectqueue.cpp
 kernel/pci.cpp
 kernel/process.cpp
+kernel/ps2keyboard.cpp
 kernel/semaphore.cpp
 kernel/stringbuilder.cpp
 kernel/thread.cpp

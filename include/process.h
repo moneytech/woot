@@ -25,6 +25,7 @@ public:
     DEntry *CurrentDirectory;
 
     static void Initialize();
+    static DEntry *GetCurrentDir();
     static uintptr_t NewAddressSpace();
     static void Cleanup();
 
