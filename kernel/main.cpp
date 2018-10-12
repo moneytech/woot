@@ -141,7 +141,7 @@ static int kbdThread(uintptr_t arg)
         {
             if(File *f = File::Open("0:/", O_DIRECTORY))
             {
-                printf("file delete result: %d\n", f->Remove("testfile2.txt"));
+                printf("file delete result: %d\n", f->Remove("newdir"));
                 delete f;
             }
         }
@@ -149,8 +149,8 @@ static int kbdThread(uintptr_t arg)
         {
             if(File *f = File::Open("0:/", O_DIRECTORY))
             {
-                bool ok = f->Create("testfile2.txt", S_IFREG | 0664);
-                //bool ok = f->Create("newdir", S_IFDIR | 0755);
+                //bool ok = f->Create("testfile2.txt", S_IFREG | 0664);
+                bool ok = f->Create("newdir", S_IFDIR | 0755);
                 printf("create %s\n", ok ? "success" : "fail");
                 delete f;
             }

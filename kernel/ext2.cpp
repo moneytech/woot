@@ -202,6 +202,11 @@ bool EXT2::updateBGDT(uint bg, off_t startOffs, size_t n)
     return true;
 }
 
+uint EXT2::getINodeBlockGroup(uint32_t ino)
+{
+    return ino / superBlock->s_inodes_per_group;
+}
+
 uint32_t EXT2::allocINode(uint *group)
 {
     for(uint i = 0; i < blockGroupCount; ++i)
@@ -1056,7 +1061,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
             {
                 buildDirectory(this, inode);
                 ++fs->BGDT[bg].bg_used_dirs_count;
-                fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 4);
+                fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 2);
             }
             fs->PutINode(inode);
             FileSystem::UnLock();
@@ -1086,7 +1091,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
                 {
                     buildDirectory(this, inode);
                     ++fs->BGDT[bg].bg_used_dirs_count;
-                    fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 4);
+                    fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 2);
                 }
                 fs->PutINode(inode);
                 FileSystem::UnLock();
@@ -1411,46 +1416,107 @@ int EXT2::FSINode::Remove(const char *name)
 
 
         if(EXT2_S_ISDIR(inode->GetMode()))
-        {
-            // TODO: add directory removing
-            INode::UnLock();
-            return -ENOTEMPTY;
+        {   // directory
+            // check if directory is empty (only . and ..  entries are allowed)
+            EXT2::DirectoryEntry de;
+            char nameBuf[4];
+            size64_t size = inode->GetSize();
+            int64_t position = 0;
+            bool isEmpty = true;
+            uint32_t selfLnkCnt = 0;
+            uint32_t parentLnkCnt = 0;
+            while(position < size)
+            {
+                if(inode->Read(&de, position, sizeof(de)) != sizeof(de) || de.rec_len < sizeof(de))
+                {
+                    INode::UnLock();
+                    return -EIO;
+                }
+
+                if(!de.inode || !de.name_len)
+                {   // skip empty entry
+                    position += max(de.rec_len, sizeof(de));
+                    continue;
+                }
+
+                // read filename
+                memset(nameBuf, 0, sizeof(nameBuf));
+                int64_t btr = min(sizeof(nameBuf), de.name_len);
+                if(inode->Read(nameBuf, position + sizeof(DirectoryEntry), btr) != btr)
+                {
+                    INode::UnLock();
+                    return -EIO;
+                }
+
+                if(!strncmp(".", nameBuf, sizeof(nameBuf)))
+                {
+                    ++selfLnkCnt;
+                    position += max(de.rec_len, sizeof(de));
+                    continue;
+                }
+
+                if(!strncmp("..", nameBuf, sizeof(nameBuf)))
+                {
+                    ++parentLnkCnt;
+                    position += max(de.rec_len, sizeof(de));
+                    continue;
+                }
+
+                isEmpty = false;
+                break;
+            }
+
+            if(!isEmpty)
+            {
+                INode::UnLock();
+                return -ENOTEMPTY;
+            }
+
+            // update link counts
+            inode->Data.i_links_count -= min(inode->Data.i_links_count, selfLnkCnt);
+            Data.i_links_count -= min(Data.i_links_count, parentLnkCnt);
+            inode->Dirty = true;
+            Dirty = true;
         }
-        else
+
+        if(inode->Data.i_links_count)
         {
-            // erase file contents
+            --inode->Data.i_links_count;
+            inode->Dirty = true;
+        }
+
+        if(!inode->Data.i_links_count)
+        {   // erase file contents
             if(int64_t newSize = inode->Resize(0))
             {
                 INode::UnLock();
                 return newSize < 0 ? newSize : -EIO;
             }
-            if(inode->Data.i_links_count)
-                --inode->Data.i_links_count;
-            FS->PutINode(inode);
-
-            // clear directory entry
-            if(!(position % blockSize))
-            {   // first entry in a block
-                de.inode = 0;
-                if(Write(&de, position, sizeof(de)) != sizeof(de))
-                {
-                    INode::UnLock();
-                    return -EIO;
-                }
-            }
-            else
-            {
-                prevDe.rec_len += de.rec_len;
-                if(Write(&prevDe, prevPos, sizeof(prevDe)) != sizeof(prevDe))
-                {
-                    INode::UnLock();
-                    return -EIO;
-                }
-            }
-
-            INode::UnLock();
-            return 0;
         }
+        FS->PutINode(inode);
+
+        // clear directory entry
+        if(!(position % blockSize))
+        {   // first entry in a block
+            de.inode = 0;
+            if(Write(&de, position, sizeof(de)) != sizeof(de))
+            {
+                INode::UnLock();
+                return -EIO;
+            }
+        }
+        else
+        {
+            prevDe.rec_len += de.rec_len;
+            if(Write(&prevDe, prevPos, sizeof(prevDe)) != sizeof(prevDe))
+            {
+                INode::UnLock();
+                return -EIO;
+            }
+        }
+
+        INode::UnLock();
+        return 0;
     }
 
     INode::UnLock();
@@ -1468,10 +1534,17 @@ int EXT2::FSINode::Release()
         {
             INode::UnLock();
             return -EBUSY;
-        }
+        }        
         EXT2 *fs = (EXT2 *)FS;
         fs->WriteINode(this);
         fs->freeINode(Number);
+        if(EXT2_S_ISDIR(Data.i_mode))
+        {
+            uint32_t bg = fs->getINodeBlockGroup(Number);
+            if(fs->BGDT[bg].bg_used_dirs_count)
+                --fs->BGDT[bg].bg_used_dirs_count;
+            fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 2);
+        }
         FileSystem::UnLock();
     }
     INode::UnLock();

@@ -39,36 +39,36 @@ cpuWaitForInterrupt:
 
 global cpuGetCR0
 cpuGetCR0:
-  mov eax, cr0
-  ret
+    mov eax, cr0
+    ret
 
 global cpuSetCR0
 cpuSetCR0:
-  mov eax, [esp + 4]
-  mov cr0, eax
-  ret
+    mov eax, [esp + 4]
+    mov cr0, eax
+    ret
 
 global cpuGetCR2
 cpuGetCR2:
-  mov eax, cr2
-  ret
+    mov eax, cr2
+    ret
 
 global cpuGetCR3
 cpuGetCR3:
-  mov eax, cr3
-  ret
+    mov eax, cr3
+    ret
 
 global cpuSetCR3
 cpuSetCR3:
-  mov eax, [esp + 4]
-  mov cr3, eax
-  ret
+    mov eax, [esp + 4]
+    mov cr3, eax
+    ret
 
 global cpuInvalidatePage
 cpuInvalidatePage:
-  mov eax, [esp + 4]
-  invlpg [eax]
-  ret
+    mov eax, [esp + 4]
+    invlpg [eax]
+    ret
 
 global cpuGetEIP
 cpuGetEIP:
@@ -1288,29 +1288,29 @@ _INTJumpTable:
 
 global cpuFXSave
 cpuFXSave:
-  mov eax, [esp + 4]
-  fxsave [eax]
-  ret
+    mov eax, [esp + 4]
+    fxsave [eax]
+    ret
 
 global cpuFXRstor
 cpuFXRstor:
-  mov eax, [esp + 4]
-  fxrstor [eax]
-  ret
+    mov eax, [esp + 4]
+    fxrstor [eax]
+    ret
 
 global cpuInitFPU
 cpuInitFPU:
-  fninit
-  fldcw [esp + 4]
-  ret
+    fninit
+    fldcw [esp + 4]
+    ret
 
 global cpuEnableSSE
 cpuEnableSSE:
-  mov eax, cr0
-  and eax, 0xFFFFFFFB
-  or eax, 0x00000022
-  mov cr0, eax
-  mov eax, cr4
-  or eax, 0x00000600
-  mov cr4, eax
-  ret
+    mov eax, cr0
+    and eax, 0xFFFFFFFB
+    or eax, 0x00000022
+    mov cr0, eax
+    mov eax, cr4
+    or eax, 0x00000600
+    mov cr4, eax
+    ret

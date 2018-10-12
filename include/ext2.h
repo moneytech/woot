@@ -280,6 +280,7 @@ private:
     bool hasSuperBlock(uint bg);
     uint64_t bgdtOffset(uint bg);
     bool updateBGDT(uint bg, off_t startOffs, size_t n);
+    uint getINodeBlockGroup(uint32_t ino);
     uint32_t allocINode(uint *group);
     bool freeINode(uint32_t inode);
     uint32_t allocBlockInGroup(uint g);
