@@ -42,7 +42,6 @@ bool Semaphore::Wait(uint timeout, bool tryWait)
             if(ct == t) Waiters->Read(nullptr);
             else Waiters->ReplaceFirst(ct, nullptr);
         }
-        else --Count;
 
         cpuRestoreInterrupts(is);
         return r;
@@ -69,6 +68,7 @@ void Semaphore::Signal(Ints::State *state)
         }
     } while(!t);
 
+    --Count;
     if(state) t->QuickResume(state);
     else t->Resume(false);
 
