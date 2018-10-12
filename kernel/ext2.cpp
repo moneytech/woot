@@ -1,4 +1,3 @@
-#include <cpu.h>
 #include <dentry.h>
 #include <directoryentry.h>
 #include <errno.h>
@@ -984,18 +983,15 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
         INode::UnLock();
         return false;
     }
-    bool ints = cpuDisableInterrupts(); // FIXME: I don't like this here
     Thread *ct = Thread::GetCurrent();
     if(!ino || !ct || !ct->Process)
     {
-        cpuRestoreInterrupts(ints);
         INode::UnLock();
         FileSystem::UnLock();
         return false;
     }
     uid_t uid = ct->Process->UID;
     gid_t gid = ct->Process->GID;
-    cpuRestoreInterrupts(ints);
 
     FSINode *inode = (FSINode *)fs->GetINode(ino);
     if(!inode)
