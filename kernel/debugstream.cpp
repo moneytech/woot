@@ -14,6 +14,14 @@ static uint vgaCurX = 0;
 static uint vgaCurY = 0;
 static word vgaAttrib = 0x0700;
 
+static void vgaSetCursorSize(byte start, byte end)
+{
+    _outb(0x3D4, 0x0A);
+    _outb(0x3D5, (_inb(0x3D5) & 0xC0) | start);
+    _outb(0x3D4, 0x0B);
+    _outb(0x3D5, (_inb(0x3D5) & 0xE0) | end);
+}
+
 static void vgaSetCursorPos(uint16_t pos)
 {
     bool cs = cpuDisableInterrupts();
@@ -30,6 +38,7 @@ DebugStream::DebugStream(word port)
 {
 #ifdef USE_VGA_TEXT
     wmemset(vgaText, vgaAttrib, vgaWidth * vgaHeight);
+    vgaSetCursorSize(13, 14);
     vgaSetCursorPos(0);
 #endif // USE_VGA_TEXT
 }
@@ -54,6 +63,12 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
 #ifdef USE_VGA_TEXT
         if(c == '\n')
             ++vgaCurY, vgaCurX = 0;
+        else if(c == '\b')
+        {
+            if(vgaCurX)
+                --vgaCurX;
+            vgaText[vgaCurY * vgaWidth + vgaCurX] = ' ' | vgaAttrib;
+        }
         else if(c == '\r')
             vgaCurX = 0;
         else
