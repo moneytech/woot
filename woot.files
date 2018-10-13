@@ -1,3 +1,6 @@
+simplefb/Makefile
+simplefb/main.cpp
+modulelist
 hdd-empty-ext2.img.gz
 include/ata.h
 include/bufferedvolume.h

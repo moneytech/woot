@@ -4,6 +4,7 @@ KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
 LIBDIR = $(ROOTDIR)/lib
+MOUNTPOINT = mnt
 
 export LIBDIR
 
@@ -65,35 +66,38 @@ clean-img:
 # your_username ALL=(ALL) NOPASSWD: /bin/umount
 # your_username ALL=(ALL) NOPASSWD: /sbin/losetup
 # your_username ALL=(ALL) NOPASSWD: /bin/cp
+# your_username ALL=(ALL) NOPASSWD: /bin/mkdir
 # your_username ALL=(ALL) NOPASSWD: /usr/sbin/grub-install
 
 # sets up GRUB on hdd.img
 setup-grub:
 	sudo losetup -P /dev/loop1 hdd.img
-	sudo mount /dev/loop1p1 mnt
-	sudo grub-install --boot-directory=mnt/boot /dev/loop1
-	sudo umount mnt
+	sudo mount /dev/loop1p1 $(MOUNTPOINT)
+	sudo grub-install --boot-directory=$(MOUNTPOINT)/boot /dev/loop1
+	sudo umount $(MOUNTPOINT)
 	sudo losetup -d /dev/loop1
 
 # builds everything and installs it on hdd image file
 hdd.img: all
 	sudo losetup -P /dev/loop1 hdd.img
-	sudo mount /dev/loop1p1 mnt
-	-sudo cp $(ISODIR)/boot/grub/grub.cfg mnt/boot/grub
-	-sudo cp kernel/$(KERNELFILE) mnt/
-	-sudo cp simplefb/simplefb.ko mnt/
-	sudo umount mnt
+	sudo mount /dev/loop1p1 $(MOUNTPOINT)
+	-sudo cp $(ISODIR)/boot/grub/grub.cfg $(MOUNTPOINT)/boot/grub
+	-sudo cp kernel/$(KERNELFILE) $(MOUNTPOINT)/
+	-sudo cp modulelist $(MOUNTPOINT)/
+	-sudo mkdir -p $(MOUNTPOINT)/system
+	-sudo cp simplefb/simplefb.ko $(MOUNTPOINT)/system
+	sudo umount $(MOUNTPOINT)
 	sudo losetup -d /dev/loop1
 
 # tries to mount image file so you can make modifications to it
 try-mount:
 	-sudo losetup -P /dev/loop1 hdd.img
-	-sudo mount /dev/loop1p1 mnt
+	-sudo mount /dev/loop1p1 $(MOUNTPOINT)
 
 # tries to unmount the image (sometimes setup-grub or hdd.img
 # rules don't unmount image properly; this is here to fix it)
 try-unmount:
-	-sudo umount mnt
+	-sudo umount $(MOUNTPOINT)
 	-sudo losetup -d /dev/loop1
 
 # alias for try-unmount

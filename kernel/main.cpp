@@ -197,7 +197,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     bool shift = false;
     char cmd[256];
     int cmdPos = 0;
-    printf("\nDebug shell started\n");
+    printf("\nDebug shell started. Don't type help for help.\n");
     for(; kbd && !quit;)
     {
         printf("%s# ", kernelProcess->CurrentDirectory->Name);
@@ -247,6 +247,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             quit = true;
             break;
         }
+        else if(!strcmp(args[0], "help"))
+            printf("Nope. For some info look around line %d in %s ;)\n", __LINE__, __FILE__);
         else if(!strcmp(args[0], "reboot") || !strcmp(args[0], "reset"))
         {
             _outb(0x64, 0xFE);
