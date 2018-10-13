@@ -3,6 +3,7 @@
 #include <dentry.h>
 #include <directoryentry.h>
 #include <drive.h>
+#include <elf.h>
 #include <ext2.h>
 #include <file.h>
 #include <filesystem.h>
@@ -179,6 +180,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         delete rootDir;
     }
 
+    ELF::Initialize("WOOT_OS:/woot");
+    Process *kernelProcess = Process::GetCurrent();
+
     Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
     Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);
 
@@ -189,7 +193,6 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     t2->Resume(false);
 
     Thread *ct = Thread::GetCurrent();
-    Process *cp = ct->Process;
     InputDevice *kbd = InputDevice::GetFirstByType(InputDevice::Type::Keyboard);
     bool shift = false;
     char cmd[256];
@@ -197,13 +200,12 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     printf("\nDebug shell started\n");
     for(; kbd && !quit;)
     {
-        printf("%s> ", cp->CurrentDirectory->Name);
+        printf("%s# ", kernelProcess->CurrentDirectory->Name);
         for(;;)
         {
             InputDevice::Event event = kbd->GetEvent(0);
-            if(event.Keyboard.Key == VirtualKey::None)
-                continue;
-            if(event.Keyboard.Key == VirtualKey::LShift || event.Keyboard.Key == VirtualKey::RShift)
+            if(event.Keyboard.Key == VirtualKey::LShift ||
+                    event.Keyboard.Key == VirtualKey::RShift)
             {
                 shift = !event.Keyboard.Release;
                 continue;
@@ -213,6 +215,15 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 continue;
             char chr = vkToChar(event.Keyboard.Key, shift, false, false);
             if(!chr) continue;
+            if(chr == '\b')
+            {
+                if(cmdPos)
+                {
+                    printf("\b");
+                    cmd[--cmdPos] = 0;
+                }
+                continue;
+            }
             printf("%c", chr);
             if(chr == '\n')
             {
@@ -266,8 +277,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             }
             if(File *dir = File::Open(args[1], O_DIRECTORY))
             {
-                if(cp->CurrentDirectory) FileSystem::PutDEntry(cp->CurrentDirectory);
-                cp->CurrentDirectory = FileSystem::GetDEntry(dir->DEntry);
+                if(kernelProcess->CurrentDirectory) FileSystem::PutDEntry(kernelProcess->CurrentDirectory);
+                kernelProcess->CurrentDirectory = FileSystem::GetDEntry(dir->DEntry);
                 delete dir;
             } else printf("[main] cd failed\n");
         }
@@ -336,6 +347,17 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             Time::DateTime dt;
             Time::UnixToDateTime(time(nullptr), &dt);
             printf("%.4d-%.2d-%.2d\n", dt.Year, dt.Month, dt.Day);
+        }
+        else if(!strcmp(args[0], "sym"))
+        {
+            if(!args[1])
+            {
+                printf("missing argument\n");
+                continue;
+            }
+            Elf32_Sym *sym = kernelProcess->Image->FindSymbol(args[1]);
+            if(!sym) printf("kernel symbol '%s' not found\n", args[1]);
+            else printf("%s = %#.8x\n", args[1], sym->st_value);
         }
         else printf("Unknown command '%s'\n", args[0]);
     }

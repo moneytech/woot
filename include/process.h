@@ -6,6 +6,7 @@
 #include <types.h>
 
 class DEntry;
+class ELF;
 class Mutex;
 class Thread;
 
@@ -23,8 +24,10 @@ public:
     uid_t UID, EUID;
     gid_t GID, EGID;
     DEntry *CurrentDirectory;
+    ELF *Image;
 
     static void Initialize();
+    static Process *GetCurrent();
     static DEntry *GetCurrentDir();
     static uintptr_t NewAddressSpace();
     static void Cleanup();

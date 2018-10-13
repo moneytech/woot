@@ -1,5 +1,5 @@
 ROOTDIR = $(shell pwd)
-SUBDIRS = lib kernel
+SUBDIRS = lib simplefb kernel
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
@@ -14,7 +14,7 @@ ASM = yasm
 LD = ld
 AR = ar
 
-COMMONFLAGS = -ggdb -m32 -fno-stack-protector -msse -fno-pic -fshort-wchar
+COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -msse -fno-pic -fshort-wchar
 COMMONFLAGS += -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -fno-exceptions -fno-rtti -nostdinc++
@@ -81,6 +81,7 @@ hdd.img: all
 	sudo mount /dev/loop1p1 mnt
 	-sudo cp $(ISODIR)/boot/grub/grub.cfg mnt/boot/grub
 	-sudo cp kernel/$(KERNELFILE) mnt/
+	-sudo cp simplefb/simplefb.ko mnt/
 	sudo umount mnt
 	sudo losetup -d /dev/loop1
 

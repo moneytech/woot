@@ -19,6 +19,13 @@ void Process::Initialize()
     new Process("Main kernel process", ct, Paging::GetAddressSpace());
 }
 
+Process *Process::GetCurrent()
+{
+    Thread *ct = Thread::GetCurrent();
+    if(!ct) return nullptr;
+    return ct->Process;
+}
+
 DEntry *Process::GetCurrentDir()
 {
     bool ints = cpuDisableInterrupts();

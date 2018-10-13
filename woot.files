@@ -4,6 +4,7 @@ include/bufferedvolume.h
 include/dentry.h
 include/directoryentry.h
 include/drive.h
+include/elf.h
 include/ext2.h
 include/file.h
 include/filesystem.h
@@ -37,6 +38,7 @@ kernel/bufferedvolume.cpp
 kernel/dentry.cpp
 kernel/directoryentry.cpp
 kernel/drive.cpp
+kernel/elf.cpp
 kernel/ext2.cpp
 kernel/file.cpp
 kernel/filesystem.cpp
