@@ -194,10 +194,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 
     Thread *ct = Thread::GetCurrent();
     InputDevice *kbd = InputDevice::GetFirstByType(InputDevice::Type::Keyboard);
-    bool shift = false;
+    bool shift = false, num = false, caps = false, alt = false, ctrl = false;
     char cmd[256];
     int cmdPos = 0;
-    printf("\nDebug shell started. Don't type help for help.\n");
+    printf("\nDebug (s)hell started. Don't type help for help.\n");
     for(; kbd && !quit;)
     {
         printf("%s# ", kernelProcess->CurrentDirectory->Name);
@@ -210,10 +210,33 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 shift = !event.Keyboard.Release;
                 continue;
             }
+            if(event.Keyboard.Key == VirtualKey::LMenu ||
+                    event.Keyboard.Key == VirtualKey::RMenu)
+            {
+                alt = !event.Keyboard.Release;
+                continue;
+            }
+            if(event.Keyboard.Key == VirtualKey::LControl ||
+                    event.Keyboard.Key == VirtualKey::RControl)
+            {
+                ctrl = !event.Keyboard.Release;
+                continue;
+            }
 
             if(event.Keyboard.Release)
+            {
+                if(event.Keyboard.Key == VirtualKey::Capital)
+                    caps = !caps;
+                if(event.Keyboard.Key == VirtualKey::NumLock)
+                    num = !num;
                 continue;
-            char chr = vkToChar(event.Keyboard.Key, shift, false, false);
+            }
+            if(ctrl && alt && event.Keyboard.Key == VirtualKey::Delete)
+            {
+                _outb(0x64, 0xFE);
+                continue;
+            }
+            char chr = vkToChar(event.Keyboard.Key, shift, caps, num);
             if(!chr) continue;
             if(chr == '\b')
             {
