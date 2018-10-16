@@ -5,73 +5,80 @@
 #include <string.h>
 
 ELF::ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShdr, byte *symtab, Elf32_Shdr *strtabShdr, byte *strtab) :
-    ehdr(ehdr), phdrData(phdrData), shdrData(shdrData), symtabShdr(symtabShdr), symtab(symtab), strtabShdr(strtabShdr), strtab(strtab)
+    ehdr(ehdr), phdrData(phdrData), shdrData(shdrData), symtabShdr(symtabShdr), symtab(symtab), strtabShdr(strtabShdr), strtab(strtab),
+    EntryPoint((int (*)())ehdr->e_entry)
 {
 }
 
 void ELF::Initialize(const char *kernelFile)
 {
-    // we need to load headers since GRUB and QEMU loader (maybe others as well) do not load them
-    File *f = File::Open(kernelFile, O_RDONLY);
+    ELF *elf = Load(kernelFile, true);
+    if(!elf) return;
+    Process *proc = Process::GetCurrent();
+    proc->Images.Append(elf);
+}
+
+ELF *ELF::Load(const char *filename, bool onlyHeaders)
+{
+    File *f = File::Open(filename, O_RDONLY);
     if(!f)
     {
-        printf("[elf] Couldn't find '%s' kernel file\n", kernelFile);
-        return;
+        printf("[elf] Couldn't find '%s' file\n", filename);
+        return nullptr;
     }
     Elf32_Ehdr *ehdr = new Elf32_Ehdr;
     if(f->Read(ehdr, sizeof(Elf32_Ehdr)) != sizeof(Elf32_Ehdr))
     {
-        printf("[elf] Couldn't load kernel ELF header\n", kernelFile);
+        printf("[elf] Couldn't load ELF header\n", filename);
         delete ehdr;
         delete f;
-        return;
+        return nullptr;
     }
     if(ehdr->e_ident[0] != 127 || ehdr->e_ident[1] != 'E' || ehdr->e_ident[2] != 'L' || ehdr->e_ident[3] != 'F')
     {
-        printf("[elf] Invalid kernel ELF header magic\n", kernelFile);
+        printf("[elf] Invalid ELF header magic\n", filename);
         delete ehdr;
         delete f;
-        return;
+        return nullptr;
     }
-
     // load program headers
     if(f->Seek(ehdr->e_phoff, SEEK_SET) != ehdr->e_phoff)
     {
-        printf("[elf] Couldn't seek to kernel program headers\n", kernelFile);
+        printf("[elf] Couldn't seek to program headers\n", filename);
         delete ehdr;
         delete f;
-        return;
+        return nullptr;
     }
     size_t phSize = ehdr->e_phentsize * ehdr->e_phnum;
     byte *phdrData = new byte[phSize];
     if(f->Read(phdrData, phSize) != phSize)
     {
-        printf("[elf] Couldn't load kernel program headers\n", kernelFile);
+        printf("[elf] Couldn't load program headers\n", filename);
         delete[] phdrData;
         delete ehdr;
         delete f;
-        return;
+        return nullptr;
     }
 
     // load section headers
     if(f->Seek(ehdr->e_shoff, SEEK_SET) != ehdr->e_shoff)
     {
-        printf("[elf] Couldn't seek to kernel section headers\n", kernelFile);
+        printf("[elf] Couldn't seek to section headers\n", filename);
         delete[] phdrData;
         delete ehdr;
         delete f;
-        return;
+        return nullptr;
     }
     size_t shSize = ehdr->e_shentsize * ehdr->e_shnum;
     byte *shdrData = new byte[shSize];
     if(f->Read(shdrData, shSize) != shSize)
     {
-        printf("[elf] Couldn't load kernel section headers\n", kernelFile);
+        printf("[elf] Couldn't load section headers\n", filename);
         delete[] shdrData;
         delete[] phdrData;
         delete ehdr;
         delete f;
-        return;
+        return nullptr;
     }
 
     // load symbol table
@@ -84,14 +91,14 @@ void ELF::Initialize(const char *kernelFile)
             continue;
         if(f->Seek(shdr->sh_offset, SEEK_SET) != shdr->sh_offset)
         {
-            printf("[elf] Couldn't seek to kernel symbol table\n", kernelFile);
+            printf("[elf] Couldn't seek to symbol table\n", filename);
             break;
         }
         symtabShdr = shdr;
         symtab = new byte[shdr->sh_size];
         if(f->Read(symtab, shdr->sh_size) != shdr->sh_size)
         {
-            printf("[elf] Couldn't load kernel symbol table\n", kernelFile);
+            printf("[elf] Couldn't load symbol table\n", filename);
             symtabShdr = nullptr;
             delete[] symtab;
             symtab = nullptr;
@@ -110,14 +117,14 @@ void ELF::Initialize(const char *kernelFile)
             continue;
         if(f->Seek(shdr->sh_offset, SEEK_SET) != shdr->sh_offset)
         {
-            printf("[elf] Couldn't seek to kernel string table\n", kernelFile);
+            printf("[elf] Couldn't seek to string table\n", filename);
             break;
         }
         strtabShdr = shdr;
         strtab = new byte[shdr->sh_size];
         if(f->Read(strtab, shdr->sh_size) != shdr->sh_size)
         {
-            printf("[elf] Couldn't load kernel string table\n", kernelFile);
+            printf("[elf] Couldn't load string table\n", filename);
             strtabShdr = nullptr;
             delete[] strtab;
             strtab = nullptr;
@@ -126,18 +133,152 @@ void ELF::Initialize(const char *kernelFile)
         break;
     }
 
-    Process *proc = Process::GetCurrent();
-    proc->Image = new ELF(ehdr, phdrData, shdrData, symtabShdr, symtab, strtabShdr, strtab);
-    delete f;
-}
+    if(!onlyHeaders)
+    {
+        // load the data
+        for(uint i = 0; i < ehdr->e_phnum; ++i)
+        {
+            Elf32_Phdr *phdr = (Elf32_Phdr *)(phdrData + ehdr->e_phentsize * i);
+            if(phdr->p_type != PT_LOAD)
+                continue;
+            if(f->Seek(phdr->p_offset, SEEK_SET) != phdr->p_offset)
+            {
+                printf("[elf] Couldn't seek to data of program header %d in file '%s'\n", i, filename);
+                if(strtab) delete[] strtab;
+                if(symtab) delete[] symtab;
+                delete[] shdrData;
+                delete[] phdrData;
+                delete ehdr;
+                return nullptr;
+            }
 
-ELF *ELF::Load(char *filename)
-{
-    return nullptr;
+            byte *buffer = (byte *)phdr->p_vaddr;
+            memset(buffer, 0, phdr->p_memsz);
+            if(f->Read(buffer, phdr->p_filesz) != phdr->p_filesz)
+            {
+                printf("[elf] Couldn't read data of program header %d in file '%s'\n", i, filename);
+                if(strtab) delete[] strtab;
+                if(symtab) delete[] symtab;
+                delete[] shdrData;
+                delete[] phdrData;
+                delete ehdr;
+                return nullptr;
+            }
+        }
+
+        uintptr_t baseDelta = 0;
+
+        auto getSHdr = [ehdr, shdrData](int i) -> Elf32_Shdr *
+        {
+            return (Elf32_Shdr *)(shdrData + i * ehdr->e_shentsize);
+        };
+
+        // resolve symbols and apply relocations
+        Process *proc = Process::GetCurrent();
+        for(uint i = 0; i < ehdr->e_shnum; ++i)
+        {
+            Elf32_Shdr *shdr = getSHdr(i);
+            if(shdr->sh_type != SHT_REL) // no SHT_RELA on x86
+                continue;
+
+            byte *reltab = (byte *)(shdr->sh_addr + baseDelta);
+            Elf32_Sym *_symtab = (Elf32_Sym *)(getSHdr(shdr->sh_link)->sh_addr + baseDelta);
+            char *_strtab = (char *)(getSHdr(getSHdr(shdr->sh_link)->sh_link)->sh_addr + baseDelta);
+
+            for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
+            {
+                Elf32_Rel *rel = (Elf32_Rel *)(reltab + coffs);
+                uint symIdx = ELF32_R_SYM(rel->r_info);
+                uint rType = ELF32_R_TYPE(rel->r_info);
+                Elf32_Sym *symbol = _symtab + symIdx;
+                Elf32_Sym *fSymbol = nullptr;
+
+                char *name = _strtab + symbol->st_name;
+                if(name[0])
+                {
+                    fSymbol = proc->FindSymbol(name);
+                    if(!fSymbol)
+                    {
+                        printf("[elf] Unresolved symbol '%s' in '%s'\n", name, filename);
+                        if(strtab) delete[] strtab;
+                        if(symtab) delete[] symtab;
+                        delete[] shdrData;
+                        delete[] phdrData;
+                        delete ehdr;
+                        return nullptr;
+                    }
+                }
+
+                uintptr_t *val = (uintptr_t *)(rel->r_offset + baseDelta);
+                uintptr_t A = *val;
+                uintptr_t B = baseDelta;
+                uintptr_t P = rel->r_offset + baseDelta;
+                uintptr_t S = fSymbol ? fSymbol->st_value : symbol->st_value;
+
+                //printf("%s: rel: %d ", elf->name, rType);
+                //printf("sym: %s S: %.8x A: %.8x P: %.8x\n", symbol->st_name ? name : "<no symbol>", S, A, P);
+
+                switch(rType)
+                {
+                case R_386_32:
+                    *val = S + A;
+                    break;
+                case R_386_PC32:
+                    *val = S + A - P;
+                    break;
+                case R_386_COPY:
+                    memcpy(val, (void *)S, symbol->st_size);
+                    break;
+                case R_386_GLOB_DAT:
+                case R_386_JMP_SLOT:
+                    *val = S;
+                    break;
+                case R_386_RELATIVE:
+                    *val = B + A;
+                    break;
+                default:
+                    printf("[elf] Unsupported relocation type: %d in '%s'\n", rType, filename);
+                    if(strtab) delete[] strtab;
+                    if(symtab) delete[] symtab;
+                    delete[] shdrData;
+                    delete[] phdrData;
+                    delete ehdr;
+                    return nullptr;
+                }
+            }
+        }
+    }
+
+    ELF *elf = new ELF(ehdr, phdrData, shdrData, symtabShdr, symtab, strtabShdr, strtab);
+    Elf32_Sym *cleanupSym = elf->FindSymbol("Cleanup");
+    elf->CleanupProc = (void (*)())(cleanupSym ? cleanupSym->st_value : 0);
+    delete f;
+    return elf;
 }
 
 Elf32_Sym *ELF::FindSymbol(const char *name)
 {
+    auto getSHdr = [this](int i) -> Elf32_Shdr *{ return (Elf32_Shdr *)(shdrData + i * ehdr->e_shentsize); };
+    for(uint i = 0; i < ehdr->e_shnum; ++i)
+    {
+        Elf32_Shdr *shdr = getSHdr(i);
+        if(shdr->sh_type != SHT_DYNSYM && shdr->sh_type != SHT_SYMTAB)
+            continue;
+        if(!shdr->sh_addr)
+            continue;
+        char *strtab = (char *)(getSHdr(shdr->sh_link)->sh_addr + baseDelta);
+        byte *symtab = (byte *)(shdr->sh_addr + baseDelta);
+        for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
+        {
+            Elf32_Sym *sym = (Elf32_Sym *)(symtab + coffs);
+            //int type = ELF32_ST_TYPE(sym->st_info);
+            if(!sym->st_shndx || !sym->st_name)
+                continue;
+            if(!strcmp(name, strtab + sym->st_name))
+                return sym;
+        }
+    }
+
     if(!symtabShdr || !symtab || !strtabShdr || !strtab)
         return nullptr;
 
@@ -154,6 +295,8 @@ Elf32_Sym *ELF::FindSymbol(const char *name)
 
 ELF::~ELF()
 {
+    if(strtab) delete[] strtab;
+    if(symtab) delete[] symtab;
     if(shdrData) delete[] shdrData;
     if(phdrData) delete[] phdrData;
     if(ehdr) delete ehdr;

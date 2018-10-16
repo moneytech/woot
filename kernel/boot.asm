@@ -56,6 +56,7 @@ _start:
 
     ; init FPU
     push 0x37F
+    mov eax, cpuInitFPU
     call cpuInitFPU
     add esp, 4
 

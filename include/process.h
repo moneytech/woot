@@ -1,6 +1,7 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
+#include <elf.h>
 #include <list.h>
 #include <sequencer.h>
 #include <types.h>
@@ -24,7 +25,7 @@ public:
     uid_t UID, EUID;
     gid_t GID, EGID;
     DEntry *CurrentDirectory;
-    ELF *Image;
+    List<ELF *> Images;
 
     static void Initialize();
     static Process *GetCurrent();
@@ -35,6 +36,7 @@ public:
     Process(const char *name, Thread *mainThread, uintptr_t addressSpace);
     bool AddThread(Thread *thread);
     bool RemoveThread(Thread *thread);
+    Elf32_Sym *FindSymbol(const char *name);
     ~Process();
 };
 

@@ -260,8 +260,10 @@ class ELF
     uintptr_t baseDelta;
     ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShdr, byte *symtab, Elf32_Shdr *strtabShdr, byte *strtab);
 public:
+    int (*EntryPoint)();
+    void (*CleanupProc)();
     static void Initialize(const char *kernelFile);
-    static ELF *Load(char *filename);
+    static ELF *Load(const char *filename, bool onlyHeaders = false);
 
     Elf32_Sym *FindSymbol(const char *name);
     ~ELF();

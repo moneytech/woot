@@ -29,23 +29,22 @@ const static uint64_t pow10Table[] =
     10000000000000000000ull
 };
 
-char Stream::ReadChar(bool echo)
+char Stream::ReadChar()
 {
     char c;
     int64_t br = Read(&c, 1);
-    if(br < 0) return 0;
-    if(echo) Write(&c, 1);
+    if(br <= 0) return 0;
     return c;
 }
 
-int64_t Stream::ReadLine(char *buffer, int64_t maxLen, bool echo)
+int64_t Stream::ReadLine(char *buffer, int64_t maxLen)
 {
     if(!maxLen)
         return 0;
     int64_t i;
     for(i = 0; i < maxLen - 1;)
     {
-        char c = ReadChar(echo);
+        char c = ReadChar();
         if(c == 127)
         { // backspace
             if(i) i--;

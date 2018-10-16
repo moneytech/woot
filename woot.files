@@ -1,3 +1,6 @@
+include/filestream.h
+kernel/filestream.cpp
+module.ldscript
 simplefb/Makefile
 simplefb/main.cpp
 modulelist

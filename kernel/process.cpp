@@ -87,6 +87,16 @@ bool Process::RemoveThread(Thread *thread)
     return res;
 }
 
+Elf32_Sym *Process::FindSymbol(const char *name)
+{
+    for(ELF *elf : Images)
+    {
+        Elf32_Sym *sym = elf->FindSymbol(name);
+        if(sym) return sym;
+    }
+    return nullptr;
+}
+
 Process::~Process()
 {
     listLock->Acquire(0, false);

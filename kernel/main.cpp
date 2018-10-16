@@ -6,6 +6,7 @@
 #include <elf.h>
 #include <ext2.h>
 #include <file.h>
+#include <filestream.h>
 #include <filesystem.h>
 #include <filesystemtype.h>
 #include <gdt.h>
@@ -180,8 +181,29 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         delete rootDir;
     }
 
+    // load modules
     ELF::Initialize("WOOT_OS:/woot");
     Process *kernelProcess = Process::GetCurrent();
+    if(File *f = File::Open("WOOT_OS:/modulelist", O_RDONLY))
+    {
+        FileStream fs(f);
+        char line[128];
+        while(fs.ReadLine(line, sizeof(line) - 1) > 0)
+        {
+            if(line[0] == '#' || !line[0])
+                continue;
+            ELF *module = ELF::Load(line);
+            if(!module)
+            {
+                printf("[main] Couldn't load module '%s'\n", line);
+                continue;
+            }
+            kernelProcess->Images.Append(module);
+            int res = module->EntryPoint();
+            printf("[main] module '%s' returned %d\n", line, res);
+        }
+        delete f;
+    } else printf("[main] Couldn't open modulelist\n");
 
     Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
     Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);
@@ -380,7 +402,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 printf("missing argument\n");
                 continue;
             }
-            Elf32_Sym *sym = kernelProcess->Image->FindSymbol(args[1]);
+            Elf32_Sym *sym = kernelProcess->FindSymbol(args[1]);
             if(!sym) printf("kernel symbol '%s' not found\n", args[1]);
             else printf("%s = %#.8x\n", args[1], sym->st_value);
         }
@@ -395,7 +417,16 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     delete t1;
     delete t2;
 
-    FileSystem::PutDEntry(Thread::GetCurrent()->Process->CurrentDirectory);
+    FileSystem::PutDEntry(kernelProcess->CurrentDirectory);
+
+    // call module cleanup functions in reverse order
+    for(int i = kernelProcess->Images.Count() - 1; i > 0; --i)
+    {
+        ELF *elf = kernelProcess->Images[i];
+        if(!elf || !elf->CleanupProc)
+            continue;
+        elf->CleanupProc();
+    }
 
     FileSystem::SynchronizeAll();
     Volume::FlushAll();
