@@ -155,6 +155,10 @@ void FrameBuffer::FillRectangle(int x, int y, int w, int h, FrameBuffer::Color c
     }
 }
 
+void FrameBuffer::BltCopy(int dx, int dy, int sx, int sy, int w, int h)
+{
+}
+
 FrameBuffer::~FrameBuffer()
 {
     Lock();

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stream.h>
 
-static DebugStream debugStream(0xE9);
+DebugStream debugStream(0xE9);
 static Mutex stdoutMutex;
 
 int printf(const char *fmt, ...)

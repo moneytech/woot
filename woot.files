@@ -1,3 +1,5 @@
+include/fbfont.h
+kernel/fbfont.cpp
 simplefb/simplefb.cpp
 simplefb/simplefb.h
 include/filestream.h

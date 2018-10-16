@@ -1,10 +1,12 @@
 #include <cpu.h>
 #include <debugstream.h>
 #include <errno.h>
+#include <fbfont.h>
+#include <framebuffer.h>
 #include <string.h>
 
 #define EXTRA_RETURN
-#define USE_VGA_TEXT
+//#define USE_VGA_TEXT
 
 #ifdef USE_VGA_TEXT
 static word *vgaText = (word *)0xC00B8000;
@@ -41,6 +43,14 @@ DebugStream::DebugStream(word port)
     vgaSetCursorSize(13, 14);
     vgaSetCursorPos(0);
 #endif // USE_VGA_TEXT
+}
+
+void DebugStream::SetFrameBuffer(FrameBuffer *fb)
+{
+    this->fb = fb;
+    FrameBuffer::ModeInfo mode = fb->GetMode();
+    fbW = mode.Width / FONT_BITS;
+    fbH = mode.Height / FONT_SCANLINES;
 }
 
 int64_t DebugStream::Read(void *buffer, int64_t n)
@@ -90,6 +100,53 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
         }
         vgaSetCursorPos(vgaCurY * vgaWidth + vgaCurX);
 #endif // USE_VGA_TEXT
+        if(fb)
+        {
+            bool back = c == '\b';
+            if(back)
+            {
+                c = ' ';
+                if(fbX) --fbX;
+            }
+
+            if(c == '\n')
+                ++fbY, fbX = 0;
+            else if(!fb->Lock())
+            {
+                byte *glyph = fbFont[c];
+                for(int y = 0; y < FONT_SCANLINES; ++y)
+                {
+                    int glyphLine = glyph[y];
+                    for(int x = 0; x < FONT_BITS; ++x)
+                    {
+                        FrameBuffer::Color c(48, 64, 16);
+                        if(glyphLine & (0x80 >> x)) c.R = 255;
+                        fb->SetPixel(x + fbX * FONT_BITS, y + fbY * FONT_SCANLINES, c);
+                    }
+                }
+                if(!back) ++fbX;
+                fb->UnLock();
+            }
+
+            if(fbX >= fbW)
+            {
+                fbX = 0;
+                ++fbY;
+            }
+            if(fbY >= fbH)
+            {
+                if(!fb->Lock())
+                {
+                    byte *pixels = (byte *)fb->GetPixels();
+                    FrameBuffer::ModeInfo mode = fb->GetMode();
+                    memmove(pixels, pixels + FONT_SCANLINES * mode.Pitch, (mode.Height - FONT_SCANLINES) * mode.Pitch);
+                    FrameBuffer::Color c(48, 64, 16);
+                    fb->FillRectangle(0, mode.Height - FONT_SCANLINES, mode.Width, FONT_SCANLINES, c);
+                    fb->UnLock();
+                }
+                --fbY;
+            }
+        }
     }
     cpuRestoreInterrupts(ints);
     return n;

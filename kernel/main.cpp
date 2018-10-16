@@ -37,6 +37,7 @@
 
 multiboot_info_t *MultibootInfo = nullptr;
 
+extern DebugStream debugStream;
 static unsigned short *video = (unsigned short *)0xC00B8000;
 static Semaphore kbdSem(0);
 static byte kbdData = 0;
@@ -208,6 +209,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         }
         delete f;
     } else printf("[main] Couldn't open modulelist\n");
+
+    debugStream.SetFrameBuffer(FrameBuffer::GetByID(0, false));
 
     Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
     Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);

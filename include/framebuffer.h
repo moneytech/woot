@@ -57,6 +57,7 @@ public:
     virtual Color GetPixel(int x, int y);
     virtual void Clear(Color c);
     virtual void FillRectangle(int x, int y, int w, int h, Color c);
+    virtual void BltCopy(int dx, int dy, int sx, int sy, int w, int h);
     virtual ~FrameBuffer();
 };
 
