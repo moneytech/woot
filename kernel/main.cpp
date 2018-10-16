@@ -34,6 +34,8 @@
 #include <volume.h>
 #include <volumetype.h>
 
+multiboot_info_t *MultibootInfo = nullptr;
+
 static unsigned short *video = (unsigned short *)0xC00B8000;
 static Semaphore kbdSem(0);
 static byte kbdData = 0;
@@ -139,6 +141,7 @@ static char vkToChar(VirtualKey vk, bool shift, bool caps, bool num)
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
+    MultibootInfo = mbootInfo;
     srand(time(nullptr));
     printf("[main] Starting woot...\n");
     printf("[main] Kernel version: v%d.%d %s\n",

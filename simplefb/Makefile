@@ -1,9 +1,9 @@
 MODULENAME = simplefb
 OUTFILE = $(MODULENAME).ko
-OBJS = main.o
+OBJS = main.o simplefb.o
 
-CFLAGS +=
-CXXFLAGS +=
+CFLAGS += -I.
+CXXFLAGS += -I.
 LDFLAGS += -Ttext=0xC1000000 -e Initialize -shared -T../module.ldscript
 
 all: $(OBJS)

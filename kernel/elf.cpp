@@ -133,6 +133,8 @@ ELF *ELF::Load(const char *filename, bool onlyHeaders)
         break;
     }
 
+    ELF *elf = new ELF(ehdr, phdrData, shdrData, symtabShdr, symtab, strtabShdr, strtab);
+
     if(!onlyHeaders)
     {
         // load the data
@@ -144,11 +146,8 @@ ELF *ELF::Load(const char *filename, bool onlyHeaders)
             if(f->Seek(phdr->p_offset, SEEK_SET) != phdr->p_offset)
             {
                 printf("[elf] Couldn't seek to data of program header %d in file '%s'\n", i, filename);
-                if(strtab) delete[] strtab;
-                if(symtab) delete[] symtab;
-                delete[] shdrData;
-                delete[] phdrData;
-                delete ehdr;
+                delete elf;
+                delete f;
                 return nullptr;
             }
 
@@ -157,14 +156,12 @@ ELF *ELF::Load(const char *filename, bool onlyHeaders)
             if(f->Read(buffer, phdr->p_filesz) != phdr->p_filesz)
             {
                 printf("[elf] Couldn't read data of program header %d in file '%s'\n", i, filename);
-                if(strtab) delete[] strtab;
-                if(symtab) delete[] symtab;
-                delete[] shdrData;
-                delete[] phdrData;
-                delete ehdr;
+                delete elf;
+                delete f;
                 return nullptr;
             }
         }
+        delete f;
 
         uintptr_t baseDelta = 0;
 
@@ -199,13 +196,13 @@ ELF *ELF::Load(const char *filename, bool onlyHeaders)
                     fSymbol = proc->FindSymbol(name);
                     if(!fSymbol)
                     {
-                        printf("[elf] Unresolved symbol '%s' in '%s'\n", name, filename);
-                        if(strtab) delete[] strtab;
-                        if(symtab) delete[] symtab;
-                        delete[] shdrData;
-                        delete[] phdrData;
-                        delete ehdr;
-                        return nullptr;
+                        fSymbol = elf->FindSymbol(name);
+                        if(!fSymbol)
+                        {
+                            printf("[elf] Unresolved symbol '%s' in '%s'\n", name, filename);
+                            delete elf;
+                            return nullptr;
+                        }
                     }
                 }
 
@@ -238,21 +235,15 @@ ELF *ELF::Load(const char *filename, bool onlyHeaders)
                     break;
                 default:
                     printf("[elf] Unsupported relocation type: %d in '%s'\n", rType, filename);
-                    if(strtab) delete[] strtab;
-                    if(symtab) delete[] symtab;
-                    delete[] shdrData;
-                    delete[] phdrData;
-                    delete ehdr;
+                    delete elf;
                     return nullptr;
                 }
             }
         }
-    }
+    } else delete f;
 
-    ELF *elf = new ELF(ehdr, phdrData, shdrData, symtabShdr, symtab, strtabShdr, strtab);
     Elf32_Sym *cleanupSym = elf->FindSymbol("Cleanup");
     elf->CleanupProc = (void (*)())(cleanupSym ? cleanupSym->st_value : 0);
-    delete f;
     return elf;
 }
 

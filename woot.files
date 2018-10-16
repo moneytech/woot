@@ -1,5 +1,9 @@
+simplefb/simplefb.cpp
+simplefb/simplefb.h
 include/filestream.h
+include/framebuffer.h
 kernel/filestream.cpp
+kernel/framebuffer.cpp
 module.ldscript
 simplefb/Makefile
 simplefb/main.cpp
