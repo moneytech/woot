@@ -5,11 +5,8 @@
 
 class SimpleFB : public FrameBuffer
 {
-    void *addr;
 public:
-    SimpleFB(void *addr);
-    virtual int GetWidth();
-    virtual int GetHeight();
+    SimpleFB(void *addr, int width, int height, int bpp, size_t pitch, int reds, int grns, int blus, int redb, int grnb, int blub);
     virtual ~SimpleFB();
 };
 

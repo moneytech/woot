@@ -1,10 +1,14 @@
 [bits 32]
 
-%define MULTIBOOT_MAGIC 0x1BADB002
-%define MULTIBOOT_FLAGS 0x00000003
-
 %define KERNEL_BASE        0xC0000000
 %define KERNEL_PAGE_NUMBER (KERNEL_BASE >> 22)
+
+%define MULTIBOOT_MAGIC 0x1BADB002
+%define MULTIBOOT_FLAGS 0x00000007
+%define VIDEO_USE_TEXT  0
+%define VIDEO_WIDTH     1024
+%define VIDEO_HEIGHT    768
+%define VIDEO_BPP       32
 
 segment .text
 align 4
@@ -12,6 +16,8 @@ _multiboot_header:
   dd MULTIBOOT_MAGIC
   dd MULTIBOOT_FLAGS
   dd -(MULTIBOOT_MAGIC + MULTIBOOT_FLAGS)
+  dd 0, 0, 0, 0, 0
+  dd VIDEO_USE_TEXT, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_BPP
 
 extern kmain
 extern __init_array_start

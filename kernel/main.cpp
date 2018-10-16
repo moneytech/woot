@@ -9,6 +9,7 @@
 #include <filestream.h>
 #include <filesystem.h>
 #include <filesystemtype.h>
+#include <framebuffer.h>
 #include <gdt.h>
 #include <idedrive.h>
 #include <idt.h>
@@ -408,6 +409,21 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             Elf32_Sym *sym = kernelProcess->FindSymbol(args[1]);
             if(!sym) printf("kernel symbol '%s' not found\n", args[1]);
             else printf("%s = %#.8x\n", args[1], sym->st_value);
+        }
+        else if(!strcmp(args[0], "grad"))
+        {
+            FrameBuffer *fb = FrameBuffer::GetByID(0, true);
+            if(fb)
+            {
+                FrameBuffer::ModeInfo mode = fb->GetMode();
+                for(int y = 0; y < mode.Height; ++y)
+                {
+                    FrameBuffer::Color c = FrameBuffer::Color::FromFloatRGB(0, 0, (float)y / mode.Height);
+                    for(int x = 0; x < mode.Width; ++x)
+                        fb->SetPixel(x, y, c);
+                }
+                fb->UnLock();
+            }
         }
         else printf("Unknown command '%s'\n", args[0]);
     }
