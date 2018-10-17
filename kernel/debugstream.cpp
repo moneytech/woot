@@ -120,7 +120,7 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
                     for(int x = 0; x < FONT_BITS; ++x)
                     {
                         FrameBuffer::Color c(48, 64, 16);
-                        if(glyphLine & (0x80 >> x)) c.R = 255;
+                        if(glyphLine & (0x80 >> x)) c = FrameBuffer::Color(255, 255, 255);
                         fb->SetPixel(x + fbX * FONT_BITS, y + fbY * FONT_SCANLINES, c);
                     }
                 }

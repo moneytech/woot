@@ -32,6 +32,7 @@ public:
         Color(uint32_t value);
         static Color FromFloatRGB(float r, float g, float b);
         uint32_t ToValue(ModeInfo &mode);
+        static Color FromValue(ModeInfo &mode, uint32_t value);
     };
 protected:
     int ID;
@@ -47,17 +48,18 @@ public:
     static int Remove(FrameBuffer *fb);
 
     FrameBuffer();
-    int SetMode(ModeInfo mode);
     ModeInfo GetMode();
     int Lock();
     void *GetPixels();
     void UnLock();
 
+    virtual int GetModeCount();
+    virtual int GetModes(ModeInfo *buffer, size_t maxModes);
+    virtual int SetMode(ModeInfo mode);
     virtual void SetPixel(int x, int y, Color c);
     virtual Color GetPixel(int x, int y);
     virtual void Clear(Color c);
     virtual void FillRectangle(int x, int y, int w, int h, Color c);
-    virtual void BltCopy(int dx, int dy, int sx, int sy, int w, int h);
     virtual ~FrameBuffer();
 };
 

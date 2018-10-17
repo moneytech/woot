@@ -15,7 +15,18 @@ SimpleFB::SimpleFB(void *addr, int width, int height, int bpp, size_t pitch, int
     Mode.BlueBits = blub;
 }
 
+int SimpleFB::GetModeCount()
+{
+    return 1;
+}
+
+int SimpleFB::GetModes(FrameBuffer::ModeInfo *buffer, size_t maxModes)
+{
+    if(maxModes < 1) return 0;
+    buffer[0] = Mode;
+    return 1;
+}
+
 SimpleFB::~SimpleFB()
 {
-
 }

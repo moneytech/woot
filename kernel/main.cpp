@@ -428,6 +428,48 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 fb->UnLock();
             }
         }
+        else if(!strcmp(args[0], "gp"))
+        {
+            if(!args[1] || !args[2])
+                printf("missing argument\n");
+            else
+            {
+                FrameBuffer *fb = FrameBuffer::GetByID(0, true);
+                if(fb)
+                {
+                    int x = strtol(args[1], nullptr, 0);
+                    int y = strtol(args[2], nullptr, 0);
+                    FrameBuffer::Color c = fb->GetPixel(x, y);
+                    printf("A: %u R: %u G: %u B: %u\n", c.A, c.R, c.G, c.B);
+                    fb->UnLock();
+                }
+            }
+        }
+        else if(!strcmp(args[0], "sp"))
+        {
+            if(!args[1] || !args[2] || !args[3])
+                printf("missing argument\n");
+            else
+            {
+                FrameBuffer *fb = FrameBuffer::GetByID(0, true);
+                if(fb)
+                {
+                    int x = strtol(args[1], nullptr, 0);
+                    int y = strtol(args[2], nullptr, 0);
+                    FrameBuffer::Color c;
+                    if(!args[4] || !args[5])
+                        c.Value = strtoul(args[3], nullptr, 0);
+                    else
+                    {
+                        c.R = strtol(args[3], nullptr, 0);
+                        c.G = strtol(args[4], nullptr, 0);
+                        c.B = strtol(args[5], nullptr, 0);
+                    }
+                    fb->SetPixel(x, y, c);
+                    fb->UnLock();
+                }
+            }
+        }
         else printf("Unknown command '%s'\n", args[0]);
     }
     if(!kbd) printf("[main] no keyboard\n");

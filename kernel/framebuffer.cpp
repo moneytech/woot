@@ -49,11 +49,6 @@ FrameBuffer::FrameBuffer() :
 {
 }
 
-int FrameBuffer::SetMode(FrameBuffer::ModeInfo mode)
-{
-    return -ENOSYS;
-}
-
 FrameBuffer::ModeInfo FrameBuffer::GetMode()
 {
     return Mode;
@@ -72,6 +67,21 @@ void *FrameBuffer::GetPixels()
 void FrameBuffer::UnLock()
 {
     return lock.Release();
+}
+
+int FrameBuffer::GetModeCount()
+{
+    return -ENOSYS;
+}
+
+int FrameBuffer::GetModes(FrameBuffer::ModeInfo *buffer, size_t maxModes)
+{
+    return -ENOSYS;
+}
+
+int FrameBuffer::SetMode(FrameBuffer::ModeInfo mode)
+{
+    return -ENOSYS;
 }
 
 void FrameBuffer::SetPixel(int x, int y, FrameBuffer::Color c)
@@ -98,7 +108,24 @@ void FrameBuffer::SetPixel(int x, int y, FrameBuffer::Color c)
 
 FrameBuffer::Color FrameBuffer::GetPixel(int x, int y)
 {
-    return Color(0); // not yet implemented
+    if(x < 0 || x >= Mode.Width || y < 0 || y >= Mode.Height)
+        return Color();
+    if(Mode.BPP == 32)
+    {
+        uint32_t *pixel = (uint32_t *)(PixelBytes + Mode.Pitch * y + x * 4);
+        return Color::FromValue(Mode, *pixel);
+    }
+    else if(Mode.BPP == 24)
+    {
+        uint32_t *pixel = (uint32_t *)(PixelBytes + Mode.Pitch * y + x * 3);
+        return Color::FromValue(Mode, *pixel & 0xFFFFFF);
+    }
+    else if(Mode.BPP == 16 || Mode.BPP == 15)
+    {
+        uint16_t *pixel = (uint16_t *)(PixelBytes + Mode.Pitch * y + x * 2);
+        return Color::FromValue(Mode, *pixel);
+    }
+    return Color();
 }
 
 void FrameBuffer::Clear(FrameBuffer::Color c)
@@ -155,10 +182,6 @@ void FrameBuffer::FillRectangle(int x, int y, int w, int h, FrameBuffer::Color c
     }
 }
 
-void FrameBuffer::BltCopy(int dx, int dy, int sx, int sy, int w, int h)
-{
-}
-
 FrameBuffer::~FrameBuffer()
 {
     Lock();
@@ -203,4 +226,13 @@ uint32_t FrameBuffer::Color::ToValue(ModeInfo &mode)
     uint32_t g = G >> (8 - mode.GreenBits);
     uint32_t b = B >> (8 - mode.BlueBits);
     return a << mode.AlphaShift | r << mode.RedShift | g << mode.GreenShift | b << mode.BlueShift;
+}
+
+FrameBuffer::Color FrameBuffer::Color::FromValue(FrameBuffer::ModeInfo &mode, uint32_t value)
+{
+    uint32_t A = ((value >> mode.AlphaShift) << (8 - mode.AlphaBits)) & 0xFF;
+    uint32_t R = ((value >> mode.RedShift) << (8 - mode.RedBits)) & 0xFF;
+    uint32_t G = ((value >> mode.GreenShift) << (8 - mode.GreenBits)) & 0xFF;
+    uint32_t B = ((value >> mode.BlueShift) << (8 - mode.BlueBits)) & 0xFF;
+    return Color(A, R, G, B);
 }
