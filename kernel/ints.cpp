@@ -2,6 +2,7 @@
 #include <ints.h>
 #include <irqs.h>
 #include <stdio.h>
+#include <sysdefs.h>
 #include <thread.h>
 
 #define VECTOR_COUNT 256
@@ -78,7 +79,7 @@ void Ints::CommonHandler(Ints::State *state)
             printf("Unhandled %s %d (%s)\n",
                    state->InterruptNumber < 32 ? "exception" : "interrupt",
                    state->InterruptNumber,
-                   state->InterruptNumber < 32 ? excNames[state->InterruptNumber] : "hardware interrupt");
+                   state->InterruptNumber < 32 ? excNames[state->InterruptNumber] : (state->InterruptNumber == SYSCALLS_INT_VECTOR ? "syscall interrupt" : "hardware interrupt"));
 
             // show what thread failed
             Thread *ct = Thread::GetCurrent();

@@ -60,18 +60,12 @@ void Thread::Initialize()
 {
     bool ints = cpuDisableInterrupts();
 
-    //if(!kernelProcess)
-    //    cpuSystemHalt(); // processInitialize() has not been called
-
     Thread *mainThread = new Thread("main kernel thread", nullptr, kmain, 0, ~0, 0, nullptr, nullptr);
     currentThread = mainThread;
-    //processAddThread(kernelProcess, mainThread);
 
     idleThread = new Thread("idle thread", nullptr, (void *)idleThreadProc, 0, 0, 0, nullptr, nullptr);
-    //processAddThread(kernelProcess, idleThread);
     idleThread->State = State::Ready;
 
-    //GDT::MainTSS.CR3 = kernelProcess->AddressSpace;
     lastVectorStateThread = currentThread;
     Ints::RegisterHandler(7, &nmInterruptHandler);
 
@@ -236,8 +230,7 @@ void Thread::Switch(Ints::State *state, Thread *thread)
         currentThread->State = State::Ready;
     }
 
-    GDT::MainTSS.ESP0 = (uintptr_t)thread->KernelStack +
-            thread->KernelStackSize; // initial thread->StackPointer;
+    GDT::MainTSS.ESP0 = thread->StackPointer;
     state->ESP = thread->StackPointer;
 
     state->GS = SEG_TLS; // make sure GS points to SEG_TLS
@@ -245,14 +238,14 @@ void Thread::Switch(Ints::State *state, Thread *thread)
     GDT::Reload();
 
     cpuSetCR0(cpuGetCR0() | 0x08); // set TS bit
-    /*if(thread->Process)
+    if(thread->Process)
     {
         uintptr_t _cr3 = cpuGetCR3();
         uintptr_t newCr3 = thread->Process->AddressSpace;
-        gdtMainTSS.CR3 = newCr3;
+        GDT::MainTSS.CR3 = newCr3;
         if(_cr3 != newCr3) // avoid unnecesary tlb flushing
             cpuSetCR3(newCr3);
-    }*/
+    }
 
     currentThread = thread;
     currentThread->State = State::Active;

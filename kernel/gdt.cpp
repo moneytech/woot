@@ -37,6 +37,7 @@ void GDT::Initialize()
     SetEntry(SEG_TLS >> 3, 0, 0xFFFFF, 0xF2, 0xC);
 
     Reload();
+    cpuLTR(SEG_MAIN_TSS);
 }
 
 void GDT::SetEntry(uintn i, uintptr_t Base, size_t Limit, byte Access, byte Flags)
@@ -51,6 +52,6 @@ void GDT::SetEntry(uintn i, uintptr_t Base, size_t Limit, byte Access, byte Flag
 
 void GDT::Reload()
 {
-    cpuLGDT(&Descriptor);
+    cpuLGDT(&Descriptor);    
     cpuFixSegments();
 }

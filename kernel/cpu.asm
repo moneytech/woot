@@ -1,5 +1,10 @@
 [bits 32]
 
+; segments must match ones in sysdefs.h
+SEG_CODE32_USER equ 0x002B
+SEG_DATA32_USER equ 0x0033
+SEG_TLS         equ 0x4B
+
 global cpuEnableInterrupts
 cpuEnableInterrupts:
     sti
@@ -1321,4 +1326,27 @@ cpuEnableSSE:
     mov eax, cr4
     or eax, 0x00000600
     mov cr4, eax
+    ret
+
+global cpuEnterUserMode
+cpuEnterUserMode:
+    cli
+    push ebp
+    mov ebp, esp
+    mov eax, SEG_DATA32_USER
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    ;mov eax, SEG_TLS
+    mov gs, ax
+    push SEG_DATA32_USER  ; SS
+    push dword [ebp + 8]  ; ESP
+    push 0x00000202       ; EFLAGS
+    push SEG_CODE32_USER  ; CS
+    push dword [ebp + 12] ; EIP
+    ;hlt
+    xor ebp, ebp ; clear frame pointer
+    iretd
+    mov esp, ebp
+    pop ebp
     ret

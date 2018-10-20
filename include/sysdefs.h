@@ -35,4 +35,8 @@
 
 #define GDT_ENTRY_COUNT ((SEG_TLS + 8) / 8)
 
+#define USERCODE __attribute__((section(".utext")))
+#define USERDATA __attribute__((section(".udata")))
+#define USERBSS __attribute__((section(".ubss")))
+
 #endif // SYSDEFS_H

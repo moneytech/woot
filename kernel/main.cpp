@@ -141,6 +141,41 @@ static char vkToChar(VirtualKey vk, bool shift, bool caps, bool num)
     return 0;
 }
 
+extern "C" void *_utext_start;
+extern "C" void *_utext_end;
+extern "C" void *_udata_start;
+extern "C" void *_udata_end;
+extern "C" void *_ubss_start;
+extern "C" void *_ubss_end;
+
+static byte userStack[65536] USERBSS;
+void USERCODE userTest()
+{
+    for(int a = 0; ; ++a)
+    {
+        asm("int $0x80":: "a"(a + 1000));
+        asm("int $0x80":: "a"(123));
+    }
+}
+
+void mapUser(uintptr_t as, void *start, void *end)
+{
+    uintptr_t ustart = (uintptr_t)start;
+    uintptr_t uend = (uintptr_t)end;
+    size_t usize = uend - ustart;
+    size_t upages = usize / PAGE_SIZE;
+    Paging::MapPages(as, ustart, ustart - KERNEL_BASE, false, true, true, upages);
+}
+
+bool syscallTest(Ints::State *state, void *context)
+{
+    if(state->EAX == 123)
+        Time::Sleep(1000, false);
+    else printf("unknown syscall %d\n", state->EAX);
+    return true;
+}
+Ints::Handler syscallHandler = { nullptr, syscallTest, nullptr };
+
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
     MultibootInfo = mbootInfo;
@@ -159,6 +194,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Paging::Initialize(ramSize);
     Thread::Initialize();
     Process::Initialize();
+
+    Process *kernelProcess = Process::GetCurrent();
+    GDT::MainTSS.CR3 = kernelProcess->AddressSpace;
+
     IRQs::Initialize();
     cpuEnableInterrupts();
     Time::Initialize();
@@ -188,7 +227,6 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 
     // load modules
     ELF::Initialize("WOOT_OS:/woot");
-    Process *kernelProcess = Process::GetCurrent();
     if(File *f = File::Open("WOOT_OS:/modulelist", O_RDONLY))
     {
         FileStream fs(f);
@@ -209,6 +247,11 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         }
         delete f;
     } else printf("[main] Couldn't open modulelist\n");
+
+    mapUser(kernelProcess->AddressSpace, &_utext_start, &_utext_end);
+    mapUser(kernelProcess->AddressSpace, &_udata_start, &_udata_end);
+    mapUser(kernelProcess->AddressSpace, &_ubss_start, &_ubss_end);
+    Ints::RegisterHandler(SYSCALLS_INT_VECTOR, &syscallHandler);
 
     FrameBuffer *fb = FrameBuffer::GetByID(0, false);
     FrameBuffer::ModeInfo mode = fb->GetMode();
@@ -488,6 +531,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                     fb->UnLock();
                 }
             }
+        }
+        else if(!strcmp(args[0], "utest"))
+        {
+            cpuEnterUserMode((uintptr_t)(userStack + sizeof(userStack)), (uintptr_t)userTest);
         }
         else printf("Unknown command '%s'\n", args[0]);
     }

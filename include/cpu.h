@@ -66,6 +66,9 @@ void cpuFXRstor(void *buffer);
 void cpuInitFPU(word cw);
 void cpuEnableSSE();
 
+// misc
+void cpuEnterUserMode(uint32_t esp, uint32_t eip);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

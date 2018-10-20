@@ -175,7 +175,7 @@ bool PS2Keyboard::isr(Ints::State *state, void *context)
 {
     PS2Keyboard *kbd = (PS2Keyboard *)context;
     byte data = _inb(kbd->dataPort);
-    if(data == 0x0E)
+    if(data == 0xE0)
     {
         kbd->ex = true;
         return true;
