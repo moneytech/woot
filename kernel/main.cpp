@@ -210,7 +210,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         delete f;
     } else printf("[main] Couldn't open modulelist\n");
 
-    debugStream.SetFrameBuffer(FrameBuffer::GetByID(0, false));
+    FrameBuffer *fb = FrameBuffer::GetByID(0, false);
+    FrameBuffer::ModeInfo mode = fb->GetMode();
+    debugStream.SetFrameBuffer(fb);
 
     Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
     Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);
@@ -222,17 +224,34 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     t2->Resume(false);
 
     Thread *ct = Thread::GetCurrent();
-    InputDevice *kbd = InputDevice::GetFirstByType(InputDevice::Type::Keyboard);
     bool shift = false, num = false, caps = false, alt = false, ctrl = false;
     char cmd[256];
     int cmdPos = 0;
+    int x = 0, y = 0;
     printf("\nDebug (s)hell started. Don't type help for help.\n");
-    for(; kbd && !quit;)
+    for(; !quit;)
     {
         printf("%s# ", kernelProcess->CurrentDirectory->Name);
         for(;;)
         {
-            InputDevice::Event event = kbd->GetEvent(0);
+            InputDevice::Event event = InputDevice::GetEvent(0);
+            if(event.DeviceType != InputDevice::Type::Keyboard)
+            {
+                if(event.DeviceType == InputDevice::Type::Mouse)
+                {
+                    /*printf("dx: %4d dy: %4d pr: %x rel: %x hld: %x\n",
+                           event.Mouse.Movement[0], event.Mouse.Movement[1],
+                            event.Mouse.ButtonsPressed, event.Mouse.ButtonsReleased,
+                            event.Mouse.ButtonsHeld);*/
+                    x += event.Mouse.Movement[0];
+                    y += event.Mouse.Movement[1];
+                    x = clamp(x, 0, mode.Width - 1);
+                    y = clamp(y, 0, mode.Height - 1);
+                    if(event.Mouse.ButtonsHeld & 1)
+                        fb->SetPixel(x, y, FrameBuffer::Color(255, 255, 255));
+                }
+                continue;
+            }
             if(event.Keyboard.Key == VirtualKey::LShift ||
                     event.Keyboard.Key == VirtualKey::RShift)
             {
@@ -472,11 +491,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         }
         else printf("Unknown command '%s'\n", args[0]);
     }
-    if(!kbd) printf("[main] no keyboard\n");
     printf("[main] Closing system\n");
 
-    t1->Finished->Wait(0, false);
-    t2->Finished->Wait(0, false);
+    t1->Finished->Wait(0, false, false);
+    t2->Finished->Wait(0, false, false);
 
     delete t1;
     delete t2;

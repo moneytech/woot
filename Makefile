@@ -1,5 +1,5 @@
 ROOTDIR = $(shell pwd)
-SUBDIRS = lib simplefb kernel
+SUBDIRS = lib ps2mouse simplefb kernel
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
@@ -86,6 +86,7 @@ hdd.img: all
 	-sudo cp modulelist $(MOUNTPOINT)/
 	-sudo mkdir -p $(MOUNTPOINT)/system
 	-sudo cp simplefb/simplefb.ko $(MOUNTPOINT)/system
+	-sudo cp ps2mouse/ps2mouse.ko $(MOUNTPOINT)/system
 	sudo umount $(MOUNTPOINT)
 	sudo losetup -d /dev/loop1
 

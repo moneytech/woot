@@ -174,16 +174,24 @@ VirtualKey scancodeTableEx[] =
 bool PS2Keyboard::isr(Ints::State *state, void *context)
 {
     PS2Keyboard *kbd = (PS2Keyboard *)context;
-    kbd->dataQueue.Write(_inb(kbd->dataPort));
-    kbd->dataSem.Signal(state);
+    byte data = _inb(kbd->dataPort);
+    if(data == 0x0E)
+    {
+        kbd->ex = true;
+        return true;
+    }
+    bool release = data & 0x80;
+    data &= 0x7F;
+    eventQueue.Write(Event(kbd, kbd->ex ? scancodeTableEx[data] : scancodeTable[data], release));
+    kbd->ex = false;
+    eventSemaphore.Signal(state);
     return true;
 }
 
 PS2Keyboard::PS2Keyboard(uint16_t data, uint16_t cmd, uint8_t irq) :
     InputDevice(Type::Keyboard, "PS/2 Keyboard"),
-    dataSem(0), handler({ nullptr, isr, this }),
-    dataPort(data), cmdPort(cmd), irq(irq),
-    dataQueue(64), ex(false)
+    handler({ nullptr, isr, this }),
+    dataPort(data), cmdPort(cmd), irq(irq), ex(false)
 {
     IRQs::RegisterHandler(irq, &handler);
     IRQs::Enable(irq);
@@ -206,33 +214,4 @@ void PS2Keyboard::Initialize()
 
 void PS2Keyboard::Cleanup()
 {
-}
-
-InputDevice::Event PS2Keyboard::GetEvent(uint timeout)
-{
-    for(;;)
-    {
-        if(!dataSem.Wait(timeout, false))
-            return Event(this, VirtualKey::None, false);
-
-        bool ok = false;
-        bool ints = cpuDisableInterrupts();
-        byte data = dataQueue.Read(&ok);
-        cpuRestoreInterrupts(ints);
-
-        if(!ok)
-            continue;
-
-        if(data == 0xE0)
-        {
-            ex = true;
-            continue;
-        }
-
-        bool release = (data & 0x80) != 0;
-        data &= 0x7F;
-        VirtualKey vk = ex ? scancodeTableEx[data] : scancodeTable[data];
-        ex = false;
-        return Event(this, vk, release);
-    }
 }

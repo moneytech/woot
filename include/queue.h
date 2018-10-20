@@ -43,7 +43,7 @@ public:
         if(IsEmpty())
         {
             if(ok) *ok = false;
-            return 0;
+            return T();
         }
         T r = Data[Tail++];
         Tail %= Capacity;

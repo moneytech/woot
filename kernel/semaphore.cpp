@@ -12,19 +12,20 @@ Semaphore::Semaphore(int count) :
 {
 }
 
-bool Semaphore::Wait(uint timeout, bool tryWait)
+bool Semaphore::Wait(uint timeout, bool tryWait, bool disableInts)
 {
     bool is = cpuDisableInterrupts();
     Thread *ct = Thread::GetCurrent();
     if(Count > 0)
     {
         --Count;
-        cpuRestoreInterrupts(is);
+        if(!disableInts)
+            cpuRestoreInterrupts(is);
         return true;
     }
     if(tryWait)
     {
-        cpuRestoreInterrupts(is);
+        cpuRestoreInterrupts(is); // ignore disableInts on failure
         return false;
     }
     if(Waiters->Write(ct))
@@ -43,11 +44,12 @@ bool Semaphore::Wait(uint timeout, bool tryWait)
             else Waiters->ReplaceFirst(ct, nullptr);
         }
 
-        cpuRestoreInterrupts(is);
+        if(!disableInts || !r)
+            cpuRestoreInterrupts(is);
         return r;
     }
     // if no free waiter slots then print message and fail
-    cpuRestoreInterrupts(is);
+    cpuRestoreInterrupts(is); // ignore disableInts on failure
     printf("!!! Semaphore ran out of free waiter slots !!!\n");
     return false;
 }

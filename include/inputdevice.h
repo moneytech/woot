@@ -3,8 +3,12 @@
 
 #include <list.h>
 #include <mutex.h>
+#include <queue.h>
+#include <semaphore.h>
 #include <types.h>
 #include <virtualkey.h>
+
+#define INPUT_MAX_MOUSE_AXES 4
 
 class InputDevice
 {
@@ -32,14 +36,27 @@ public:
                 VirtualKey Key;
                 bool Release;
             } Keyboard;
+            struct
+            {
+                int Movement[INPUT_MAX_MOUSE_AXES];
+                int ButtonsPressed;
+                int ButtonsReleased;
+                int ButtonsHeld;
+            } Mouse;
         };
-        Event(InputDevice *dev, Type devType);
-        Event(InputDevice *dev, VirtualKey key, bool release);
+        Event();
+        Event(InputDevice *dev, Type devType); // general event
+        Event(InputDevice *dev, VirtualKey key, bool release); // keyboard event
+        Event(InputDevice *dev, int *movement, int pressed, int released, int held); // mouse event
     };
-
+protected:
+    static Semaphore eventSemaphore;
+    static Queue<Event> eventQueue;
+public:
     static void Initialize();
     static bool Lock();
     static bool Add(InputDevice *dev);
+    static Event GetEvent(uint timeout);
     static InputDevice *GetFirstByType(Type type);
     static bool Remove(InputDevice *dev);
     static void UnLock();
@@ -48,7 +65,6 @@ public:
     Type DeviceType;
     char *Name;
     InputDevice(Type type, const char *name);
-    virtual Event GetEvent(uint timeout);
     virtual ~InputDevice();
 };
 

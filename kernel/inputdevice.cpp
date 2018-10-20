@@ -1,9 +1,12 @@
+#include <cpu.h>
 #include <inputdevice.h>
 #include <stdlib.h>
 #include <string.h>
 
 List<InputDevice *> InputDevice::devices;
 Mutex InputDevice::listLock;
+Semaphore InputDevice::eventSemaphore(0);
+Queue<InputDevice::Event> InputDevice::eventQueue(256);
 
 void InputDevice::Initialize()
 {
@@ -20,6 +23,16 @@ bool InputDevice::Add(InputDevice *dev)
     devices.Append(dev);
     UnLock();
     return true;
+}
+
+InputDevice::Event InputDevice::GetEvent(uint timeout)
+{
+    bool ints = cpuAreInterruptsEnabled();
+    if(!eventSemaphore.Wait(timeout, false, true))
+        return Event();
+    Event event = eventQueue.Read(nullptr);
+    cpuRestoreInterrupts(ints);
+    return event;
 }
 
 InputDevice *InputDevice::GetFirstByType(InputDevice::Type type)
@@ -62,14 +75,14 @@ InputDevice::InputDevice(Type type, const char *name) :
 {
 }
 
-InputDevice::Event InputDevice::GetEvent(uint timeout)
-{
-    return Event(this, Type::Unknown);
-}
-
 InputDevice::~InputDevice()
 {
     if(Name) free(Name);
+}
+
+InputDevice::Event::Event() :
+    Device(nullptr), DeviceType(Type::Unknown)
+{
 }
 
 InputDevice::Event::Event(InputDevice *dev, Type devType) :
@@ -81,4 +94,11 @@ InputDevice::Event::Event(InputDevice *dev, VirtualKey key, bool release) :
     Device(dev), DeviceType(Type::Keyboard),
     Keyboard({ key, release })
 {
+}
+
+InputDevice::Event::Event(InputDevice *dev, int *movement, int pressed, int released, int held) :
+    Device(dev), DeviceType(Type::Mouse),
+    Mouse({ { }, pressed, released, held })
+{
+    memcpy(Mouse.Movement, movement, sizeof(int) * INPUT_MAX_MOUSE_AXES);
 }

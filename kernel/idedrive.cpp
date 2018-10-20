@@ -181,7 +181,7 @@ int IDEDrive::sectorTransfer(bool write, void *buffer, uint64_t start, int64_t c
 
     _outb(Controller->BM, write ? 0x01 : 0x09); // start reading/writing
 
-    bool ok = TransferDone->Wait(5000, false);
+    bool ok = TransferDone->Wait(5000, false, false);
     if(!ok)
     {
         //printf("IDE drive read timeout! status: %.2x\n", inb(ctrl->Base + 7));
@@ -205,7 +205,7 @@ int IDEDrive::sectorTransfer(bool write, void *buffer, uint64_t start, int64_t c
 
 void IDEDrive::Initialize()
 {
-    PCI::Lock->Wait(0, false);
+    PCI::Lock->Wait(0, false, false);
     for(PCI::Device *pciDev : *PCI::Devices)
     {
         if(pciDev->Class != 0x01 || pciDev->SubClass != 0x01)

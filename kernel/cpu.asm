@@ -14,6 +14,14 @@ cpuDisableInterrupts:
     and eax, 1
     ret
 
+global cpuAreInterruptsEnabled
+cpuAreInterruptsEnabled:
+    pushfd
+    pop eax
+    shr eax, 9
+    and eax, 1
+    ret
+
 global cpuRestoreInterrupts
 cpuRestoreInterrupts:
     mov eax, [esp + 4]

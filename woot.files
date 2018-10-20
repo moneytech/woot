@@ -1,5 +1,9 @@
 include/fbfont.h
 kernel/fbfont.cpp
+ps2mouse/Makefile
+ps2mouse/main.cpp
+ps2mouse/ps2mouse.cpp
+ps2mouse/ps2mouse.h
 simplefb/simplefb.cpp
 simplefb/simplefb.h
 include/filestream.h

@@ -10,6 +10,7 @@ extern "C" {
 // interrupts
 void cpuEnableInterrupts();
 bool cpuDisableInterrupts();		// returns true if interrupts were enabled
+bool cpuAreInterruptsEnabled();
 void cpuRestoreInterrupts(bool state);	// restores interrupt state
                     // returned by cpuDisableInterrupts
 
