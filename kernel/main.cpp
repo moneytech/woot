@@ -148,6 +148,7 @@ extern "C" void *_udata_end;
 extern "C" void *_ubss_start;
 extern "C" void *_ubss_end;
 
+// crashes at count about 1131
 static byte userStack[65536] USERBSS;
 void USERCODE userTest()
 {
@@ -530,6 +531,45 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                     fb->SetPixel(x, y, c);
                     fb->UnLock();
                 }
+            }
+        }
+        else if(!strcmp(args[0], "frac"))
+        {
+            struct complex
+            {
+                float re, im;
+            };
+            auto complexMul = [](complex a, complex b) -> complex
+            {
+                return complex { a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re };
+            };
+            auto complexAdd = [](complex a, complex b) -> complex
+            {
+                return complex { a.re * b.re, a.im + b.im };
+            };
+
+            FrameBuffer *fb = FrameBuffer::GetByID(0, true);
+            if(fb)
+            {
+                complex con = { 0.7f, 0.9f };
+                FrameBuffer::ModeInfo mode = fb->GetMode();
+                int cx = mode.Width / 2;
+                int cy = mode.Height / 2;
+                for(int y = 0; y < mode.Height; ++y)
+                {
+                    float u = (y - cy) / (float)(cy);
+                    for(int x = 0; x < mode.Width; ++x)
+                    {
+                        float v = (x - cx) / (float)(cx);
+                        complex z = { u * 1.1f, v * 2.1f };
+                        for(int i = 0; i < 15; ++i)
+                            z = complexAdd(complexMul(z, z), con);
+                        float mod = z.re * z.re + z.im * z.im;
+                        FrameBuffer::Color c = FrameBuffer::Color::FromFloatRGB(0, 0, mod);
+                        fb->SetPixel(x, y, c);
+                    }
+                }
+                fb->UnLock();
             }
         }
         else if(!strcmp(args[0], "utest"))
