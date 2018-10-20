@@ -561,7 +561,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                     for(int x = 0; x < mode.Width; ++x)
                     {
                         float v = (x - cx) / (float)(cx);
-                        complex z = { u * 1.1f, v * 2.1f };
+                        complex z = { u, v };
                         for(int i = 0; i < 15; ++i)
                             z = complexAdd(complexMul(z, z), con);
                         float mod = z.re * z.re + z.im * z.im;
