@@ -16,6 +16,7 @@ class Process
     static Sequencer<pid_t> id;
     static List<Process *> *processList;
     static Mutex *listLock;
+    static uintptr_t kernelAddressSpace;
     List<Thread *> *threads;
     Mutex *lock;
 public:

@@ -144,10 +144,12 @@ void Ints::DumpState(Ints::State *state)
            state->EAX, state->EBX, state->ECX, state->EDX);
     printf("ESI: %.8X EDI: %.8X ESP: %.8X EBP: %.8X\n",
            state->ESI, state->EDI, state->ESP, state->EBP);
-    printf("CS: %.4X EIP: %.8X EFLAGS: %.8X CR2: %.8X\n",
-           state->CS, state->EIP, state->EFLAGS, cpuGetCR2());
+    printf("CS: %.4X EIP: %.8X EFLAGS: %.8X\n",
+           state->CS, state->EIP, state->EFLAGS);
     printf("DS: %.4X ES: %.4X FS: %.4X GS: %.4X SS: %.4X\n",
            state->DS, state->ES, state->FS, state->GS, state->SS);
+    printf("CR0: %.8x CR2: %.8X CR3: %.8X\n",
+           cpuGetCR0(), cpuGetCR2(), cpuGetCR3());
     if(state->CS & 0x03 || state->EFLAGS & (1 << 17))
         printf("UserSS: %.4X UserESP: %.8X\n", state->UserSS, state->UserESP);
     else printf("UserSS: N/A  UserESP: N/A\n");

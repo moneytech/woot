@@ -248,6 +248,8 @@ typedef struct
 
 #pragma pack(pop)
 
+class Process;
+
 class ELF
 {
     Elf32_Ehdr *ehdr;
@@ -258,6 +260,8 @@ class ELF
     Elf32_Shdr *strtabShdr;
     byte *strtab;
     uintptr_t baseDelta;
+    bool releaseData;
+    Process *process;
     ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShdr, byte *symtab, Elf32_Shdr *strtabShdr, byte *strtab);
 public:
     int (*EntryPoint)();

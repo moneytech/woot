@@ -1,8 +1,11 @@
 #include <elf.h>
 #include <file.h>
+#include <paging.h>
 #include <process.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sysdefs.h>
 
 ELF::ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShdr, byte *symtab, Elf32_Shdr *strtabShdr, byte *strtab) :
     ehdr(ehdr), phdrData(phdrData), shdrData(shdrData), symtabShdr(symtabShdr), symtab(symtab), strtabShdr(strtabShdr), strtab(strtab),
@@ -134,9 +137,13 @@ ELF *ELF::Load(const char *filename, bool onlyHeaders)
     }
 
     ELF *elf = new ELF(ehdr, phdrData, shdrData, symtabShdr, symtab, strtabShdr, strtab);
+    Process *proc = Process::GetCurrent();
 
-    if(!onlyHeaders)
+    if(!onlyHeaders && proc)
     {
+        elf->process = proc;
+        elf->releaseData = true;
+
         // load the data
         for(uint i = 0; i < ehdr->e_phnum; ++i)
         {
@@ -151,6 +158,34 @@ ELF *ELF::Load(const char *filename, bool onlyHeaders)
                 return nullptr;
             }
 
+            size_t pageCount = align(phdr->p_memsz, PAGE_SIZE) / PAGE_SIZE;
+            for(uint i = 0; i < pageCount; ++i)
+            {
+                uintptr_t va = phdr->p_vaddr + i * PAGE_SIZE;
+                uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
+                if(pa != ~0)
+                {
+                    printf("[elf] Address conflict at %p in file '%s'\n", va, filename);
+                    delete elf;
+                    delete f;
+                    return nullptr;
+                }
+                pa = Paging::AllocPage();
+                if(pa == ~0)
+                {
+                    printf("[elf] Couldn't allocate memory for data in file '%s'\n", filename);
+                    delete elf;
+                    delete f;
+                    return nullptr;
+                }
+                if(!Paging::MapPage(proc->AddressSpace, va, pa, false, false, true))
+                {
+                    printf("[elf] Couldn't map memory for data in file '%s'\n", filename);
+                    delete elf;
+                    delete f;
+                    return nullptr;
+                }
+            }
             byte *buffer = (byte *)phdr->p_vaddr;
             memset(buffer, 0, phdr->p_memsz);
             if(f->Read(buffer, phdr->p_filesz) != phdr->p_filesz)
@@ -171,7 +206,6 @@ ELF *ELF::Load(const char *filename, bool onlyHeaders)
         };
 
         // resolve symbols and apply relocations
-        Process *proc = Process::GetCurrent();
         for(uint i = 0; i < ehdr->e_shnum; ++i)
         {
             Elf32_Shdr *shdr = getSHdr(i);
@@ -286,6 +320,26 @@ Elf32_Sym *ELF::FindSymbol(const char *name)
 
 ELF::~ELF()
 {
+    if(process)
+    {
+        for(uint i = 0; i < ehdr->e_phnum; ++i)
+        {
+            Elf32_Phdr *phdr = (Elf32_Phdr *)(phdrData + ehdr->e_phentsize * i);
+            if(phdr->p_type != PT_LOAD)
+                continue;
+            size_t pageCount = align(phdr->p_memsz, PAGE_SIZE) / PAGE_SIZE;
+            for(uint i = 0; i < pageCount; ++i)
+            {
+                uintptr_t va = phdr->p_vaddr + i * PAGE_SIZE;
+                uintptr_t pa = Paging::GetPhysicalAddress(process->AddressSpace, va);
+                if(pa == ~0)
+                    continue;
+                Paging::UnMapPage(process->AddressSpace, va, false);
+                Paging::FreePage(pa);
+            }
+        }
+    }
+
     if(strtab) delete[] strtab;
     if(symtab) delete[] symtab;
     if(shdrData) delete[] shdrData;

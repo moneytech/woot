@@ -61,14 +61,20 @@ void Paging::Initialize(size_t ramSize)
     kernelAddressSpace = ((uintptr_t)kernelPageDir) - KERNEL_BASE;
     GDT::MainTSS.CR3 = kernelAddressSpace;
 
-    // identity whole 4 gigs
-    for(uintptr_t va = 0, pdidx = 0; !pdidx || va & ~0; va += LARGE_PAGE_SIZE, ++pdidx)
+    // identity map first 3 gigs
+    for(uintptr_t va = 0, pdidx = 0; va < KERNEL_BASE; va += LARGE_PAGE_SIZE, ++pdidx)
         kernelPageDir[pdidx] = va | 0x83;
+    // map mmio space
+    for(uintptr_t va = MMIO_BASE; va; va += LARGE_PAGE_SIZE)
+        kernelPageDir[va >> 22] = va | 0x83;
     // map kernel space
     for(uintptr_t va = 0; va < KERNEL_SPACE_SIZE; va += LARGE_PAGE_SIZE)
         kernelPageDir[(KERNEL_BASE + va) >> 22] = va | 0x83;
     // map 4k region
     kernelPageDir[kernel4kVA >> 22] = (((uintptr_t)kernel4kPT) - KERNEL_BASE) | 0x03;
+    // unmap space for modules
+    for(uintptr_t va = 0; va < MODULES_SPACE_SIZE; va += LARGE_PAGE_SIZE)
+        kernelPageDir[(MODULES_BASE + va) >> 22] = 0;
 
     cpuSetCR3(kernelAddressSpace);
 
@@ -87,8 +93,9 @@ void Paging::BuildAddressSpace(uintptr_t pd)
     // map kernel space
     for(uintptr_t va = 0; va < KERNEL_SPACE_SIZE; va += LARGE_PAGE_SIZE)
         PD[(KERNEL_BASE + va) >> 22] = va | 0x83;
+    cpuSystemHalt(0);
     // map mmio space
-    for(uintptr_t va = KERNEL_BASE + KERNEL_SPACE_SIZE; va; va += LARGE_PAGE_SIZE)
+    for(uintptr_t va = MMIO_BASE; va; va += LARGE_PAGE_SIZE)
         PD[va >> 22] = va | 0x83;
     // map 4k region
     PD[kernel4kVA >> 22] = (((uintptr_t)kernel4kPT) - KERNEL_BASE) | 0x03;

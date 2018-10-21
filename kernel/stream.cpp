@@ -324,11 +324,19 @@ int64_t Stream::VWriteFmt(const char *fmt, va_list args)
 
                 specifier = false;
             }
-            else if(c == 'x' || c == 'X')
+            else if(c == 'p' || c == 'P' || c == 'x' || c == 'X')
             {
+                if(c == 'p' || c == 'P')
+                {
+                    dot = true;
+                    hashFlag = true;
+                    precision = sizeof(void *) * 2;
+                }
+
+                bool upperCase = isupper(c);
                 uint64_t val = longSpec ? va_arg(args, uint64_t) : va_arg(args, uintn);
                 int maxDigits = width ? width - (hashFlag ? 2 : 0) : 16;
-                int len = WriteHex(val, c == 'X', precision, maxDigits, true);
+                int len = WriteHex(val, upperCase, precision, maxDigits, true);
                 len += hashFlag ? 2 : 0;
                 int padc = width - len;
                 padc = padc < 0 ? 0 : padc;
@@ -340,8 +348,8 @@ int64_t Stream::VWriteFmt(const char *fmt, va_list args)
                 }
 
                 if(hashFlag)
-                    bw += WriteStr(c == 'X' ? "0X" : "0x", 0);
-                bw += WriteHex(val, c == 'X', precision, maxDigits, false);
+                    bw += WriteStr(upperCase ? "0X" : "0x", 0);
+                bw += WriteHex(val, upperCase, precision, maxDigits, false);
 
                 if(leftJustify)
                 {

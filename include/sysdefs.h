@@ -4,10 +4,15 @@
 #define KERNEL_VERSION_MAJOR        0
 #define KERNEL_VERSION_MINOR        1
 #define KERNEL_VERSION_DESCRIPTION  "internal"
+
 #define KERNEL_BASE                 0xC0000000
+#define MODULES_BASE                0xC8000000
+#define MMIO_BASE                   0xD0000000
+
 #define PAGE_SIZE                   0x00001000
 #define LARGE_PAGE_SIZE             0x00400000
 #define KERNEL_SPACE_SIZE           0x10000000
+#define MODULES_SPACE_SIZE          (MMIO_BASE - MODULES_BASE - LARGE_PAGE_SIZE)
 #define PDE_SIZE                    4
 #define PTE_SIZE                    4
 #define PDE_PER_TABLE               1024

@@ -5,18 +5,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysdefs.h>
 #include <thread.h>
 
 Sequencer<pid_t> Process::id(1);
 List<Process *> *Process::processList;
 Mutex *Process::listLock;
+uintptr_t Process::kernelAddressSpace;
 
 void Process::Initialize()
 {
+    kernelAddressSpace = Paging::GetAddressSpace();
     processList = new List<Process *>();
     listLock = new Mutex();
     Thread *ct = Thread::GetCurrent();
-    new Process("Main kernel process", ct, Paging::GetAddressSpace());
+    new Process("Main kernel process", ct, kernelAddressSpace);
 }
 
 Process *Process::GetCurrent()
@@ -48,8 +51,11 @@ DEntry *Process::GetCurrentDir()
 
 uintptr_t Process::NewAddressSpace()
 {
-    NOT_IMPLEMENTED
-    return 0;
+    uintptr_t newAS = Paging::AllocPage();
+    if(newAS == ~0)
+        return ~0;
+    Paging::BuildAddressSpace(newAS);
+    return newAS;
 }
 
 void Process::Cleanup()

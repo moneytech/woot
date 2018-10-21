@@ -4,7 +4,7 @@ OBJS = main.o simplefb.o
 
 CFLAGS += -I.
 CXXFLAGS += -I.
-LDFLAGS += -Ttext=0xC1000000 -e Initialize -shared -T../module.ldscript
+LDFLAGS += -Ttext=0xC8000000 -e Initialize -shared -T../module.ldscript
 
 all: $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $(OUTFILE)
