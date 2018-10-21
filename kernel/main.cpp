@@ -270,12 +270,14 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Thread *ct = Thread::GetCurrent();
     bool shift = false, num = false, caps = false, alt = false, ctrl = false;
     char cmd[256];
+    char cwd[256];
     int cmdPos = 0;
     int x = 0, y = 0;
     printf("\nDebug (s)hell started. Don't type help for help.\n");
     for(; !quit;)
     {
-        printf("%s# ", kernelProcess->CurrentDirectory->Name);
+        kernelProcess->CurrentDirectory->GetFullPath(cwd, sizeof(cwd));
+        printf("%s# ", cwd);
         for(;;)
         {
             InputDevice::Event event = InputDevice::GetEvent(0);
@@ -597,7 +599,12 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         elf->CleanupProc();
     }
 
+    // 'close' current kernel directory
+    if(kernelProcess->CurrentDirectory)
+        FileSystem::PutDEntry(kernelProcess->CurrentDirectory);
+
     FileSystem::SynchronizeAll();
+    FileSystem::Cleanup();
     Volume::FlushAll();
     Volume::Cleanup();
     Drive::Cleanup();

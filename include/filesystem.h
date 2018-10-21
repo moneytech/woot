@@ -43,7 +43,7 @@ public:
     virtual bool WriteSuperBlock();
 
     INode *GetINode(ino_t number);
-    void PutINode(INode *inode);
+    static void PutINode(INode *inode);
     void SetRoot(DEntry *dentry);
     static DEntry *GetDEntry(DEntry *parent, const char *name);
     static DEntry *GetDEntry(DEntry *dentry); // used to make reference counter (great again)

@@ -3,6 +3,7 @@
 #include <filesystem.h>
 #include <inode.h>
 #include <mutex.h>
+#include <stdio.h>
 #include <string.h>
 #include <volume.h>
 
@@ -93,6 +94,13 @@ void FileSystem::Cleanup()
             fs->Volume->FS = nullptr;
         delete fs;
     }
+    DEntry::Lock();
+    for(DEntry *dentry : dentryCache)
+        printf("[filesystem] WARNING: DEntry still in cache! (ref count: %d)\n", dentry->ReferenceCount);
+    for(INode *inode : inodeCache)
+        printf("[filesystem] WARNING: INode still in cache! (ref count: %d)\n", inode->ReferenceCount);
+    DEntry::UnLock();
+    UnLock();
 }
 
 bool FileSystem::GetLabel(char *buffer, size_t num)
@@ -152,7 +160,7 @@ void FileSystem::PutINode(INode *inode)
     {
         inodeCache.Remove(inode, nullptr, false);
         if(inode->Dirty)
-            WriteINode(inode);
+            inode->FS->WriteINode(inode);
         inode->Release();
         delete inode;
     }

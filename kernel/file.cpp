@@ -17,12 +17,6 @@ File::File(::DEntry *dentry, int flags) :
     Position(0),
     Lock(new Mutex())
 {
-    DEntry::Lock(); // Exceptions would do nicely here
-    INode::Lock();
-    if(dentry && dentry->INode) // make sure reference count is ok
-        dentry->INode->FS->GetDEntry(dentry);
-    INode::UnLock();
-    DEntry::UnLock();
 }
 
 File *File::Open(::DEntry *parent, const char *name, int flags)
@@ -42,9 +36,9 @@ File *File::Open(::DEntry *parent, const char *name, int flags)
     for(Tokenizer::Token t : path.Tokens)
     {
         ::DEntry *nextDe = FileSystem::GetDEntry(dentry, t.String);
-        FileSystem::PutDEntry(dentry);
         if(!nextDe)
         {
+            FileSystem::PutDEntry(dentry);
             DEntry::UnLock();
             return nullptr;
         }
@@ -71,11 +65,9 @@ File *File::Open(::DEntry *parent, const char *name, int flags)
     if((flags & O_DIRECTORY && !S_ISDIR(mode)) || (!(flags & O_DIRECTORY) && S_ISDIR(mode)))
     {
         FileSystem::PutDEntry(dentry);
-        DEntry::UnLock();
         return nullptr;
     }
     File *file = new File(dentry, flags);
-    FileSystem::PutDEntry(dentry);
     if(flags & O_APPEND)
         file->Position = file->GetSize();
     DEntry::UnLock();
@@ -326,10 +318,6 @@ DirectoryEntry *File::ReadDir()
 File::~File()
 {
     Lock->Acquire(0, false);
-    DEntry::Lock();
-    INode::Lock();
-    DEntry->INode->FS->PutDEntry(DEntry);
-    INode::UnLock();
-    DEntry::UnLock();
+    FileSystem::PutDEntry(DEntry);
     delete Lock;
 }

@@ -114,16 +114,23 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
             else if(!fb->Lock())
             {
                 byte *glyph = fbFont[c];
-                for(int y = 0; y < FONT_SCANLINES; ++y)
+
+                auto drawGlyph = [this, glyph](FrameBuffer *fb, int ox, int oy, FrameBuffer::Color c)
                 {
-                    int glyphLine = glyph[y];
-                    for(int x = 0; x < FONT_BITS; ++x)
+                    for(int y = 0; y < FONT_SCANLINES; ++y)
                     {
-                        FrameBuffer::Color c(255, 255, 255);
-                        if(glyphLine & (0x80 >> x))
-                            fb->SetPixel(x + fbX * FONT_BITS, y + fbY * FONT_SCANLINES, c);
+                        int glyphLine = glyph[y];
+                        for(int x = 0; x < FONT_BITS; ++x)
+                        {
+                            if(glyphLine & (0x80 >> x))
+                                fb->SetPixel(x + fbX * FONT_BITS + ox, y + fbY * FONT_SCANLINES + oy, c);
+                        }
                     }
-                }
+                };
+
+                drawGlyph(fb, 2, 2, FrameBuffer::Color(0, 0, 0));
+                drawGlyph(fb, 0, 0, FrameBuffer::Color(255, 255, 255));
+
                 if(!back) ++fbX;
                 fb->UnLock();
             }

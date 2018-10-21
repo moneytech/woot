@@ -1029,7 +1029,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
                 cde.rec_len = cdeMinSize;
                 if(Write(&cde, position, sizeof(cde)) != sizeof(cde))
                 {
-                    fs->PutINode(inode);
+                    PutINode(inode);
                     FileSystem::UnLock();
                     INode::UnLock();
                     return false;
@@ -1040,7 +1040,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
             de.rec_len = origCdeEnd - cdeMinEnd;
             if(Write(&de, cdeMinEnd, sizeof(de)) != sizeof(de))
             {
-                fs->PutINode(inode);
+                PutINode(inode);
                 INode::UnLock();
                 return false;
             }
@@ -1048,7 +1048,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
             // write new filename
             if(Write(name, cdeMinEnd + sizeof(de), nameLen) != nameLen)
             {
-                fs->PutINode(inode);
+                PutINode(inode);
                 FileSystem::UnLock();
                 INode::UnLock();
                 return false;
@@ -1059,7 +1059,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
                 ++fs->BGDT[bg].bg_used_dirs_count;
                 fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 2);
             }
-            fs->PutINode(inode);
+            PutINode(inode);
             FileSystem::UnLock();
             INode::UnLock();
             return true;
@@ -1073,7 +1073,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
                 de.rec_len = cde.rec_len;
                 if(Write(&de, position, sizeof(de)) != sizeof(de))
                 {
-                    fs->PutINode(inode);
+                    PutINode(inode);
                     FileSystem::UnLock();
                     INode::UnLock();
                     return false;
@@ -1089,7 +1089,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
                     ++fs->BGDT[bg].bg_used_dirs_count;
                     fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 2);
                 }
-                fs->PutINode(inode);
+                PutINode(inode);
                 FileSystem::UnLock();
                 INode::UnLock();
                 return true;
@@ -1103,7 +1103,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     size64_t newSize = cSize + blockSize;
     if(Resize(newSize) != newSize)
     {
-        fs->PutINode(inode);
+        PutINode(inode);
         FileSystem::UnLock();
         INode::UnLock();
         return false;
@@ -1111,14 +1111,14 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     de.rec_len = blockSize;
     if(Write(&de, cSize, sizeof(de)) != sizeof(de))
     {
-        fs->PutINode(inode);
+        PutINode(inode);
         FileSystem::UnLock();
         INode::UnLock();
         return false;
     }
     if(Write(name, cSize + sizeof(de), nameLen) != nameLen)
     {
-        fs->PutINode(inode);
+        PutINode(inode);
         FileSystem::UnLock();
         INode::UnLock();
         return false;
@@ -1129,7 +1129,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
         ++fs->BGDT[bg].bg_used_dirs_count;
         fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 4);
     }
-    fs->PutINode(inode);
+    PutINode(inode);
     FileSystem::UnLock();
     INode::UnLock();
     return true;
@@ -1489,7 +1489,7 @@ int EXT2::FSINode::Remove(const char *name)
                 return newSize < 0 ? newSize : -EIO;
             }
         }
-        FS->PutINode(inode);
+        PutINode(inode);
 
         // clear directory entry
         if(!(position % blockSize))

@@ -11,6 +11,7 @@ class StringBuilder;
 class DEntry
 {
     static Mutex lock;
+    static void getPath(DEntry *dentry, StringBuilder &sb);
 public:
     DEntry *Parent;
     List<DEntry *> *Children;
@@ -22,6 +23,7 @@ public:
     static void UnLock();
 
     DEntry(const char *name, DEntry *parent);
+    bool GetFullPath(char *buffer, size_t bufferSize);
     ~DEntry();
 };
 
