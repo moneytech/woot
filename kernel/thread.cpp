@@ -230,7 +230,6 @@ void Thread::Switch(Ints::State *state, Thread *thread)
         currentThread->State = State::Ready;
     }
 
-    GDT::MainTSS.ESP0 = thread->StackPointer;
     state->ESP = thread->StackPointer;
 
     state->GS = SEG_TLS; // make sure GS points to SEG_TLS

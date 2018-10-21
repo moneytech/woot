@@ -148,7 +148,6 @@ extern "C" void *_udata_end;
 extern "C" void *_ubss_start;
 extern "C" void *_ubss_end;
 
-// crashes at count about 1131
 static byte userStack[65536] USERBSS;
 void USERCODE userTest()
 {
@@ -171,7 +170,7 @@ void mapUser(uintptr_t as, void *start, void *end)
 bool syscallTest(Ints::State *state, void *context)
 {
     if(state->EAX == 123)
-        Time::Sleep(1000, false);
+        Time::Sleep(100, false);
     else printf("unknown syscall %d\n", state->EAX);
     return true;
 }
@@ -565,7 +564,12 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                         float v = (x - cx) / (float)(cx);
                         complex z = { u, v };
                         for(int i = 0; i < 15; ++i)
+                        {
                             z = complexAdd(complexMul(z, z), con);
+                            float mod = z.re * z.re + z.im * z.im;
+                            if(mod > 10000)
+                                break;
+                        }
                         float mod = z.re * z.re + z.im * z.im;
                         FrameBuffer::Color c = FrameBuffer::Color::FromFloatRGB(0, 0, mod);
                         fb->SetPixel(x, y, c);
