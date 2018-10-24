@@ -586,6 +586,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 Process *proc = Process::Create(args[0], &finished);
                 proc->Start();
                 finished.Wait(0, false, false);
+                //delete proc;
             }
             else printf("Unknown command '%s'\n", args[0]);
         }

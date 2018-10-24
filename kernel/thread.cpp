@@ -13,6 +13,8 @@
 #include <time.h>
 
 extern "C" void *kmain;
+extern "C" void *mainKernelThreadStack;
+extern "C" void *mainKernelThreadStackEnd;
 
 extern "C" void threadFinalize(Thread *thread, int returnValue)
 {
@@ -61,6 +63,8 @@ void Thread::Initialize()
     bool ints = cpuDisableInterrupts();
 
     Thread *mainThread = new Thread("main kernel thread", nullptr, kmain, 0, ~0, 0, nullptr, nullptr);
+    mainThread->KernelStack = &mainKernelThreadStack;
+    mainThread->KernelStackSize = (uintptr_t)&mainKernelThreadStackEnd - (uintptr_t)&mainKernelThreadStack;
     currentThread = mainThread;
 
     idleThread = new Thread("idle thread", nullptr, (void *)idleThreadProc, 0, 0, 0, nullptr, nullptr);
@@ -75,6 +79,7 @@ void Thread::Initialize()
 void Thread::Finalize(Thread *thread, int returnValue)
 {
     bool is = cpuDisableInterrupts();
+    if(!thread) thread = currentThread;
     if(thread->ReturnCodePtr)
         *thread->ReturnCodePtr = returnValue;
     if(thread->Finished)
@@ -84,8 +89,6 @@ void Thread::Finalize(Thread *thread, int returnValue)
         thread->WaitingMutex->Cancel(thread);
     if(thread->WaitingSemaphore)
         thread->WaitingSemaphore->Cancel(thread);
-    if(thread->Process)
-        thread->Process->RemoveThread(thread);
     readyThreads.Remove(thread, nullptr);
     suspendedThreads.Remove(thread, nullptr);
     sleepingThreads.Remove(thread, nullptr);
@@ -232,6 +235,7 @@ void Thread::Switch(Ints::State *state, Thread *thread)
 
     state->ESP = thread->StackPointer;
 
+    GDT::MainTSS.ESP0 = thread->StackPointer; //thread->KernelStackSize + (uintptr_t)thread->KernelStack;
     state->GS = SEG_TLS; // make sure GS points to SEG_TLS
     //gdtSetEntry(SEG_TLS >> 3, (uintptr_t)thread->PThread, 0xFFFFF, 0xF2, 0xC); // make SEG_TLS point to PThread structure
     GDT::Reload();

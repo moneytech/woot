@@ -8,13 +8,15 @@
 
 class SysCalls
 {
-    typedef int (*Callback)(uintptr_t *args);
+    typedef long (*Callback)(long *args);
 
     static Ints::Handler handler;
     static Callback callbacks[MAX_SYSCALLS];
     static bool isr(Ints::State *state, void *context);
 
-    static int sys_msleep(uintptr_t *args);
+    static long sys_exit(long *args); // 1
+    static long sys_write(long *args); // 4
+    static long sys_msleep(long *args);
 public:
     static void Initialize();
     static void Cleanup();

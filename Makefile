@@ -1,5 +1,5 @@
 ROOTDIR = $(shell pwd)
-SUBDIRS = lib ps2mouse simplefb kernel usertest
+SUBDIRS = lib libc ps2mouse simplefb kernel usertest
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso

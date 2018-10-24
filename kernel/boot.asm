@@ -58,7 +58,7 @@ _start:
     mov eax, cr3 ; flush tlb
     mov cr3, eax
 
-    lea esp, [stack.end] ; setup stack
+    lea esp, [mainKernelThreadStack.end] ; setup stack
 
     ; init FPU
     push 0x37F
@@ -155,5 +155,8 @@ bootPageDir: ; map first 64 megs
     times (1024 - KERNEL_PAGE_NUMBER - 16) dd 0
 
 segment .bss
-stack: resb 64 << 10
+global mainKernelThreadStack
+mainKernelThreadStack: resb 64 << 10
 .end
+global mainKernelThreadStackEnd
+mainKernelThreadStackEnd:
