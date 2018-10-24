@@ -1,5 +1,5 @@
 ROOTDIR = $(shell pwd)
-SUBDIRS = lib ps2mouse simplefb kernel
+SUBDIRS = lib ps2mouse simplefb kernel usertest
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
@@ -15,7 +15,7 @@ ASM = yasm
 LD = ld
 AR = ar
 
-COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -msse -fno-pic -fshort-wchar
+COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -mno-sse -fno-pic -fshort-wchar
 COMMONFLAGS += -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -fno-exceptions -fno-rtti -nostdinc++
@@ -87,6 +87,7 @@ hdd.img: all
 	-sudo mkdir -p $(MOUNTPOINT)/system
 	-sudo cp simplefb/simplefb.ko $(MOUNTPOINT)/system
 	-sudo cp ps2mouse/ps2mouse.ko $(MOUNTPOINT)/system
+	-sudo cp usertest/usertest $(MOUNTPOINT)
 	sudo umount $(MOUNTPOINT)
 	sudo losetup -d /dev/loop1
 

@@ -15,6 +15,8 @@ void free(void *ptr);
 void abort();
 void *sbrk(intptr_t incr);
 
+#define RAND_MAX 0xFFFFFFFFu
+
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define clamp(_min, _max, val) (max((_min), min((_max), (val))))

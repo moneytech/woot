@@ -15,15 +15,15 @@ ELF::ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShd
 
 void ELF::Initialize(const char *kernelFile)
 {
-    ELF *elf = Load(kernelFile, true);
+    ELF *elf = Load(nullptr, kernelFile, true);
     if(!elf) return;
     Process *proc = Process::GetCurrent();
     proc->Images.Append(elf);
 }
 
-ELF *ELF::Load(const char *filename, bool onlyHeaders)
+ELF *ELF::Load(DEntry *dentry, const char *filename, bool onlyHeaders)
 {
-    File *f = File::Open(filename, O_RDONLY);
+    File *f = dentry ? File::Open(dentry, filename, O_RDONLY) : File::Open(filename, O_RDONLY);
     if(!f)
     {
         printf("[elf] Couldn't find '%s' file\n", filename);

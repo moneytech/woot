@@ -194,7 +194,7 @@ DEntry *FileSystem::GetDEntry(DEntry *parent, const char *name)
         }
     }
     ino_t ino = parent->INode->Lookup(name);
-    if(ino < 0)
+    if(ino <= 0)
     {
         DEntry::UnLock();
         UnLock();

@@ -1,3 +1,5 @@
+usertest/main.cpp
+usertest/Makefile
 include/fbfont.h
 kernel/fbfont.cpp
 ps2mouse/Makefile

@@ -248,6 +248,7 @@ typedef struct
 
 #pragma pack(pop)
 
+class DEntry;
 class Process;
 
 class ELF
@@ -267,7 +268,7 @@ public:
     int (*EntryPoint)();
     void (*CleanupProc)();
     static void Initialize(const char *kernelFile);
-    static ELF *Load(const char *filename, bool onlyHeaders = false);
+    static ELF *Load(DEntry *dentry, const char *filename, bool onlyHeaders = false);
 
     Elf32_Sym *FindSymbol(const char *name);
     ~ELF();

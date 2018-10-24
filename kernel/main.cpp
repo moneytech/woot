@@ -16,6 +16,7 @@
 #include <inputdevice.h>
 #include <ints.h>
 #include <irqs.h>
+#include <malloc.h>
 #include <mbrvolume.h>
 #include <multiboot.h>
 #include <mutex.h>
@@ -170,7 +171,7 @@ void mapUser(uintptr_t as, void *start, void *end)
 bool syscallTest(Ints::State *state, void *context)
 {
     if(state->EAX == 123)
-        Time::Sleep(100, false);
+        Time::Sleep(1000, false);
     else printf("unknown syscall %d\n", state->EAX);
     return true;
 }
@@ -235,7 +236,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         {
             if(line[0] == '#' || !line[0])
                 continue;
-            ELF *module = ELF::Load(line);
+            ELF *module = ELF::Load(nullptr, line, false);
             if(!module)
             {
                 printf("[main] Couldn't load module '%s'\n", line);
@@ -552,7 +553,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             FrameBuffer *fb = FrameBuffer::GetByID(0, true);
             if(fb)
             {
-                complex con = { 0.7f, 0.9f };
+                complex con = { args[1] ? (float)strtod(args[1], nullptr) : 0.7f, args[2] ? (float)strtod(args[2], nullptr) : 0.9f };
                 FrameBuffer::ModeInfo mode = fb->GetMode();
                 int cx = mode.Width / 2;
                 int cy = mode.Height / 2;
@@ -578,11 +579,24 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 fb->UnLock();
             }
         }
+        else if(!strcmp(args[0], "mstat"))
+            malloc_stats();
         else if(!strcmp(args[0], "utest"))
         {
             cpuEnterUserMode((uintptr_t)(userStack + sizeof(userStack)), (uintptr_t)userTest);
         }
-        else printf("Unknown command '%s'\n", args[0]);
+        else
+        {
+            if(File *f = File::Open(kernelProcess->CurrentDirectory, args[0], O_RDONLY))
+            {
+                delete f;
+                Semaphore finished(0);
+                Process *proc = Process::Create(args[0], &finished);
+                proc->Start();
+                finished.Wait(0, false, false);
+            }
+            else printf("Unknown command '%s'\n", args[0]);
+        }
     }
     printf("[main] Closing system\n");
 

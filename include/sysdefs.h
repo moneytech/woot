@@ -24,6 +24,7 @@
 #define PATH_SEPARATORS "/\\"
 #define VOLUME_SEPARATOR ':'
 #define MAX_FS_LABEL_LENGTH 127
+#define MAX_PATH_LENGTH 4095
 
 // syscalls
 #define SYSCALLS_INT_VECTOR 128

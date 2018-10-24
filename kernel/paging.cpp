@@ -90,15 +90,16 @@ void Paging::Initialize(size_t ramSize)
 void Paging::BuildAddressSpace(uintptr_t pd)
 {
     dword *PD = (dword *)alloc4k(pd);
-    // map kernel space
-    for(uintptr_t va = 0; va < KERNEL_SPACE_SIZE; va += LARGE_PAGE_SIZE)
-        PD[(KERNEL_BASE + va) >> 22] = va | 0x83;
-    cpuSystemHalt(0);
-    // map mmio space
-    for(uintptr_t va = MMIO_BASE; va; va += LARGE_PAGE_SIZE)
-        PD[va >> 22] = va | 0x83;
-    // map 4k region
-    PD[kernel4kVA >> 22] = (((uintptr_t)kernel4kPT) - KERNEL_BASE) | 0x03;
+    dword *cPD = (dword *)alloc4k(GetAddressSpace());
+
+    // zero user address space and clone current kernel address space
+    uint i;
+    for(i = 0; i < (KERNEL_BASE / LARGE_PAGE_SIZE); ++i)
+        PD[i] = 0;
+    for(; i < 1024; ++i)
+        PD[i] = cPD[i];
+
+    free4k(cPD);
     free4k(PD);
 }
 

@@ -1,7 +1,8 @@
 #define LACKS_SYS_TYPES_H
 #include <types.h>
 #include <stdlib.h>
-#define NO_MALLOC_STATS 1
+#include <stdio.h>
+#define NO_MALLOC_STATS 0
 #define LACKS_SYS_MMAN_H
 #define LACKS_FCNTL_H
 #define LACKS_UNISTD_H

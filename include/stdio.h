@@ -7,6 +7,12 @@
 extern "C" {
 #endif // __cplusplus
 
+typedef void *FILE;
+extern FILE *stdin;
+extern FILE *stdout;
+extern FILE *stderr;
+
+int fprintf(void *f, const char *fmt, ...);
 int printf(const char *fmt, ...);
 int putchar(int ch);
 int puts(const char *str);
