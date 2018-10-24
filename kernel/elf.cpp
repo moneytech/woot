@@ -7,21 +7,21 @@
 #include <string.h>
 #include <sysdefs.h>
 
-ELF::ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShdr, byte *symtab, Elf32_Shdr *strtabShdr, byte *strtab) :
-    ehdr(ehdr), phdrData(phdrData), shdrData(shdrData), symtabShdr(symtabShdr), symtab(symtab), strtabShdr(strtabShdr), strtab(strtab),
+ELF::ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShdr, byte *symtab, Elf32_Shdr *strtabShdr, byte *strtab, bool user) :
+    ehdr(ehdr), phdrData(phdrData), shdrData(shdrData), symtabShdr(symtabShdr), symtab(symtab), strtabShdr(strtabShdr), strtab(strtab), user(user),
     EntryPoint((int (*)())ehdr->e_entry)
 {
 }
 
 void ELF::Initialize(const char *kernelFile)
 {
-    ELF *elf = Load(nullptr, kernelFile, true);
+    ELF *elf = Load(nullptr, kernelFile, true, true);
     if(!elf) return;
     Process *proc = Process::GetCurrent();
     proc->Images.Append(elf);
 }
 
-ELF *ELF::Load(DEntry *dentry, const char *filename, bool onlyHeaders)
+ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders)
 {
     File *f = dentry ? File::Open(dentry, filename, O_RDONLY) : File::Open(filename, O_RDONLY);
     if(!f)
@@ -136,7 +136,7 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool onlyHeaders)
         break;
     }
 
-    ELF *elf = new ELF(ehdr, phdrData, shdrData, symtabShdr, symtab, strtabShdr, strtab);
+    ELF *elf = new ELF(ehdr, phdrData, shdrData, symtabShdr, symtab, strtabShdr, strtab, user);
     Process *proc = Process::GetCurrent();
 
     if(!onlyHeaders && proc)
@@ -162,6 +162,13 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool onlyHeaders)
             for(uint i = 0; i < pageCount; ++i)
             {
                 uintptr_t va = phdr->p_vaddr + i * PAGE_SIZE;
+                if(user && va >= KERNEL_BASE)
+                {   // user elf can't map any kernel memory
+                    printf("[elf] Invalid user address %p in file '%s'\n", va, filename);
+                    delete elf;
+                    delete f;
+                    return nullptr;
+                }
                 uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
                 if(pa != ~0)
                 {
@@ -178,7 +185,7 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool onlyHeaders)
                     delete f;
                     return nullptr;
                 }
-                if(!Paging::MapPage(proc->AddressSpace, va, pa, false, false, true))
+                if(!Paging::MapPage(proc->AddressSpace, va, pa, false, user, true))
                 {
                     printf("[elf] Couldn't map memory for data in file '%s'\n", filename);
                     delete elf;

@@ -20,8 +20,11 @@ class Process
     static uintptr_t kernelAddressSpace;
     List<Thread *> threads;
     Mutex lock;
+    uintptr_t userStackPtr;
 
     static int processEntryPoint(const char *filename);
+    uintptr_t allocUserStack();
+    void freeUserStack(uintptr_t startPtr);
 public:
     pid_t ID;
     char *Name;

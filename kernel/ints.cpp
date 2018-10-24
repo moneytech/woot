@@ -1,6 +1,7 @@
 #include <cpu.h>
 #include <ints.h>
 #include <irqs.h>
+#include <process.h>
 #include <stdio.h>
 #include <sysdefs.h>
 #include <thread.h>
@@ -81,6 +82,9 @@ void Ints::CommonHandler(Ints::State *state)
                    state->InterruptNumber,
                    state->InterruptNumber < 32 ? excNames[state->InterruptNumber] : (state->InterruptNumber == SYSCALLS_INT_VECTOR ? "syscall interrupt" : "hardware interrupt"));
 
+            // show what process failed
+            Process *cp = Process::GetCurrent();
+            if(cp) printf("Process: %d (%s)\n", cp->ID, cp->Name);
             // show what thread failed
             Thread *ct = Thread::GetCurrent();
             if(ct) printf("Thread: %d (%s)\n", ct->ID, ct->Name);

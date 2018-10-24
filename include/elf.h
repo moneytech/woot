@@ -263,12 +263,13 @@ class ELF
     uintptr_t baseDelta;
     bool releaseData;
     Process *process;
-    ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShdr, byte *symtab, Elf32_Shdr *strtabShdr, byte *strtab);
+    bool user;
+    ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShdr, byte *symtab, Elf32_Shdr *strtabShdr, byte *strtab, bool user);
 public:
     int (*EntryPoint)();
     void (*CleanupProc)();
     static void Initialize(const char *kernelFile);
-    static ELF *Load(DEntry *dentry, const char *filename, bool onlyHeaders = false);
+    static ELF *Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders);
 
     Elf32_Sym *FindSymbol(const char *name);
     ~ELF();

@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stringbuilder.h>
+#include <syscalls.h>
 #include <thread.h>
 #include <tokenizer.h>
 #include <time.h>
@@ -168,15 +169,6 @@ void mapUser(uintptr_t as, void *start, void *end)
     Paging::MapPages(as, ustart, ustart - KERNEL_BASE, false, true, true, upages);
 }
 
-bool syscallTest(Ints::State *state, void *context)
-{
-    if(state->EAX == 123)
-        Time::Sleep(1000, false);
-    else printf("unknown syscall %d\n", state->EAX);
-    return true;
-}
-Ints::Handler syscallHandler = { nullptr, syscallTest, nullptr };
-
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
     MultibootInfo = mbootInfo;
@@ -212,6 +204,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Volume::Initialize();
     FileSystemType::Initialize();
     FileSystem::Initialize();
+    SysCalls::Initialize();
 
     VolumeType::Add(new MBRVolumeType());
     VolumeType::AutoDetect();
@@ -236,7 +229,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         {
             if(line[0] == '#' || !line[0])
                 continue;
-            ELF *module = ELF::Load(nullptr, line, false);
+            ELF *module = ELF::Load(nullptr, line, false, false);
             if(!module)
             {
                 printf("[main] Couldn't load module '%s'\n", line);
@@ -252,7 +245,6 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     mapUser(kernelProcess->AddressSpace, &_utext_start, &_utext_end);
     mapUser(kernelProcess->AddressSpace, &_udata_start, &_udata_end);
     mapUser(kernelProcess->AddressSpace, &_ubss_start, &_ubss_end);
-    Ints::RegisterHandler(SYSCALLS_INT_VECTOR, &syscallHandler);
 
     FrameBuffer *fb = FrameBuffer::GetByID(0, false);
     FrameBuffer::ModeInfo mode = fb->GetMode();
@@ -621,6 +613,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     if(kernelProcess->CurrentDirectory)
         FileSystem::PutDEntry(kernelProcess->CurrentDirectory);
 
+    SysCalls::Cleanup();
     FileSystem::SynchronizeAll();
     FileSystem::Cleanup();
     Volume::FlushAll();

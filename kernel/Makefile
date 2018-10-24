@@ -6,6 +6,7 @@ OBJS += mutex.o volume.o volumetype.o mbrvolume.o bufferedvolume.o
 OBJS += filesystem.o filesystemtype.o ext2.o inode.o file.o dentry.o
 OBJS += tokenizer.o directoryentry.o uuid.o memorystream.o stringbuilder.o
 OBJS += inputdevice.o ps2keyboard.o elf.o filestream.o framebuffer.o fbfont.o
+OBJS += syscalls.o
 
 LDFLAGS += -Tldscript
 

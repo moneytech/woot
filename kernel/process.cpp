@@ -17,14 +17,50 @@ uintptr_t Process::kernelAddressSpace;
 int Process::processEntryPoint(const char *filename)
 {
     printf("filename: %s\n", filename);
-    ELF *elf = ELF::Load(GetCurrentDir(), filename, false);
+    ELF *elf = ELF::Load(GetCurrentDir(), filename, true, false);
     if(!elf) return 127;
     if(!elf->EntryPoint)
     {
         delete elf;
         return 126;
     }
-    return elf->EntryPoint();
+    Process *proc = GetCurrent();
+    cpuEnterUserMode(proc->allocUserStack(), (uintptr_t)elf->EntryPoint);
+    return 0;
+}
+
+uintptr_t Process::allocUserStack()
+{
+    if(!lock.Acquire(0, false))
+        return ~0;
+    Thread *ct = Thread::GetCurrent();
+    uintptr_t res = userStackPtr;
+    size_t pageCount = align(ct->UserStackSize, PAGE_SIZE) / PAGE_SIZE;
+    uintptr_t startPtr = align(userStackPtr, PAGE_SIZE) - pageCount * PAGE_SIZE;
+    ct->UserStack = (void *)startPtr;
+    for(uint i = 0; i < pageCount; ++i)
+    {
+        uintptr_t pa = Paging::AllocPage();
+        if(pa == ~0)
+        {
+            freeUserStack(startPtr);
+            lock.Release();
+            return ~0;
+        }
+        if(!Paging::MapPage(AddressSpace, startPtr + i * PAGE_SIZE, pa, false, true, true))
+        {
+            freeUserStack(startPtr);
+            lock.Release();
+            return ~0;
+        }
+    }
+    lock.Release();
+    return res;
+}
+
+void Process::freeUserStack(uintptr_t startPtr)
+{
+    NOT_IMPLEMENTED
 }
 
 void Process::Initialize()
@@ -40,7 +76,7 @@ Process *Process::Create(const char *filename, Semaphore *finished)
     Thread *thread = new Thread("main", nullptr, (void *)processEntryPoint, (uintptr_t)filename,
                                 DEFAULT_STACK_SIZE, DEFAULT_STACK_SIZE,
                                 nullptr, finished);    
-    Process *proc = new Process("filename", thread, 0);
+    Process *proc = new Process(filename, thread, 0);
     return proc;
 }
 
@@ -86,6 +122,7 @@ void Process::Cleanup()
 }
 
 Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace) :
+    userStackPtr(KERNEL_BASE),
     ID(id.GetNext()),
     Name(strdup(name)),
     AddressSpace(addressSpace ? addressSpace : NewAddressSpace())

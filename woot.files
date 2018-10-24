@@ -1,3 +1,5 @@
+include/syscalls.h
+kernel/syscalls.cpp
 usertest/main.cpp
 usertest/Makefile
 include/fbfont.h
