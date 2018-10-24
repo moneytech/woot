@@ -23,7 +23,9 @@ class Thread : public ObjectQueue::Item
     static Ints::Handler nmInterruptHandler;
     static bool nmInterrupt(Ints::State *state, void *context);
     static bool sleepingThreadComparer(ObjectQueue::Item *a, ObjectQueue::Item *b);
+
     void kernelPush(uintptr_t value);
+    void freeUserStack();
 public:
     enum class State
     {
@@ -92,6 +94,7 @@ public:
     bool QuickResume(Ints::State *state);
     uint TicksSleep(uint ticks, bool interruptible);
     uint Sleep(uint millis, bool interruptible);
+    uintptr_t AllocUserStack();
     ~Thread();
 };
 

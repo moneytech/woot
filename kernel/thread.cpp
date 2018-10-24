@@ -3,6 +3,7 @@
 #include <malloc.h>
 #include <miscasm.h>
 #include <mutex.h>
+#include <paging.h>
 #include <process.h>
 #include <semaphore.h>
 #include <stdio.h>
@@ -56,6 +57,21 @@ bool Thread::sleepingThreadComparer(Item *a, Item *b)
 void Thread::kernelPush(uintptr_t value)
 {
     *(uintptr_t *)(StackPointer -= 4) = value;
+}
+
+void Thread::freeUserStack()
+{
+    if(!Process) return;
+    uintptr_t as = Process->AddressSpace;
+    size_t pageCount = UserStackSize / PAGE_SIZE;
+    for(uint i = 0; i < pageCount; ++i)
+    {
+        uintptr_t va = i * PAGE_SIZE + (uintptr_t)UserStack;
+        uintptr_t pa = Paging::GetPhysicalAddress(as, va);
+        if(pa == ~0) continue;
+        Paging::UnMapPage(as, va, false);
+        Paging::FreePage(pa);
+    }
 }
 
 void Thread::Initialize()
@@ -125,7 +141,7 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     CurrentSignal(-1),
     ReturnCodePtr(returnCodePtr),
     Finished(finished ? finished : new Semaphore(0)),
-    DeleteFinished(finished)
+    DeleteFinished(!finished)
 {
     if(!process)
     {
@@ -371,11 +387,41 @@ uint Thread::Sleep(uint millis, bool interruptible)
     return (ticksLeft * nanosPerTick) / 1000000;
 }
 
+uintptr_t Thread::AllocUserStack()
+{
+    if(!UserStackSize) return ~0;
+    uintptr_t as = Process->AddressSpace;
+    uintptr_t res = Process->UserStackPtr;
+    size_t pageCount = align(UserStackSize, PAGE_SIZE) / PAGE_SIZE;
+    uintptr_t startPtr = align(res, PAGE_SIZE) - pageCount * PAGE_SIZE;
+    UserStack = (void *)startPtr;
+    for(uint i = 0; i < pageCount; ++i)
+    {
+        uintptr_t pa = Paging::AllocPage();
+        if(pa == ~0)
+        {
+            freeUserStack();
+            return ~0;
+        }
+        if(!Paging::MapPage(as, startPtr + i * PAGE_SIZE, pa, false, true, true))
+        {
+            freeUserStack();
+            return ~0;
+        }
+    }
+    Process->UserStackPtr = (uintptr_t)UserStack;
+    return res;
+}
+
 Thread::~Thread()
 {
     if(Name) free(Name);
     if(KernelStack) free(KernelStack);
-    if(UserStack) free(UserStack);
+    if(UserStack)
+    {   // we have user stack
+        freeUserStack();
+        UserStack = nullptr;
+    }
     if(SignalStack) free(SignalStack);
     if(FXSaveData) free(FXSaveData);
     if(SignalQueue) delete SignalQueue;

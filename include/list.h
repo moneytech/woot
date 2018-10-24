@@ -39,6 +39,17 @@ public:
     {
     }
 
+    void Clear()
+    {
+        for(Node *n = First; n;)
+        {
+            Node *next = n->Next;
+            delete n;
+            n = next;
+        }
+        First = nullptr;
+    }
+
     void Prepend(T value)
     {
         First = new Node(First, value);
