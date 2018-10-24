@@ -4,6 +4,12 @@
 
 #include "internal/syscall.h"
 
+void _exit(int status)
+{
+    for(;;)
+        syscall1(SYS_exit, status);
+}
+
 int open(const char *pathname, int flags)
 {
     return -ENOSYS;
@@ -29,8 +35,7 @@ int close(int fd)
     return -ENOSYS;
 }
 
-void _exit(int status)
+pid_t getpid()
 {
-    for(;;)
-        syscall1(SYS_exit, status);
+    return syscall0(SYS_getpid);
 }

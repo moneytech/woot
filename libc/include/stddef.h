@@ -3,7 +3,7 @@
 
 #include <sys/types.h>
 
-typedef unsigned long size_t;
-typedef signed long ssize_t;
+typedef unsigned int size_t;
+typedef signed int ssize_t;
 
 #endif // STDDEF_H
