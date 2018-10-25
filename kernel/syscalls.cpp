@@ -1,8 +1,10 @@
 #include <cpu.h>
 #include <debugstream.h>
 #include <errno.h>
+#include <paging.h>
 #include <process.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <syscall.h>
 #include <syscalls.h>
 #include <sysdefs.h>
@@ -19,7 +21,9 @@ SysCalls::Callback SysCalls::callbacks[] =
 {
     [SYS_exit] = sys_exit,
     [SYS_write] = sys_write,
+    [SYS_time] = sys_time,
     [SYS_getpid] = sys_getpid,
+    [SYS_brk] = sys_brk,
     [SYS_nanosleep] = sys_nanosleep,
     [SYS_gettid] = sys_gettid,
 };
@@ -49,9 +53,79 @@ long SysCalls::sys_write(long *args) // 4
     return debugStream.Write((const void *)args[2], (int64_t)args[3]);
 }
 
+long SysCalls::sys_time(long *args) // 13
+{
+    return time((time_t *)args[1]);
+}
+
 long SysCalls::sys_getpid(long *args) // 20
 {
     return Process::GetCurrent()->ID;
+}
+
+long SysCalls::sys_brk(long *args) // 45
+{
+    uintptr_t brk = args[1];
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -EINVAL;
+    if(!cp->MemoryLock.Acquire(10 * 1000, false))
+        return -EBUSY;
+    if(!cp->MinBrk && !cp->MaxBrk && !cp->CurrentBrk)
+    {   // first call
+        if(brk >= (KERNEL_BASE - 0x10000000))
+        {   // we leave at least 0x10000000 bytes for stacks
+            cp->MemoryLock.Release();
+            return -ENOMEM;
+        }
+        cp->MinBrk = brk;
+        cp->MaxBrk = KERNEL_BASE - 0x10000000;
+        cp->CurrentBrk = cp->MinBrk;
+        cp->MappedBrk = cp->CurrentBrk;
+    }
+    else
+    {
+        if(brk < cp->MinBrk || brk >= cp->MaxBrk)
+        {
+            cp->MemoryLock.Release();
+            return -ENOMEM;
+        }
+        uintptr_t oldBrk = cp->CurrentBrk;
+        cp->CurrentBrk = brk;
+        uintptr_t neededMappedBrk = align(cp->CurrentBrk, PAGE_SIZE);
+        if(neededMappedBrk > cp->MappedBrk)
+        {   // allocate and map some more memory
+            for(uintptr_t va = cp->MappedBrk; va < neededMappedBrk; va += PAGE_SIZE)
+            {
+                uintptr_t pa = Paging::AllocPage();
+                if(pa == ~0)
+                {
+                    cp->CurrentBrk = oldBrk;
+                    cp->MemoryLock.Release();;
+                    return -ENOMEM;
+                }
+                if(!Paging::MapPage(cp->AddressSpace, va, pa, false, true, true))
+                {
+                    cp->CurrentBrk = oldBrk;
+                    cp->MemoryLock.Release();;
+                    return -ENOMEM;
+                }
+            }
+            cp->MappedBrk = neededMappedBrk;
+        }
+        else if(neededMappedBrk < cp->MappedBrk)
+        {   // unmap and release memory
+            for(uintptr_t va = neededMappedBrk; va < cp->MappedBrk; va += PAGE_SIZE)
+            {
+                uintptr_t pa = Paging::GetPhysicalAddress(cp->AddressSpace, va);
+                if(pa != ~0)
+                    Paging::FreePage(pa);
+                Paging::UnMapPage(cp->AddressSpace, va, false);
+            }
+            cp->MappedBrk = neededMappedBrk;
+        }
+    }
+    cp->MemoryLock.Release();
+    return 0;
 }
 
 long SysCalls::sys_nanosleep(long *args) // 162

@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <sys/types.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,6 +16,8 @@ ssize_t write(int fd, const void *buf, size_t count);
 off_t lseek(int fd, off_t offset, int whence);
 int close(int fd);
 pid_t getpid();
+int brk(void *addr);
+void *sbrk(intptr_t increment);
 
 #ifdef __cplusplus
 }

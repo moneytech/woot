@@ -3,7 +3,8 @@
 
 #include <sys/types.h>
 
-typedef unsigned int size_t;
-typedef signed int ssize_t;
+#define NULL ((void *)0)
+
+typedef long ptrdiff_t;
 
 #endif // STDDEF_H

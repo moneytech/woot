@@ -4,6 +4,9 @@
 
 #include "internal/syscall.h"
 
+extern void *end;
+uintptr_t __current_brk = (uintptr_t)&end;
+
 void _exit(int status)
 {
     for(;;)
@@ -38,4 +41,24 @@ int close(int fd)
 pid_t getpid()
 {
     return syscall0(SYS_getpid);
+}
+
+int brk(void *addr)
+{
+    int res = syscall1(SYS_brk, (long)addr);
+    if(res < 0)
+    {
+        errno = -res;
+        res = -1;
+    }
+    __current_brk = (uintptr_t)addr;
+    return res;
+}
+
+void *sbrk(intptr_t increment)
+{
+    uintptr_t cbrk = __current_brk;
+    int res = brk((void *)(cbrk + increment));
+    if(res < 0) return (void *)-1;
+    return (void *)cbrk;
 }

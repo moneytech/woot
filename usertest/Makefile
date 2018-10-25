@@ -1,7 +1,7 @@
 OUTFILE = usertest
 OBJS = main.o
 
-COMMONFLAGS = -m32 -nostdinc -I../libc/include
+COMMONFLAGS = -m32 -ggdb -nostdinc -I../libc/include
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS)
 LDFLAGS = -melf_i386 -nostdlib -L../libc

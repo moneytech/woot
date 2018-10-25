@@ -10,5 +10,6 @@ struct timespec
 };
 
 int nanosleep(const struct timespec *req, struct timespec *rem);
+time_t time(time_t *t);
 
 #endif // TIME_H

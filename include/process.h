@@ -32,6 +32,13 @@ public:
     List<ELF *> Images;
     uintptr_t UserStackPtr;
 
+    // used for brk() syscall
+    Mutex MemoryLock;
+    uintptr_t MinBrk;
+    uintptr_t MaxBrk;
+    uintptr_t CurrentBrk;
+    uintptr_t MappedBrk;
+
     static void Initialize();
     static Process *Create(const char *filename, Semaphore *finished);
     static Process *GetCurrent();

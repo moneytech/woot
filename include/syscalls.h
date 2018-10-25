@@ -16,7 +16,9 @@ class SysCalls
 
     static long sys_exit(long *args); // 1
     static long sys_write(long *args); // 4
+    static long sys_time(long * args); // 13
     static long sys_getpid(long *args); // 20
+    static long sys_brk(long *args); // 45
     static long sys_nanosleep(long *args); // 162
     static long sys_gettid(long *args); // 224
 public:

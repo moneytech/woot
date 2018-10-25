@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/syscall.h>
 #include <test.h>
@@ -8,14 +9,11 @@
 
 int main(int argc, char *argv[])
 {
-    char testText[] = "Wait for 5 seconds...\n";
+    char testText[] = "Trololololo...\n";
     write(0, testText, sizeof(testText) - 1);
 
-    syscall0(23);
-    struct timespec ts = { 5, 0 };
-    struct timespec tr;
-    nanosleep(&ts, &tr);
-    asm("int $0x80":: "a"(13));
+    for(int i = 0; i < 20; ++i)
+        printf("%s9000 %2d %#.8x %.5f\n", "over", i, i * 1000, 1.0 / 3);
 
-    exit(42);
+    return 42;
 }
