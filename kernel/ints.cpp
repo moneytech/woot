@@ -55,6 +55,8 @@ void Ints::CommonHandler(Ints::State *state)
 {
     int irq = state->InterruptNumber - IRQS_BASE;
     bool isIrq = irq >= 0 && irq < IRQS_COUNT;
+    Process *cp = Process::GetCurrent();
+    Thread *ct = Thread::GetCurrent();
 
     // handle spurious irqs
     if(isIrq)
@@ -82,11 +84,7 @@ void Ints::CommonHandler(Ints::State *state)
                    state->InterruptNumber,
                    state->InterruptNumber < 32 ? excNames[state->InterruptNumber] : (state->InterruptNumber == SYSCALLS_INT_VECTOR ? "syscall interrupt" : "hardware interrupt"));
 
-            // show what process failed
-            Process *cp = Process::GetCurrent();
             if(cp) printf("Process: %d (%s)\n", cp->ID, cp->Name);
-            // show what thread failed
-            Thread *ct = Thread::GetCurrent();
             if(ct) printf("Thread: %d (%s)\n", ct->ID, ct->Name);
         }
 
@@ -99,7 +97,8 @@ void Ints::CommonHandler(Ints::State *state)
                    cpuGetCR2());
         }
         DumpState(state);
-        cpuSystemHalt(state->InterruptNumber);
+        if(ct && ct->ID != 1) Thread::Finalize(ct, 127);
+        else cpuSystemHalt(state->InterruptNumber);
     }
 
     if(isIrq) IRQs::SendEOI(irq);
