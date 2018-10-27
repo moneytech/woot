@@ -9,6 +9,10 @@ int main(int argc, char *argv[])
     char testText[] = "Trololololo...\n";
     write(0, testText, sizeof(testText) - 1);
 
+    char *cwd = get_current_dir_name();
+    printf("current directory: '%s'\n", cwd);
+    if(cwd) free(cwd);
+
     const char *filename = "modulelist";
     FILE *f = fopen(filename, "rb");
     if(f)

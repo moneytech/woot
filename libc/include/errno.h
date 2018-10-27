@@ -1,8 +1,15 @@
 #ifndef ERRNO_H
 #define ERRNO_H
 
-static int dummy_errno = 0;
-#define errno (dummy_errno)
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+extern int errno;
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #define EPERM        1  /* Operation not permitted */
 #define ENOENT       2  /* No such file or directory */

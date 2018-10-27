@@ -1,5 +1,6 @@
 #include <cpu.h>
 #include <debugstream.h>
+#include <dentry.h>
 #include <errno.h>
 #include <file.h>
 #include <paging.h>
@@ -30,6 +31,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     [SYS_getpid] = sys_getpid,
     [SYS_brk] = sys_brk,
     [SYS_nanosleep] = sys_nanosleep,
+    [SYS_getcwd] = sys_getcwd,
     [SYS_gettid] = sys_gettid,
 };
 
@@ -187,7 +189,20 @@ long SysCalls::sys_nanosleep(long *args) // 162
     return res;
 }
 
-long SysCalls::sys_gettid(long *args)
+long SysCalls::sys_getcwd(long *args) // 183
+{
+    char *buf = (char *)args[1];
+    size_t size = (size_t)args[2];
+    if(!buf || !size) return -EINVAL;
+    DEntry *cwd = Process::GetCurrentDir();
+    if(!cwd) return -ENOENT;
+    size_t res = cwd->GetFullPath(buf, size);
+    if(res >= (size - 1))
+        return -ERANGE;
+    return 0;
+}
+
+long SysCalls::sys_gettid(long *args) // 224
 {
     Process *cp = Process::GetCurrent();
     if(!cp) return -ESRCH;

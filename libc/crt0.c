@@ -5,6 +5,8 @@
 
 #include "internal/syscall.h"
 
+int errno = 0;
+
 extern int main(int argc, char *argv[]);
 extern uintptr_t __current_brk;
 

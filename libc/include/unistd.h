@@ -21,6 +21,9 @@ int close(int fd);
 pid_t getpid();
 int brk(void *addr);
 void *sbrk(intptr_t increment);
+char *getcwd(char *buf, size_t size);
+char *getwd(char *buf);
+char *get_current_dir_name(void);
 
 #ifdef __cplusplus
 }

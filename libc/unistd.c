@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdlib.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -57,4 +58,53 @@ void *sbrk(intptr_t increment)
     if(res == ~0) return (void *)(-1);
     __current_brk = res;
     return (void *)cbrk;
+}
+
+char *getcwd(char *buf, size_t size)
+{
+    long res = syscall2(SYS_getcwd, (long)buf, size);
+    if(res < 0)
+    {
+        errno = -res;
+        return NULL;
+    }
+    return buf;
+}
+
+char *getwd(char *buf)
+{
+    return getcwd(buf, SIZE_MAX);
+}
+
+char *get_current_dir_name(void)
+{
+    size_t size = 64;
+    char *buf = (char *)malloc(size);
+    if(!buf)
+    {
+        errno = ENOMEM;
+        return NULL;
+    }
+    while(!getcwd(buf, size))
+    {
+        if(errno != ERANGE)
+        {
+            free(buf);
+            return NULL;
+        }
+        size *= 2;
+        if(size >= 8192)
+        {
+            free(buf);
+            errno = ENAMETOOLONG;
+            return NULL;
+        }
+        buf = (char *)realloc(buf, size);
+        if(!buf)
+        {
+            errno = ENOMEM;
+            return NULL;
+        }
+    }
+    return buf;
 }

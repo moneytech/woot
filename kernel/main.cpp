@@ -265,10 +265,13 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     char cwd[256];
     int cmdPos = 0;
     int x = 0, y = 0;
+    DEntry *cdir = Process::GetCurrentDir();
     printf("\nDebug (s)hell started. Don't type help for help.\n");
     for(; !quit;)
     {
-        kernelProcess->CurrentDirectory->GetFullPath(cwd, sizeof(cwd));
+        cdir = Process::GetCurrentDir();
+        if(cdir) cdir->GetFullPath(cwd, sizeof(cwd));
+        else cwd[0] = 0;
         printf("%s# ", cwd);
         for(;;)
         {
@@ -388,8 +391,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             }
             if(File *dir = File::Open(args[1], O_DIRECTORY))
             {
-                if(kernelProcess->CurrentDirectory) FileSystem::PutDEntry(kernelProcess->CurrentDirectory);
-                kernelProcess->CurrentDirectory = FileSystem::GetDEntry(dir->DEntry);
+                if(cdir) FileSystem::PutDEntry(cdir);
+                kernelProcess->CurrentDirectory = cdir = FileSystem::GetDEntry(dir->DEntry);
                 delete dir;
             } else printf("[main] cd failed\n");
         }
@@ -599,7 +602,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     delete t1;
     delete t2;
 
-    FileSystem::PutDEntry(kernelProcess->CurrentDirectory);
+    FileSystem::PutDEntry(cdir);
 
     // call module cleanup functions in reverse order
     for(int i = kernelProcess->Images.Count() - 1; i > 0; --i)

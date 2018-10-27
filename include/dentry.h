@@ -24,7 +24,7 @@ public:
     static void UnLock();
 
     DEntry(const char *name, DEntry *parent);
-    bool GetFullPath(char *buffer, size_t bufferSize);
+    size_t GetFullPath(char *buffer, size_t bufferSize);
     ~DEntry();
 };
 
