@@ -12,6 +12,7 @@ class DEntry
 {
     static Mutex lock;
     static void getPath(DEntry *dentry, StringBuilder &sb);
+    void getFSLabelAndID(char *buf, size_t bufSize, int *id);
 public:
     DEntry *Parent;
     List<DEntry *> *Children;

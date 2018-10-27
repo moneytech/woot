@@ -2,6 +2,7 @@
 #define FILESYSTEM_H
 
 #include <list.h>
+#include <sequencer.h>
 #include <types.h>
 #include <uuid.h>
 
@@ -14,6 +15,7 @@ class Volume;
 
 class FileSystem
 {
+    static Sequencer<int> ids;
     static List<FileSystem *> fileSystems;
     static List<INode *> inodeCache;
     static List<DEntry *> dentryCache;
@@ -21,6 +23,7 @@ class FileSystem
 
     List<File *> *openedFiles;
 protected:
+    int ID;
     FileSystem(class Volume *vol, FileSystemType *type);
     virtual ~FileSystem();
 public:
@@ -31,8 +34,8 @@ public:
     static void Initialize();
     static void Add(FileSystem *fs);
     static FileSystem *GetByIndex(uint idx, bool lock);
-    static bool Lock();
-    static void UnLock();
+    static bool GlobalLock();
+    static void GlobalUnLock();
     static void SynchronizeAll();
     static void Cleanup();
 
@@ -42,6 +45,7 @@ public:
     virtual bool WriteINode(INode *inode);
     virtual bool WriteSuperBlock();
 
+    int GetID();
     INode *GetINode(ino_t number);
     static void PutINode(INode *inode);
     void SetRoot(DEntry *dentry);

@@ -698,7 +698,7 @@ bool EXT2::zeroBlock(uint32_t block)
 
 EXT2::~EXT2()
 {
-    Lock();
+    GlobalLock();
     if(Root) PutDEntry(Root);
     WriteSuperBlock();
     Volume->Flush();
@@ -708,58 +708,58 @@ EXT2::~EXT2()
 
 bool EXT2::GetLabel(char *buffer, size_t num)
 {
-    if(!Lock()) return false;
+    if(!GlobalLock()) return false;
     if(!superBlock->s_volume_name[0])
     {
-        UnLock();
+        GlobalUnLock();
         return false;
     }
     memset(buffer, 0, num);
     strncpy(buffer, superBlock->s_volume_name, min(16, num));
-    UnLock();
+    GlobalUnLock();
     return true;
 }
 
 UUID EXT2::GetUUID()
 {
-    if(!Lock()) return UUID::nil;
+    if(!GlobalLock()) return UUID::nil;
     UUID uuid(superBlock->s_uuid);
-    UnLock();
+    GlobalUnLock();
     return uuid;
 }
 
 ::INode *EXT2::ReadINode(ino_t number)
 {
-    if(!Lock() || !initialized) return nullptr;
+    if(!GlobalLock() || !initialized) return nullptr;
     FSINode *inode = new FSINode(number, this);
     int64_t btr = min(sizeof(EXT2::INode), superBlock->s_inode_size);
     int64_t br = Volume->Read(&inode->Data, getINodeOffset(number), btr);
     if(br != btr)
     {
         delete inode;
-        UnLock();
+        GlobalUnLock();
         return nullptr;
     }
-    UnLock();
+    GlobalUnLock();
     return inode;
 }
 
 bool EXT2::WriteINode(::INode *inode)
 {
-    if(!Lock() || !initialized) return false;
+    if(!GlobalLock() || !initialized) return false;
     FSINode *i = (FSINode *)inode;
     int64_t btw = min(sizeof(EXT2::INode), superBlock->s_inode_size);
     int64_t bw = Volume->Write(&i->Data, getINodeOffset(inode->Number), btw);
-    UnLock();
+    GlobalUnLock();
     return bw == btw;
 }
 
 bool EXT2::WriteSuperBlock()
 {
-    if(!Lock() || !initialized) return false;
+    if(!GlobalLock() || !initialized) return false;
     if(!superDirty)
     {
-        UnLock();
+        GlobalUnLock();
         return true;
     }
     int64_t bw = Volume->Write(superBlock, 1024, sizeof(SuperBlock));
@@ -767,7 +767,7 @@ bool EXT2::WriteSuperBlock()
     {
         printf("[ext2] ext2SuperBlockWriteSuper: couldn't write main\n"
                "       superblock on volume %d. Use fsck.\n", Volume->ID);
-        UnLock();
+        GlobalUnLock();
         return false;
     }
     for(uint i = 0; i < blockGroupCount; ++i)
@@ -781,12 +781,12 @@ bool EXT2::WriteSuperBlock()
         {
             printf("[ext2] ext2SuperBlockWriteSuper: couldn't write backup\n"
                    "       superblock (group %d) on volume %d. Use fsck.\n", i, Volume->ID);
-            UnLock();
+            GlobalUnLock();
             return false;
         }
     }
     superDirty = false;
-    UnLock();
+    GlobalUnLock();
     return true;
 }
 
@@ -798,7 +798,7 @@ EXT2::FSINode::FSINode(ino_t number, FileSystem *fs) :
 void EXT2::FSINode::setSize(size64_t size)
 {
     if(!INode::Lock()) return;
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         INode::UnLock();
         return;
@@ -814,7 +814,7 @@ void EXT2::FSINode::setSize(size64_t size)
     }
     Dirty = true;
 
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
     INode::UnLock();
 }
 
@@ -822,14 +822,14 @@ bool EXT2::FSINode::buildDirectory(EXT2::FSINode *parentINode, FSINode *newINode
 {
     if(!INode::Lock())
         return false;
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         INode::UnLock();
         return false;
     }
     EXT2 *fs = (EXT2 *)newINode->FS;
     size_t blockSize = fs->blockSize;
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
 
     if(!newINode->Resize(blockSize))
     {
@@ -866,7 +866,7 @@ bool EXT2::FSINode::buildDirectory(EXT2::FSINode *parentINode, FSINode *newINode
 size64_t EXT2::FSINode::GetSize()
 {
     if(!INode::Lock()) return 0;
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         INode::UnLock();
         return 0;
@@ -877,7 +877,7 @@ size64_t EXT2::FSINode::GetSize()
                 (inode->Data.i_size | ((inode->Data.i_mode & 0xF000) == EXT2_S_IFREG ?
                                            ((uint64_t)inode->Data.i_dir_acl << 32) :
                                            0));
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
     INode::UnLock();
     return size;
 }
@@ -968,7 +968,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     }
 
     // get fs revision, new inode, upd, gid and block size
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         INode::UnLock();
         return false;
@@ -987,7 +987,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     if(!ino || !ct || !ct->Process)
     {
         INode::UnLock();
-        FileSystem::UnLock();
+        FileSystem::GlobalUnLock();
         return false;
     }
     uid_t uid = ct->Process->UID;
@@ -996,7 +996,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     FSINode *inode = (FSINode *)fs->GetINode(ino);
     if(!inode)
     {
-        FileSystem::UnLock();
+        FileSystem::GlobalUnLock();
         INode::UnLock();
         return false;
     }
@@ -1030,7 +1030,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
                 if(Write(&cde, position, sizeof(cde)) != sizeof(cde))
                 {
                     PutINode(inode);
-                    FileSystem::UnLock();
+                    FileSystem::GlobalUnLock();
                     INode::UnLock();
                     return false;
                 }
@@ -1049,7 +1049,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
             if(Write(name, cdeMinEnd + sizeof(de), nameLen) != nameLen)
             {
                 PutINode(inode);
-                FileSystem::UnLock();
+                FileSystem::GlobalUnLock();
                 INode::UnLock();
                 return false;
             }
@@ -1060,7 +1060,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
                 fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 2);
             }
             PutINode(inode);
-            FileSystem::UnLock();
+            FileSystem::GlobalUnLock();
             INode::UnLock();
             return true;
         }
@@ -1074,7 +1074,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
                 if(Write(&de, position, sizeof(de)) != sizeof(de))
                 {
                     PutINode(inode);
-                    FileSystem::UnLock();
+                    FileSystem::GlobalUnLock();
                     INode::UnLock();
                     return false;
                 }
@@ -1090,7 +1090,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
                     fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 2);
                 }
                 PutINode(inode);
-                FileSystem::UnLock();
+                FileSystem::GlobalUnLock();
                 INode::UnLock();
                 return true;
             }
@@ -1104,7 +1104,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     if(Resize(newSize) != newSize)
     {
         PutINode(inode);
-        FileSystem::UnLock();
+        FileSystem::GlobalUnLock();
         INode::UnLock();
         return false;
     }
@@ -1112,14 +1112,14 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     if(Write(&de, cSize, sizeof(de)) != sizeof(de))
     {
         PutINode(inode);
-        FileSystem::UnLock();
+        FileSystem::GlobalUnLock();
         INode::UnLock();
         return false;
     }
     if(Write(name, cSize + sizeof(de), nameLen) != nameLen)
     {
         PutINode(inode);
-        FileSystem::UnLock();
+        FileSystem::GlobalUnLock();
         INode::UnLock();
         return false;
     }
@@ -1130,7 +1130,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
         fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 4);
     }
     PutINode(inode);
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
     INode::UnLock();
     return true;
 }
@@ -1181,13 +1181,13 @@ ino_t EXT2::FSINode::Lookup(const char *name)
 int64_t EXT2::FSINode::Read(void *buffer, int64_t position, int64_t n)
 {
     if(!Lock()) return -EBUSY;
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         UnLock();
         return -EBUSY;
     }
     int64_t res = ((EXT2 *)FS)->read(this, buffer, position, n);
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
     UnLock();
     return res;
 }
@@ -1195,13 +1195,13 @@ int64_t EXT2::FSINode::Read(void *buffer, int64_t position, int64_t n)
 int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
 {
     if(!Lock()) return -EBUSY;
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         UnLock();
         return -EBUSY;
     }
     int64_t res = ((EXT2 *)FS)->write(this, buffer, position, n);
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
     UnLock();
     return res;
 }
@@ -1264,7 +1264,7 @@ int64_t EXT2::FSINode::Resize(int64_t size)
 {
     if(!INode::Lock())
         return -EBUSY;
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         INode::UnLock();
         return -EBUSY;
@@ -1285,7 +1285,7 @@ int64_t EXT2::FSINode::Resize(int64_t size)
                 printf("[ext2] Something went wrong in FSINode::Resize()\n"
                        "       Filesystem may be inconsistent. Run fsck.\n");
                 INode::UnLock();
-                FileSystem::UnLock();
+                FileSystem::GlobalUnLock();
                 return -EIO;
             }
             fs->freeBlock(blkIdx);
@@ -1322,7 +1322,7 @@ int64_t EXT2::FSINode::Resize(int64_t size)
             int64_t bytesWritten = fs->Volume->Write(fs->blockOfZeros, blockOffset + inBlockOffset, bytesToWrite);
             if(bytesWritten < 0)
             {
-                FileSystem::UnLock();
+                FileSystem::GlobalUnLock();
                 INode::UnLock();
                 return bytesWritten;
             }
@@ -1335,14 +1335,14 @@ int64_t EXT2::FSINode::Resize(int64_t size)
             bytesLeft -= bytesWritten;
             if(bytesWritten != bytesToWrite)
             {
-                FileSystem::UnLock();
+                FileSystem::GlobalUnLock();
                 INode::UnLock();
                 return -EIO;
             }
         }
     }
     currentSize = GetSize();
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
     INode::UnLock();
     return currentSize;
 }
@@ -1402,13 +1402,13 @@ int EXT2::FSINode::Remove(const char *name)
             return -EIO;
         }
 
-        if(!FileSystem::Lock())
+        if(!FileSystem::GlobalLock())
         {
             INode::UnLock();
             return -EBUSY;
         }
         size_t blockSize = ((EXT2 *)FS)->blockSize;
-        FileSystem::UnLock();
+        FileSystem::GlobalUnLock();
 
 
         if(EXT2_S_ISDIR(inode->GetMode()))
@@ -1526,7 +1526,7 @@ int EXT2::FSINode::Release()
     if(!Data.i_links_count)
     {
         Data.i_dtime = time(nullptr);
-        if(!FileSystem::Lock())
+        if(!FileSystem::GlobalLock())
         {
             INode::UnLock();
             return -EBUSY;
@@ -1541,7 +1541,7 @@ int EXT2::FSINode::Release()
                 --fs->BGDT[bg].bg_used_dirs_count;
             fs->updateBGDT(bg, offsetof(BlockGroupDescriptor, bg_used_dirs_count), 2);
         }
-        FileSystem::UnLock();
+        FileSystem::GlobalUnLock();
     }
     INode::UnLock();
     return 0;

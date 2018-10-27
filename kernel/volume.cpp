@@ -57,7 +57,7 @@ Volume *Volume::GetByIndex(uint idx)
 Volume *Volume::GetByLabel(const char *label)
 {
     if(!Lock()) return nullptr;
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         UnLock();
         return nullptr;
@@ -73,7 +73,7 @@ Volume *Volume::GetByLabel(const char *label)
         res = v;
         break;
     }
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
     UnLock();
     return res;
 }
@@ -81,7 +81,7 @@ Volume *Volume::GetByLabel(const char *label)
 Volume *Volume::GetByUUID(UUID uuid)
 {
     if(!Lock()) return nullptr;
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         UnLock();
         return nullptr;
@@ -96,7 +96,7 @@ Volume *Volume::GetByUUID(UUID uuid)
         res = v;
         break;
     }
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
     UnLock();
     return res;
 }

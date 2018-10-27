@@ -35,6 +35,18 @@ File *File::Open(::DEntry *parent, const char *name, int flags)
     ::DEntry *dentry = FileSystem::GetDEntry(parent);
     for(Tokenizer::Token t : path.Tokens)
     {
+        if(!strcmp(".", t.String))
+            continue;
+        else if(!strcmp("..", t.String))
+        {
+            if(dentry->Parent)
+            {
+                ::DEntry *nextDe = FileSystem::GetDEntry(dentry->Parent);
+                FileSystem::PutDEntry(dentry);
+                dentry = nextDe;
+            }
+            continue;
+        }
         ::DEntry *nextDe = FileSystem::GetDEntry(dentry, t.String);
         if(!nextDe)
         {
@@ -102,7 +114,7 @@ File *File::Open(const char *name, int flags)
         Volume::UnLock();
         return nullptr;
     };
-    if(!FileSystem::Lock())
+    if(!FileSystem::GlobalLock())
     {
         Volume::UnLock();
         DEntry::UnLock();
@@ -111,7 +123,7 @@ File *File::Open(const char *name, int flags)
     bool hasVolume = hasVolumeId || hasUUID || hasLabel;
     bool absolute = !hasVolume && path[0][0] == '/';
     ::DEntry *dentry = hasVolume || absolute ? vol->FS->Root : Process::GetCurrentDir();
-    FileSystem::UnLock();
+    FileSystem::GlobalUnLock();
     Volume::UnLock();
 
     if(!dentry)
