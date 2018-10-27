@@ -5,12 +5,15 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
 void _exit(int status) __attribute__((noreturn));
-int open(const char *pathname, int flags);
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, const void *buf, size_t count);
 off_t lseek(int fd, off_t offset, int whence);

@@ -1,7 +1,7 @@
 #ifndef TIME_H
 #define TIME_H
 
-typedef long long time_t;
+typedef long time_t;
 
 struct timespec
 {

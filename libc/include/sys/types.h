@@ -7,4 +7,6 @@ typedef signed int ssize_t;
 typedef long pid_t;
 typedef long off_t;
 
+typedef unsigned int mode_t;
+
 #endif // SYS_TYPES_H

@@ -264,6 +264,7 @@ class ELF
     bool releaseData;
     Process *process;
     bool user;
+    uintptr_t endPtr;
     ELF(Elf32_Ehdr *ehdr, byte *phdrData, byte *shdrData, Elf32_Shdr *symtabShdr, byte *symtab, Elf32_Shdr *strtabShdr, byte *strtab, bool user);
 public:
     int (*EntryPoint)();
@@ -272,6 +273,7 @@ public:
     static ELF *Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders);
 
     Elf32_Sym *FindSymbol(const char *name);
+    uintptr_t GetEndPtr();
     ~ELF();
 };
 

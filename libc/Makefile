@@ -1,6 +1,6 @@
 LIB = libc
 OBJS = crt0.o
-OBJS += ctype.o malloc.o math.o softdiv.o stdio.o stdlib.o string.o time.o unistd.o
+OBJS += ctype.o fcntl.o malloc.o math.o softdiv.o stdio.o stdlib.o string.o time.o unistd.o
 OBJS += asm/syscall.o
 
 CFLAGS = -m32 -ggdb -nostdinc -I./include -Wno-expansion-to-defined

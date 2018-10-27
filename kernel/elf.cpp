@@ -192,6 +192,7 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                     delete f;
                     return nullptr;
                 }
+                elf->endPtr = max(elf->endPtr, va + PAGE_SIZE);
             }
             byte *buffer = (byte *)phdr->p_vaddr;
             memset(buffer, 0, phdr->p_memsz);
@@ -323,6 +324,11 @@ Elf32_Sym *ELF::FindSymbol(const char *name)
             return sym;
     }
     return nullptr;
+}
+
+uintptr_t ELF::GetEndPtr()
+{
+    return endPtr;
 }
 
 ELF::~ELF()

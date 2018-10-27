@@ -1,16 +1,22 @@
 #include <ctype.h>
+#include <fcntl.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-FILE *stdin;
-FILE *stdout;
-FILE *stderr;
+static FILE fstdin = { STDIN_FILENO };
+static FILE fstdout = { STDOUT_FILENO };
+static FILE fstderr = { STDERR_FILENO };
 
-static int pow(int x, int y)
+FILE *stdin = &fstdin;
+FILE *stdout = &fstdout;
+FILE *stderr = &fstderr;
+
+static int powi(int x, int y)
 {
     int v = 1;
     for(;;)
@@ -418,7 +424,7 @@ static int vncnprintf(writeCallback wc, void *wcarg, size_t n, const char *fmt, 
                     bw += wc(wcarg, '.');
                     double f = val - i;
                     if(!precision) precision = 4;
-                    int64_t ai = (int64_t)(f * pow(10, precision));
+                    int64_t ai = (int64_t)(f * powi(10, precision));
                     ai = ai < 0 ? - ai : ai;
                     bw += writeDec(wc, wcarg, ai, precision, -1, 0, 0, 0);
                 }
@@ -478,9 +484,83 @@ int sprintf(char *str, const char *format, ...)
     return res;
 }
 
+void clearerr(FILE *stream)
+{
+    if(!stream) return;
+    stream->eof = 0;
+    stream->error = 0;
+}
+
+void rewind(FILE *stream)
+{
+    if(!stream) return;
+    lseek(stream->fd, 0, SEEK_SET);
+    clearerr(stream);
+}
+
+FILE *fopen(const char *filename, const char *mode)
+{
+    // TODO: add proper '+' handling
+    char *read = strchr(mode, 'r');
+    char *write = strchr(mode, 'w');
+    char *append = strchr(mode, 'a');
+    //int rupdate = read ? read[1] == '+' : 0;
+    //int wupdate = write ? write[1] == '+' : 0;
+    //int aupdate = append ? append[1] == '+' : 0;
+    int rw = read && write;
+
+    FILE *f = (FILE *)calloc(1, sizeof(FILE));
+    if(!f) return NULL;
+
+    f->fd = open(filename, (rw ? O_RDWR : (read ? O_RDONLY : (write ? O_WRONLY : 0))) | (append ? O_APPEND : 0));
+    if(f->fd < 0)
+    {
+        free(f);
+        return NULL;
+    }
+    return f;
+}
+
+int feof(FILE *stream)
+{
+    if(!stream) return 1;
+    return stream->eof != 0;
+}
+
+int ferror(FILE *stream)
+{
+    if(!stream) return 1;
+    return stream->error != 0;
+}
+
+size_t fread(void *ptr, size_t size, size_t count, FILE *stream)
+{
+    int res = read(stream->fd, ptr, size * count);
+    if(res < 0)
+    {
+        stream->error = 1;
+        return 0;
+    }
+    stream->eof = !res;
+    return res / size;
+}
+
 size_t fwrite(const void *ptr, size_t size, size_t count, FILE *stream)
 {
-    int res = write(0, ptr, size * count);
-    if(res < 0) return 0;
+    int res = write(stream->fd, ptr, size * count);
+    if(res < 0)
+    {
+        stream->error = 1;
+        return 0;
+    }
+    stream->eof = !res;
     return res / size;
+}
+
+int fclose(FILE *stream)
+{
+    if(!stream) return EOF;
+    int res = close(stream->fd);
+    free(stream);
+    return res < 0 ? EOF : 0;
 }

@@ -1,6 +1,7 @@
 #include <cpu.h>
 #include <debugstream.h>
 #include <errno.h>
+#include <file.h>
 #include <paging.h>
 #include <process.h>
 #include <stdio.h>
@@ -20,8 +21,12 @@ Ints::Handler SysCalls::handler = { nullptr, SysCalls::isr, nullptr };
 SysCalls::Callback SysCalls::callbacks[] =
 {
     [SYS_exit] = sys_exit,
+    [SYS_read] = sys_read,
     [SYS_write] = sys_write,
+    [SYS_open] = sys_open,
+    [SYS_close] = sys_close,
     [SYS_time] = sys_time,
+    [SYS_lseek] = sys_lseek,
     [SYS_getpid] = sys_getpid,
     [SYS_brk] = sys_brk,
     [SYS_nanosleep] = sys_nanosleep,
@@ -35,7 +40,7 @@ bool SysCalls::isr(Ints::State *state, void *context)
     if(args[0] >= MAX_SYSCALLS || !callbacks[args[0]])
     {
         printf("[syscalls] unknown syscall %u\n", args[0]);
-        return -EINVAL;
+        state->EAX = -EINVAL;
         return true;
     }
     state->EAX = callbacks[args[0]](args);
@@ -45,17 +50,63 @@ bool SysCalls::isr(Ints::State *state, void *context)
 long SysCalls::sys_exit(long *args) // 1
 {
     Thread::Finalize(nullptr, args[1]);
+    printf("[syscalls] sys_exit(): Thread::Finalize() returned\n");
     return 0; // should never happen
+}
+
+long SysCalls::sys_read(long *args) // 3
+{
+    if(args[1] < 3)
+        return 0;
+    if(!args[2])
+        return -EINVAL;
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    File *f = cp->GetFileDescriptor(args[1]);
+    if(!f) return -EBADF;
+    return f->Read((void *)args[2], args[3]);
 }
 
 long SysCalls::sys_write(long *args) // 4
 {
-    return debugStream.Write((const void *)args[2], (int64_t)args[3]);
+    if(args[1] < 3)
+        return debugStream.Write((const void *)args[2], (int64_t)args[3]);
+    if(!args[2])
+        return -EINVAL;
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    File *f = cp->GetFileDescriptor(args[1]);
+    if(!f) return -EBADF;
+    return f->Write((const void *)args[2], args[3]);
+}
+
+long SysCalls::sys_open(long *args) // 5
+{
+    if(!args[1]) return -EINVAL;
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    return cp->Open((const char *)args[1], args[2]);
+}
+
+long SysCalls::sys_close(long *args) // 6
+{
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    return cp->Close(args[1]);
 }
 
 long SysCalls::sys_time(long *args) // 13
 {
     return time((time_t *)args[1]);
+}
+
+long SysCalls::sys_lseek(long *args) // 19
+{
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    File *f = cp->GetFileDescriptor(args[1]);
+    if(!f) return -EBADF;
+    return f->Seek(args[1], args[2]);
 }
 
 long SysCalls::sys_getpid(long *args) // 20
@@ -67,65 +118,52 @@ long SysCalls::sys_brk(long *args) // 45
 {
     uintptr_t brk = args[1];
     Process *cp = Process::GetCurrent();
-    if(!cp) return -EINVAL;
+    if(!cp) return ~0;
     if(!cp->MemoryLock.Acquire(10 * 1000, false))
-        return -EBUSY;
-    if(!cp->MinBrk && !cp->MaxBrk && !cp->CurrentBrk)
-    {   // first call
-        if(brk >= (KERNEL_BASE - 0x10000000))
-        {   // we leave at least 0x10000000 bytes for stacks
-            cp->MemoryLock.Release();
-            return -ENOMEM;
+        return ~0;
+
+    if(brk < cp->MinBrk || brk > cp->MaxBrk)
+    {
+        brk = cp->CurrentBrk;
+        cp->MemoryLock.Release();
+        return brk;
+    }
+
+    uintptr_t mappedNeeded = align(brk, PAGE_SIZE);
+
+    if(mappedNeeded > cp->MappedBrk)
+    {   // alloc and map needed memory
+        for(uintptr_t va = cp->MappedBrk; va < mappedNeeded; va += PAGE_SIZE)
+        {
+            uintptr_t pa = Paging::AllocPage();
+            if(pa == ~0)
+            {
+                cp->MemoryLock.Release();;
+                return cp->CurrentBrk;
+            }
+            if(!Paging::MapPage(cp->AddressSpace, va, pa, false, true, true))
+            {
+                cp->MemoryLock.Release();;
+                return cp->CurrentBrk;
+            }
         }
-        cp->MinBrk = brk;
-        cp->MaxBrk = KERNEL_BASE - 0x10000000;
-        cp->CurrentBrk = cp->MinBrk;
-        cp->MappedBrk = cp->CurrentBrk;
+        cp->MappedBrk = mappedNeeded;
     }
     else
-    {
-        if(brk < cp->MinBrk || brk >= cp->MaxBrk)
+    {   // unmap and free excess memory
+        for(uintptr_t va = mappedNeeded; va < cp->MappedBrk; va += PAGE_SIZE)
         {
-            cp->MemoryLock.Release();
-            return -ENOMEM;
+            uintptr_t pa = Paging::GetPhysicalAddress(cp->AddressSpace, va);
+            if(pa != ~0)
+                Paging::FreePage(pa);
+            Paging::UnMapPage(cp->AddressSpace, va, false);
         }
-        uintptr_t oldBrk = cp->CurrentBrk;
-        cp->CurrentBrk = brk;
-        uintptr_t neededMappedBrk = align(cp->CurrentBrk, PAGE_SIZE);
-        if(neededMappedBrk > cp->MappedBrk)
-        {   // allocate and map some more memory
-            for(uintptr_t va = cp->MappedBrk; va < neededMappedBrk; va += PAGE_SIZE)
-            {
-                uintptr_t pa = Paging::AllocPage();
-                if(pa == ~0)
-                {
-                    cp->CurrentBrk = oldBrk;
-                    cp->MemoryLock.Release();;
-                    return -ENOMEM;
-                }
-                if(!Paging::MapPage(cp->AddressSpace, va, pa, false, true, true))
-                {
-                    cp->CurrentBrk = oldBrk;
-                    cp->MemoryLock.Release();;
-                    return -ENOMEM;
-                }
-            }
-            cp->MappedBrk = neededMappedBrk;
-        }
-        else if(neededMappedBrk < cp->MappedBrk)
-        {   // unmap and release memory
-            for(uintptr_t va = neededMappedBrk; va < cp->MappedBrk; va += PAGE_SIZE)
-            {
-                uintptr_t pa = Paging::GetPhysicalAddress(cp->AddressSpace, va);
-                if(pa != ~0)
-                    Paging::FreePage(pa);
-                Paging::UnMapPage(cp->AddressSpace, va, false);
-            }
-            cp->MappedBrk = neededMappedBrk;
-        }
+        cp->MappedBrk = mappedNeeded;
     }
+
+    cp->CurrentBrk = brk;
     cp->MemoryLock.Release();
-    return 0;
+    return brk;
 }
 
 long SysCalls::sys_nanosleep(long *args) // 162
@@ -151,7 +189,9 @@ long SysCalls::sys_nanosleep(long *args) // 162
 
 long SysCalls::sys_gettid(long *args)
 {
-    return Thread::GetCurrent()->ID;
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    return cp->ID;
 }
 
 void SysCalls::Initialize()

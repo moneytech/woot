@@ -1,4 +1,6 @@
 #include <cpu.h>
+#include <errno.h>
+#include <file.h>
 #include <filesystem.h>
 #include <mutex.h>
 #include <process.h>
@@ -29,6 +31,15 @@ int Process::processEntryPoint(const char *filename)
         delete elf;
         return 126;
     }
+
+    proc->MemoryLock.Acquire(0, false);
+    for(ELF *e : proc->Images)
+        proc->MinBrk = max(proc->MinBrk, e->GetEndPtr());
+    proc->CurrentBrk = proc->MinBrk;
+    proc->MappedBrk = proc->CurrentBrk;
+    proc->MaxBrk = KERNEL_BASE - 0x10000000;
+    proc->MemoryLock.Release();
+
     uintptr_t esp = Thread::GetCurrent()->AllocUserStack();
     proc->lock.Release();
     cpuEnterUserMode(esp, (uintptr_t)elf->EntryPoint);
@@ -47,7 +58,7 @@ Process *Process::Create(const char *filename, Semaphore *finished)
     if(!filename) return nullptr;
     Thread *thread = new Thread("main", nullptr, (void *)processEntryPoint, (uintptr_t)filename,
                                 DEFAULT_STACK_SIZE, DEFAULT_STACK_SIZE,
-                                nullptr, finished);    
+                                nullptr, finished);
     Process *proc = new Process(filename, thread, 0);
     return proc;
 }
@@ -145,6 +156,60 @@ Elf32_Sym *Process::FindSymbol(const char *name)
         if(sym) return sym;
     }
     return nullptr;
+}
+
+int Process::Open(const char *filename, int flags)
+{
+    if(!lock.Acquire(0, false))
+        return -EBUSY;
+    File *f = File::Open(filename, flags);
+    if(!f)
+    {
+        lock.Release();
+        return -ENOENT;
+    }
+    int fd = 3;
+    for(; fd < MAX_FILE_DESCRIPTORS; ++fd)
+    {
+        if(!FileDescriptors[fd])
+        {
+            FileDescriptors[fd] = f;
+            break;
+        }
+    }
+    if(fd >= MAX_FILE_DESCRIPTORS)
+        fd = -EMFILE;
+    lock.Release();
+    return fd;
+}
+
+int Process::Close(int fd)
+{
+    if(fd < 0 || fd >= MAX_FILE_DESCRIPTORS)
+        return -EBADF;
+    if(!lock.Acquire(0, false))
+        return -EBUSY;
+    File *f = FileDescriptors[fd];
+    if(!f)
+    {
+        lock.Release();
+        return -EBADF;
+    }
+    delete f;
+    FileDescriptors[fd] = nullptr;
+    lock.Release();
+    return 0;
+}
+
+File *Process::GetFileDescriptor(int fd)
+{
+    if(fd < 0 || fd >= MAX_FILE_DESCRIPTORS)
+        return nullptr;
+    if(!lock.Acquire(0, false))
+        return nullptr;
+    File *f = FileDescriptors[fd];
+    lock.Release();
+    return f;
 }
 
 Process::~Process()

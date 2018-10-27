@@ -9,8 +9,11 @@
 
 class DEntry;
 class ELF;
+class File;
 class Semaphore;
 class Thread;
+
+#define MAX_FILE_DESCRIPTORS 128
 
 class Process
 {
@@ -31,6 +34,7 @@ public:
     DEntry *CurrentDirectory;
     List<ELF *> Images;
     uintptr_t UserStackPtr;
+    File *FileDescriptors[MAX_FILE_DESCRIPTORS];
 
     // used for brk() syscall
     Mutex MemoryLock;
@@ -51,6 +55,9 @@ public:
     bool AddThread(Thread *thread);
     bool RemoveThread(Thread *thread);
     Elf32_Sym *FindSymbol(const char *name);
+    int Open(const char *filename, int flags);
+    int Close(int fd);
+    File *GetFileDescriptor(int fd);
     ~Process();
 };
 

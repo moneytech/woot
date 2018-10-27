@@ -15,8 +15,12 @@ class SysCalls
     static bool isr(Ints::State *state, void *context);
 
     static long sys_exit(long *args); // 1
+    static long sys_read(long *args); // 3;
     static long sys_write(long *args); // 4
+    static long sys_open(long *args); // 5
+    static long sys_close(long *args); // 6
     static long sys_time(long * args); // 13
+    static long sys_lseek(long *args); // 19
     static long sys_getpid(long *args); // 20
     static long sys_brk(long *args); // 45
     static long sys_nanosleep(long *args); // 162

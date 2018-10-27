@@ -2,8 +2,10 @@ include/syscall.h
 libc/asm/syscall.asm
 libc/crt0.c
 libc/ctype.c
+libc/fcntl.c
 libc/include/ctype.h
 libc/include/errno.h
+libc/include/fcntl.h
 libc/include/limits.h
 libc/include/malloc.h
 libc/include/math.h
@@ -14,6 +16,7 @@ libc/include/stdio.h
 libc/include/stdlib.h
 libc/include/string.h
 libc/include/sys/param.h
+libc/include/sys/stat.h
 libc/include/sys/syscall.h
 libc/include/sys/types.h
 libc/include/time.h

@@ -13,14 +13,9 @@ void _exit(int status)
         syscall1(SYS_exit, status);
 }
 
-int open(const char *pathname, int flags)
-{
-    return -ENOSYS;
-}
-
 ssize_t read(int fd, void *buf, size_t count)
 {
-    return -ENOSYS;
+    return syscall3(SYS_read, fd, (long)buf, count);
 }
 
 ssize_t write(int fd, const void *buf, size_t count)
@@ -30,12 +25,12 @@ ssize_t write(int fd, const void *buf, size_t count)
 
 off_t lseek(int fd, off_t offset, int whence)
 {
-    return -ENOSYS;
+    return syscall3(SYS_lseek, fd, offset, whence);
 }
 
 int close(int fd)
 {
-    return -ENOSYS;
+    return syscall1(SYS_close, fd);
 }
 
 pid_t getpid()
@@ -45,11 +40,11 @@ pid_t getpid()
 
 int brk(void *addr)
 {
-    int res = syscall1(SYS_brk, (long)addr);
-    if(res < 0)
+    uintptr_t res = syscall1(SYS_brk, (long)addr);
+    if(res == ~0)
     {
-        errno = -res;
-        res = -1;
+        errno = ENOMEM;
+        return -1;
     }
     __current_brk = (uintptr_t)addr;
     return res;
@@ -58,7 +53,8 @@ int brk(void *addr)
 void *sbrk(intptr_t increment)
 {
     uintptr_t cbrk = __current_brk;
-    int res = brk((void *)(cbrk + increment));
-    if(res < 0) return (void *)-1;
+    uintptr_t res = syscall1(SYS_brk, (long)(cbrk + increment));
+    if(res == ~0) return (void *)(-1);
+    __current_brk = res;
     return (void *)cbrk;
 }

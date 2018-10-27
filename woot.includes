@@ -1,3 +1,9 @@
+libc
+libc/include
+libc/include/sys
+libc/internal
+libc/asm
+
 ./include
 kernel
 lib
@@ -6,8 +12,3 @@ mnt
 simplefb
 ps2mouse
 usertest
-libc
-libc/include
-libc/include/sys
-libc/internal
-libc/asm
