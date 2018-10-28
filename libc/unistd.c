@@ -108,3 +108,25 @@ char *get_current_dir_name(void)
     }
     return buf;
 }
+
+int fsync(int fd)
+{
+    long res = syscall1(SYS_fsync, fd);
+    if(res < 0)
+    {
+        errno = -res;
+        return -1;
+    }
+    return 0;
+}
+
+int fdatasync(int fd)
+{
+    long res = syscall1(SYS_fdatasync, fd);
+    if(res < 0)
+    {
+        errno = -res;
+        return -1;
+    }
+    return 0;
+}

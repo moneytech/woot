@@ -34,7 +34,6 @@ usertest/main.c
 include/syscalls.h
 kernel/syscalls.cpp
 libc/Makefile
-libc/include/test.h
 usertest/Makefile
 include/fbfont.h
 kernel/fbfont.cpp

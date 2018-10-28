@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <test.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -9,20 +8,22 @@ int main(int argc, char *argv[])
     char testText[] = "Trololololo...\n";
     write(0, testText, sizeof(testText) - 1);
 
-    char *cwd = get_current_dir_name();
-    printf("current directory: '%s'\n", cwd);
-    if(cwd) free(cwd);
+    char cwd[256];
+    printf("current directory: '%s'\n", getcwd(cwd, sizeof(cwd)));
 
     const char *filename = "modulelist";
     FILE *f = fopen(filename, "rb");
     if(f)
     {
-        for(char buf[16];;)
+        for(char buf[16]; !feof(f);)
         {
             size_t n = fread(buf, 1, sizeof(buf), f);
-            if(feof(f))
+            if(ferror(f))
+            {
+                printf("read error\n");
                 break;
-            printf("%-*s", n, buf);
+            }
+            printf("%.*s", (int)n, buf);
         }
         fclose(f);
     } else printf("couldn't open '%s'\n", filename);

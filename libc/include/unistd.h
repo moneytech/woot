@@ -24,6 +24,8 @@ void *sbrk(intptr_t increment);
 char *getcwd(char *buf, size_t size);
 char *getwd(char *buf);
 char *get_current_dir_name(void);
+int fsync(int fd);
+int fdatasync(int fd);
 
 #ifdef __cplusplus
 }

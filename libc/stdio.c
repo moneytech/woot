@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <math.h>
 #include <stdarg.h>
@@ -8,6 +9,8 @@
 #include <string.h>
 #include <unistd.h>
 
+// FIXME: freopen will fail if these are not dynamically allocated
+
 static FILE fstdin = { STDIN_FILENO };
 static FILE fstdout = { STDOUT_FILENO };
 static FILE fstderr = { STDERR_FILENO };
@@ -16,7 +19,7 @@ FILE *stdin = &fstdin;
 FILE *stdout = &fstdout;
 FILE *stderr = &fstderr;
 
-static int powi(int x, int y)
+static int ipow(int x, int y)
 {
     int v = 1;
     for(;;)
@@ -231,16 +234,20 @@ static int vncnprintf(writeCallback wc, void *wcarg, size_t n, const char *fmt, 
             }
             else if(c == '*')
             {
-                if(!argWidth && !width)
+                if(!dot)
                 {
-                    argWidth = 1;
-                    width = va_arg(arg, int);
+                    if(!argWidth && !width)
+                    {
+                        argWidth = 1;
+                        width = va_arg(arg, int);
+                    }
+                    else
+                    {
+                        bw += wc(wcarg, c);
+                        specifier = 0;
+                    }
                 }
-                else
-                {
-                    bw += wc(wcarg, c);
-                    specifier = 0;
-                }
+                else precision = va_arg(arg, int);
             }
             else if(c == '-')
             {
@@ -424,7 +431,7 @@ static int vncnprintf(writeCallback wc, void *wcarg, size_t n, const char *fmt, 
                     bw += wc(wcarg, '.');
                     double f = val - i;
                     if(!precision) precision = 4;
-                    int64_t ai = (int64_t)(f * powi(10, precision));
+                    int64_t ai = (int64_t)(f * ipow(10, precision));
                     ai = ai < 0 ? - ai : ai;
                     bw += writeDec(wc, wcarg, ai, precision, -1, 0, 0, 0);
                 }
@@ -535,26 +542,88 @@ int ferror(FILE *stream)
 
 size_t fread(void *ptr, size_t size, size_t count, FILE *stream)
 {
-    int res = read(stream->fd, ptr, size * count);
+    if(!ptr || !stream)
+    {
+        errno = EINVAL;
+        return 0;
+    }
+    size_t s = size * count;
+    int res = read(stream->fd, ptr, s);
     if(res < 0)
     {
         stream->error = 1;
         return 0;
     }
-    stream->eof = !res;
+    stream->eof = res != s;
     return res / size;
 }
 
 size_t fwrite(const void *ptr, size_t size, size_t count, FILE *stream)
 {
-    int res = write(stream->fd, ptr, size * count);
+    if(!ptr || !stream)
+    {
+        errno = EINVAL;
+        return 0;
+    }
+    size_t s = size * count;
+    int res = write(stream->fd, ptr, s);
     if(res < 0)
     {
         stream->error = 1;
         return 0;
     }
-    stream->eof = !res;
+    stream->eof = res != s;
     return res / size;
+}
+
+int fseek(FILE *stream, long int offset, int whence)
+{
+    if(!stream)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    off_t res = lseek(stream->fd, offset, whence);
+    return res < 0 ? (errno = EINVAL), -1 : 0;
+}
+
+long int ftell(FILE *stream)
+{
+    if(!stream)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    return lseek(stream->fd, 0, SEEK_CUR);
+}
+
+int fgetpos(FILE *stream, fpos_t *pos)
+{
+    if(!stream)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    long int p = ftell(stream);
+    if(p < 0) return p;
+    if(pos) *pos = p;
+    return 0;
+}
+
+int fsetpos(FILE *stream, const fpos_t *pos)
+{
+    if(!stream || !pos)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    off_t res = lseek(stream->fd, *pos, SEEK_SET);
+    if(res < 0)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    return 0;
 }
 
 int fclose(FILE *stream)

@@ -4,7 +4,7 @@ OBJS += ctype.o fcntl.o malloc.o math.o softdiv.o stdio.o stdlib.o string.o time
 OBJS += asm/syscall.o
 
 CFLAGS = -m32 -ggdb -nostdinc -I./include -Wno-expansion-to-defined
-ASMFLAGS = -f elf
+ASMFLAGS = -f elf -gdwarf2
 LDFLAGS = -melf_i386 -shared
 
 LIB_STATIC = $(LIB).a

@@ -30,6 +30,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     [SYS_lseek] = sys_lseek,
     [SYS_getpid] = sys_getpid,
     [SYS_brk] = sys_brk,
+    [SYS_fsync] = sys_fsync,
     [SYS_nanosleep] = sys_nanosleep,
     [SYS_getcwd] = sys_getcwd,
     [SYS_gettid] = sys_gettid,
@@ -166,6 +167,21 @@ long SysCalls::sys_brk(long *args) // 45
     cp->CurrentBrk = brk;
     cp->MemoryLock.Release();
     return brk;
+}
+
+long SysCalls::sys_fsync(long *args) // 118
+{
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    File *f = cp->GetFileDescriptor(args[1]);
+    if(!f) return -EBADF;
+    //return f->Flush(); // Not implemented yet
+    return 0;
+}
+
+long SysCalls::sys_fdatasync(long *args) // 148
+{   // the same as sys_fsync for now
+    return sys_fsync(args);
 }
 
 long SysCalls::sys_nanosleep(long *args) // 162

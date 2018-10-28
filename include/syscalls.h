@@ -23,6 +23,8 @@ class SysCalls
     static long sys_lseek(long *args); // 19
     static long sys_getpid(long *args); // 20
     static long sys_brk(long *args); // 45
+    static long sys_fsync(long *args); // 118
+    static long sys_fdatasync(long *args); // 148
     static long sys_nanosleep(long *args); // 162
     static long sys_getcwd(long *args); // 183
     static long sys_gettid(long *args); // 224
