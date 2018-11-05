@@ -33,10 +33,16 @@ static int ipow(int x, int y)
 }
 
 typedef int (*writeCallback)(void *arg, char c);
+typedef int (*readCallback)(void *arg, char *c);
 
 static int fwriteCallback(void *arg, char c)
 {
     return fwrite(&c, sizeof(c), 1, (FILE *)arg);
+}
+
+static int freadCallback(void *arg, char *c)
+{
+    return fread(c, 1, 1, (FILE *)arg);
 }
 
 typedef struct stringBuffer
@@ -164,7 +170,7 @@ int writeDec(writeCallback wc, void *wcarg, uint64_t value, int minDigits, int m
     return measure ? strlen(buf) : writeString(wc, wcarg, buf, 0);
 }
 
-static int vncnprintf(writeCallback wc, void *wcarg, const char *fmt, va_list arg)
+static int internalPrintf(writeCallback wc, void *wcarg, const char *fmt, va_list arg)
 {
     int hashFlag = 0;
     int dot = 0;
@@ -489,6 +495,12 @@ static int vncnprintf(writeCallback wc, void *wcarg, const char *fmt, va_list ar
     return bw;
 }
 
+static int internalScanf(readCallback rc, void *rcarg, const char *fmt, va_list arg)
+{
+    printf("[stdio] internalScanf() not implemented\n");
+    return 0;
+}
+
 int vprintf(const char *format, va_list arg)
 {
     return vfprintf(stdout, format, arg);
@@ -505,7 +517,7 @@ int printf(const char *format, ...)
 
 int vfprintf(FILE *stream, const char *format, va_list arg)
 {
-    return vncnprintf(fwriteCallback, stream, format, arg);
+    return internalPrintf(fwriteCallback, stream, format, arg);
 }
 
 int fprintf(FILE *stream, const char *format, ...)
@@ -520,7 +532,7 @@ int fprintf(FILE *stream, const char *format, ...)
 int vsprintf(char *str, const char *format, va_list arg)
 {
     stringBuffer sb = { str, 0, SIZE_MAX };
-    return vncnprintf(stringWriteCallback, &sb, format, arg);
+    return internalPrintf(stringWriteCallback, &sb, format, arg);
 }
 
 int sprintf(char *str, const char *format, ...)
@@ -537,7 +549,7 @@ int snprintf(char *str, size_t n, const char *format, ...)
     stringBuffer sb = { str, 0, n };
     va_list arg;
     va_start(arg, format);
-    int res = vncnprintf(stringWriteCallback, &sb, format, arg);
+    int res = internalPrintf(stringWriteCallback, &sb, format, arg);
     va_end(arg);
     return res;
 }
@@ -576,6 +588,11 @@ int puts(const char *str)
     if(ferror(stdout))
         return EOF;
     return bw;
+}
+
+int getc(FILE *stream)
+{
+    return fgetc(stream);
 }
 
 FILE *tmpfile(void)
@@ -750,6 +767,15 @@ char *fgets(char *str, int num, FILE *stream)
     }
     if(i) str[i] = 0;
     return !i || ferror(stream) ? NULL : str;
+}
+
+int fscanf(FILE *stream, const char *format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    int res = internalScanf(freadCallback, stream, format, arg);
+    va_end(arg);
+    return res;
 }
 
 int fclose(FILE *stream)

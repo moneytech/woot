@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fbfont.h>
 #include <framebuffer.h>
+#include <inputdevice.h>
 #include <string.h>
 
 #define EXTRA_RETURN
@@ -35,6 +36,73 @@ static void vgaSetCursorPos(uint16_t pos)
 }
 #endif // USE_VGA_TEXT
 
+static char vkToChar(VirtualKey vk, bool shift, bool caps, bool num)
+{
+    static const char *digits = "0123456789";
+    static const char *shiftDigits = ")!@#$%^&*(";
+    static const char *lowerLetters = "abcdefghijklmnopqrstuvwxyz";
+    static const char *upperLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    unsigned int k = (unsigned int)vk;
+
+    if(k >= (unsigned int)VirtualKey::NumPad0 && k <= (unsigned int)VirtualKey::NumPad9)
+    {
+        if(num)
+            return digits[k - (unsigned int)VirtualKey::NumPad0];
+    }
+    else if(k >= (unsigned int)VirtualKey::Key0 && k <= (unsigned int)VirtualKey::Key9)
+    {
+        unsigned int dig = k - (unsigned int)VirtualKey::Key0;
+        return shift ? shiftDigits[dig] : digits[dig];
+    }
+    else if(k >= (unsigned int)VirtualKey::KeyA && k <= (unsigned int)VirtualKey::KeyZ)
+    {
+        unsigned int let = k - (unsigned int)VirtualKey::KeyA;
+        return ((shift != caps) ? upperLetters[let] : lowerLetters[let]);
+    }
+    else if(vk == VirtualKey::Space)
+        return ' ';
+    else if(vk == VirtualKey::Return)
+        return '\n';
+    else if(vk == VirtualKey::OEMMinus)
+        return (shift ? '_' : '-');
+    else if(vk == VirtualKey::OEMPlus)
+        return (shift ? '+' : '=');
+    else if(vk == VirtualKey::OEMComma)
+        return (shift ? '<' : ',');
+    else if(vk == VirtualKey::OEMPeriod)
+        return (shift ? '>' : '.');
+    else if(vk == VirtualKey::OEM1)
+        return (shift ? ':' : ';');
+    else if(vk == VirtualKey::OEM2)
+        return (shift ? '?' : '/');
+    else if(vk == VirtualKey::OEM3)
+        return (shift ? '~' : '`');
+    else if(vk == VirtualKey::OEM4)
+        return (shift ? '{' : '[');
+    else if(vk == VirtualKey::OEM5)
+        return (shift ? '|' : '\\');
+    else if(vk == VirtualKey::OEM6)
+        return (shift ? '}' : ']');
+    else if(vk == VirtualKey::OEM7)
+        return (shift ? '"' : '\'');
+    else if(vk == VirtualKey::Subtract)
+        return '-';
+    else if(vk == VirtualKey::Add)
+        return '+';
+    else if(vk == VirtualKey::Multiply)
+        return '*';
+    else if(vk == VirtualKey::Divide)
+        return '/';
+    else if(vk == VirtualKey::Decimal)
+        return '.';
+    else if(vk == VirtualKey::Back)
+        return '\b';
+    else if(vk == VirtualKey::Escape)
+        return 0x1B;
+    return 0;
+}
+
 DebugStream::DebugStream(word port)
     : port(port)
 {
@@ -53,9 +121,94 @@ void DebugStream::SetFrameBuffer(FrameBuffer *fb)
     fbH = mode.Height / FONT_SCANLINES;
 }
 
+void DebugStream::EnableLineBuffer()
+{
+    lineBufferState = true;
+    lineBufferPos = 0;
+}
+
+void DebugStream::DisableLineBuffer()
+{
+    lineBufferState = false;
+}
+
 int64_t DebugStream::Read(void *buffer, int64_t n)
 {
-    return -ENOSYS;
+    static bool shift = false, alt = false, ctrl = false, caps = false, num = false;
+
+    if(!n) return 0;
+    if(!buffer) return -EINVAL;
+
+    for(;;)
+    {
+        InputDevice::Event event = InputDevice::GetEvent(0);
+        if(event.DeviceType != InputDevice::Type::Keyboard)
+            continue; // ignore non keyboard events
+        if(event.Keyboard.Key == VirtualKey::LShift ||
+                event.Keyboard.Key == VirtualKey::RShift)
+        {
+            shift = !event.Keyboard.Release;
+            continue;
+        }
+        if(event.Keyboard.Key == VirtualKey::LMenu ||
+                event.Keyboard.Key == VirtualKey::RMenu)
+        {
+            alt = !event.Keyboard.Release;
+            continue;
+        }
+        if(event.Keyboard.Key == VirtualKey::LControl ||
+                event.Keyboard.Key == VirtualKey::RControl)
+        {
+            ctrl = !event.Keyboard.Release;
+            continue;
+        }
+
+        if(event.Keyboard.Release)
+        {
+            if(event.Keyboard.Key == VirtualKey::Capital)
+                caps = !caps;
+            if(event.Keyboard.Key == VirtualKey::NumLock)
+                num = !num;
+            continue;
+        }
+        if(ctrl && alt && event.Keyboard.Key == VirtualKey::Delete)
+        {
+            _outb(0x64, 0xFE);
+            continue;
+        }
+        char chr = vkToChar(event.Keyboard.Key, shift, caps, num);
+        if(!chr) continue;
+        if(!lineBufferState)
+        {
+            *((byte *)buffer) = chr;
+            return 1;
+        }
+
+        if(chr == '\b')
+        {
+            if(lineBufferPos)
+            {
+                Write("\b", 1);
+                lineBuffer[--lineBufferPos] = 0;
+            }
+            continue;
+        }
+        if(lineBufferPos >= sizeof(lineBuffer))
+            continue;
+        Write(&chr, 1);
+        if(chr == '\n')
+        {
+            lineBuffer[lineBufferPos] = '\n';
+            break;
+        }
+        lineBuffer[lineBufferPos++] = chr;
+        if(lineBufferPos >= n)
+            break;
+    }
+    int res = lineBufferPos;
+    memcpy(buffer, lineBuffer, lineBufferPos);
+    lineBufferPos = 0;
+    return res;
 }
 
 int64_t DebugStream::Write(const void *buffer, int64_t n)
@@ -107,6 +260,11 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
             {
                 c = ' ';
                 if(fbX) --fbX;
+                else
+                {
+                    fbX = fbW - 1;
+                    --fbY;
+                }
             }
 
             if(c == '\n')
@@ -114,22 +272,19 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
             else if(!fb->Lock())
             {
                 byte *glyph = fbFont[c];
+                FrameBuffer::ModeInfo mi = fb->GetMode();
+                FrameBuffer::Color bg = fb->GetPixel(mi.Width - 1, mi.Height - 1);
 
-                auto drawGlyph = [this, glyph](FrameBuffer *fb, int ox, int oy, FrameBuffer::Color c)
+                auto drawGlyph = [this, glyph](FrameBuffer *fb, int ox, int oy, FrameBuffer::Color c, FrameBuffer::Color bc)
                 {
                     for(int y = 0; y < FONT_SCANLINES; ++y)
                     {
                         int glyphLine = glyph[y];
                         for(int x = 0; x < FONT_BITS; ++x)
-                        {
-                            if(glyphLine & (0x80 >> x))
-                                fb->SetPixel(x + fbX * FONT_BITS + ox, y + fbY * FONT_SCANLINES + oy, c);
-                        }
+                            fb->SetPixel(x + fbX * FONT_BITS + ox, y + fbY * FONT_SCANLINES + oy, glyphLine & (0x80 >> x) ? c : bc);
                     }
                 };
-
-                drawGlyph(fb, 2, 2, FrameBuffer::Color(0, 0, 0));
-                drawGlyph(fb, 0, 0, FrameBuffer::Color(255, 255, 255));
+                drawGlyph(fb, 0, 0, FrameBuffer::Color(255, 255, 255), bg);
 
                 if(!back) ++fbX;
                 fb->UnLock();

@@ -76,73 +76,6 @@ int testThread(uintptr_t arg)
 
 static uint64_t getRAMSize(multiboot_info_t *mboot_info);
 
-static char vkToChar(VirtualKey vk, bool shift, bool caps, bool num)
-{
-    static const char *digits = "0123456789";
-    static const char *shiftDigits = ")!@#$%^&*(";
-    static const char *lowerLetters = "abcdefghijklmnopqrstuvwxyz";
-    static const char *upperLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-    unsigned int k = (unsigned int)vk;
-
-    if(k >= (unsigned int)VirtualKey::NumPad0 && k <= (unsigned int)VirtualKey::NumPad9)
-    {
-        if(num)
-            return digits[k - (unsigned int)VirtualKey::NumPad0];
-    }
-    else if(k >= (unsigned int)VirtualKey::Key0 && k <= (unsigned int)VirtualKey::Key9)
-    {
-        unsigned int dig = k - (unsigned int)VirtualKey::Key0;
-        return shift ? shiftDigits[dig] : digits[dig];
-    }
-    else if(k >= (unsigned int)VirtualKey::KeyA && k <= (unsigned int)VirtualKey::KeyZ)
-    {
-        unsigned int let = k - (unsigned int)VirtualKey::KeyA;
-        return ((shift != caps) ? upperLetters[let] : lowerLetters[let]);
-    }
-    else if(vk == VirtualKey::Space)
-        return ' ';
-    else if(vk == VirtualKey::Return)
-        return '\n';
-    else if(vk == VirtualKey::OEMMinus)
-        return (shift ? '_' : '-');
-    else if(vk == VirtualKey::OEMPlus)
-        return (shift ? '+' : '=');
-    else if(vk == VirtualKey::OEMComma)
-        return (shift ? '<' : ',');
-    else if(vk == VirtualKey::OEMPeriod)
-        return (shift ? '>' : '.');
-    else if(vk == VirtualKey::OEM1)
-        return (shift ? ':' : ';');
-    else if(vk == VirtualKey::OEM2)
-        return (shift ? '?' : '/');
-    else if(vk == VirtualKey::OEM3)
-        return (shift ? '~' : '`');
-    else if(vk == VirtualKey::OEM4)
-        return (shift ? '{' : '[');
-    else if(vk == VirtualKey::OEM5)
-        return (shift ? '|' : '\\');
-    else if(vk == VirtualKey::OEM6)
-        return (shift ? '}' : ']');
-    else if(vk == VirtualKey::OEM7)
-        return (shift ? '"' : '\'');
-    else if(vk == VirtualKey::Subtract)
-        return '-';
-    else if(vk == VirtualKey::Add)
-        return '+';
-    else if(vk == VirtualKey::Multiply)
-        return '*';
-    else if(vk == VirtualKey::Divide)
-        return '/';
-    else if(vk == VirtualKey::Decimal)
-        return '.';
-    else if(vk == VirtualKey::Back)
-        return '\b';
-    else if(vk == VirtualKey::Escape)
-        return 0x1B;
-    return 0;
-}
-
 extern "C" void *_utext_start;
 extern "C" void *_utext_end;
 extern "C" void *_udata_start;
@@ -273,82 +206,14 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         if(cdir) cdir->GetFullPath(cwd, sizeof(cwd));
         else cwd[0] = 0;
         printf("%s# ", cwd);
-        for(;;)
+        debugStream.EnableLineBuffer();
+        int br = debugStream.Read(cmd, sizeof(cmd) - 1);
+        if(br < 0)
         {
-            InputDevice::Event event = InputDevice::GetEvent(0);
-            if(event.DeviceType != InputDevice::Type::Keyboard)
-            {
-                if(event.DeviceType == InputDevice::Type::Mouse)
-                {
-                    /*printf("dx: %4d dy: %4d pr: %x rel: %x hld: %x\n",
-                           event.Mouse.Movement[0], event.Mouse.Movement[1],
-                            event.Mouse.ButtonsPressed, event.Mouse.ButtonsReleased,
-                            event.Mouse.ButtonsHeld);*/
-                    x += event.Mouse.Movement[0];
-                    y += event.Mouse.Movement[1];
-                    x = clamp(x, 0, mode.Width - 1);
-                    y = clamp(y, 0, mode.Height - 1);
-                    if(event.Mouse.ButtonsHeld & 1)
-                        fb->SetPixel(x, y, FrameBuffer::Color(255, 255, 255));
-                }
-                continue;
-            }
-            if(event.Keyboard.Key == VirtualKey::LShift ||
-                    event.Keyboard.Key == VirtualKey::RShift)
-            {
-                shift = !event.Keyboard.Release;
-                continue;
-            }
-            if(event.Keyboard.Key == VirtualKey::LMenu ||
-                    event.Keyboard.Key == VirtualKey::RMenu)
-            {
-                alt = !event.Keyboard.Release;
-                continue;
-            }
-            if(event.Keyboard.Key == VirtualKey::LControl ||
-                    event.Keyboard.Key == VirtualKey::RControl)
-            {
-                ctrl = !event.Keyboard.Release;
-                continue;
-            }
-
-            if(event.Keyboard.Release)
-            {
-                if(event.Keyboard.Key == VirtualKey::Capital)
-                    caps = !caps;
-                if(event.Keyboard.Key == VirtualKey::NumLock)
-                    num = !num;
-                continue;
-            }
-            if(ctrl && alt && event.Keyboard.Key == VirtualKey::Delete)
-            {
-                _outb(0x64, 0xFE);
-                continue;
-            }
-            char chr = vkToChar(event.Keyboard.Key, shift, caps, num);
-            if(!chr) continue;
-            if(chr == '\b')
-            {
-                if(cmdPos)
-                {
-                    printf("\b");
-                    cmd[--cmdPos] = 0;
-                }
-                continue;
-            }
-            printf("%c", chr);
-            if(chr == '\n')
-            {
-                cmd[cmdPos++] = 0;
-                break;
-            }
-            cmd[cmdPos++] = chr;
-            if(cmdPos == (sizeof(cmd) - 1))
-            {
-                cmd[cmdPos++] = 0;
-                break;
-            }
+            printf("[main] debugStream read error %d\n", -br);
+            continue;
         }
+        cmd[br] = 0;
         cmdPos = 0;
 
 
@@ -591,7 +456,11 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 finished.Wait(0, false, false);
                 delete proc;
             }
-            else printf("Unknown command '%s'\n", args[0]);
+            else
+            {
+                char *cmd = args[0];
+                printf("Unknown command '%s'\n", cmd);
+            }
         }
     }
     printf("[main] Closing system\n");

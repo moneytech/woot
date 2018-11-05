@@ -44,6 +44,7 @@ void clearerr(FILE *stream);
 void rewind(FILE *stream);
 int remove(const char *filename);
 int puts(const char *str);
+int getc(FILE *stream);
 FILE *tmpfile(void);
 
 FILE *fopen(const char *filename, const char *mode);
@@ -59,6 +60,7 @@ int fputc(int character, FILE *stream);
 int fputs(const char *str, FILE *stream);
 int fgetc(FILE *stream);
 char *fgets(char *str, int num, FILE *stream);
+int fscanf(FILE *stream, const char *format, ...);
 int fclose(FILE *stream);
 
 #ifdef __cplusplus

@@ -65,10 +65,10 @@ long SysCalls::sys_exit(long *args) // 1
 
 long SysCalls::sys_read(long *args) // 3
 {
-    if(args[1] < 3)
-        return 0;
     if(!args[2])
         return -EINVAL;
+    if(args[1] < 3)
+        return debugStream.Read((void *)args[2], (int64_t)args[3]);
     Process *cp = Process::GetCurrent();
     if(!cp) return -ESRCH;
     File *f = cp->GetFileDescriptor(args[1]);
@@ -78,10 +78,10 @@ long SysCalls::sys_read(long *args) // 3
 
 long SysCalls::sys_write(long *args) // 4
 {
-    if(args[1] < 3)
-        return debugStream.Write((const void *)args[2], (int64_t)args[3]);
     if(!args[2])
         return -EINVAL;
+    if(args[1] < 3)
+        return debugStream.Write((const void *)args[2], (int64_t)args[3]);
     Process *cp = Process::GetCurrent();
     if(!cp) return -ESRCH;
     File *f = cp->GetFileDescriptor(args[1]);
