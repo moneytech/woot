@@ -10,15 +10,103 @@
 #include <string.h>
 #include <sysdefs.h>
 #include <thread.h>
+#include <tokenizer.h>
 
 Sequencer<pid_t> Process::id(1);
 List<Process *> Process::processList;
 Mutex Process::listLock;
 uintptr_t Process::kernelAddressSpace;
 
-int Process::processEntryPoint(const char *filename)
+typedef struct AuxVector
 {
-    ELF *elf = ELF::Load(GetCurrentDir(), filename, true, false);
+    uintptr_t a_type;
+    uintptr_t a_val;
+} AuxVector;
+
+#define AT_NULL         0               /* End of vector */
+#define AT_IGNORE       1               /* Entry should be ignored */
+#define AT_EXECFD       2               /* File descriptor of program */
+#define AT_PHDR         3               /* Program headers for program */
+#define AT_PHENT        4               /* Size of program header entry */
+#define AT_PHNUM        5               /* Number of program headers */
+#define AT_PAGESZ       6               /* System page size */
+#define AT_BASE         7               /* Base address of interpreter */
+#define AT_FLAGS        8               /* Flags */
+#define AT_ENTRY        9               /* Entry point of program */
+#define AT_NOTELF       10              /* Program is not ELF */
+#define AT_UID          11              /* Real uid */
+#define AT_EUID         12              /* Effective uid */
+#define AT_GID          13              /* Real gid */
+#define AT_EGID         14              /* Effective gid */
+#define AT_CLKTCK       17              /* Frequency of times() */
+
+uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf)
+{
+    auto stackPush = [](uintptr_t stackPtr, void *data, size_t size) -> uintptr_t
+    {
+        stackPtr -= size;
+        void *buf = (void *)stackPtr;
+        memcpy(buf, data, size);
+        return stackPtr;
+    };
+
+    Tokenizer cmd(cmdLine, " ", 0);
+    int argCount = cmd.Tokens.Count();
+
+    uintptr_t envPtrs[32];
+    uintptr_t argPtrs[32];
+
+    uintptr_t zeroPtr = 0;
+    stackPtr = stackPush(stackPtr, &zeroPtr, sizeof(zeroPtr));
+
+    // info block
+    int i;
+    for(i = 0; i < envCount; ++i)
+        envPtrs[i] = stackPtr = stackPush(stackPtr, (void *)envVars[i], strlen(envVars[i]) + 1);
+    i = 0;
+    for(Tokenizer::Token token : cmd.Tokens)
+    {
+        char *str = token.String;
+        argPtrs[i++] = stackPtr = stackPush(stackPtr, str, strlen(str) + 1);
+    }
+
+    // align stack pointer
+    uintptr_t padding = 0;
+    stackPtr = stackPush(stackPtr, &padding, stackPtr % sizeof(padding));
+
+    AuxVector auxVectors[] =
+    {
+        //{ AT_SECURE, (uintptr_t)1 },
+        { AT_ENTRY, (uintptr_t)elf->EntryPoint },
+        { AT_PAGESZ, (uintptr_t)PAGE_SIZE },
+        //{ AT_PHNUM, (uintptr_t)elf->ehdr->e_phnum },
+        //{ AT_PHENT, (uintptr_t)elf->ehdr->e_phentsize },
+        //{ AT_PHDR, (uintptr_t)elf->phdrs }
+    };
+
+    // aux vectors
+    for(i = 0; i < 2; ++i)
+        stackPtr = stackPush(stackPtr, &zeroPtr, sizeof zeroPtr);
+    stackPtr = stackPush(stackPtr, auxVectors, sizeof auxVectors);
+
+    // env pointers
+    stackPtr = stackPush(stackPtr, &zeroPtr, sizeof zeroPtr);
+    for(i = 0; i < envCount; ++i)
+        stackPtr = stackPush(stackPtr, &envPtrs[envCount - i - 1], sizeof(uintptr_t));
+
+    // arg pointers
+    stackPtr = stackPush(stackPtr, &zeroPtr, sizeof zeroPtr);
+    for(i = 0; i < argCount; ++i)
+        stackPtr = stackPush(stackPtr, &argPtrs[argCount - i - 1], sizeof(uintptr_t));
+    stackPtr = stackPush(stackPtr, &argCount, sizeof argCount);
+
+    return stackPtr;
+}
+
+int Process::processEntryPoint(const char *cmdline)
+{
+    Tokenizer cmd(cmdline, " ", 2);
+    ELF *elf = ELF::Load(GetCurrentDir(), cmd[0], true, false);
     if(!elf) return 127;
     if(!elf->EntryPoint)
     {
@@ -34,13 +122,19 @@ int Process::processEntryPoint(const char *filename)
 
     proc->MemoryLock.Acquire(0, false);
     for(ELF *e : proc->Images)
-        proc->MinBrk = max(proc->MinBrk, e->GetEndPtr());
+        proc->MinBrk = max(proc->MinBrk, align(e->GetEndPtr(), (64 << 10)));
     proc->CurrentBrk = proc->MinBrk;
     proc->MappedBrk = proc->CurrentBrk;
     proc->MaxBrk = KERNEL_BASE - 0x10000000;
     proc->MemoryLock.Release();
 
     uintptr_t esp = Thread::GetCurrent()->AllocUserStack();
+    const char *envVars[] =
+    {
+        "PATH=WOOT_OS~/:WOOT_OS~/system",
+        "TEST=value"
+    };
+    esp = buildUserStack(esp, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf);
     proc->lock.Release();
     cpuEnterUserMode(esp, (uintptr_t)elf->EntryPoint);
     return 0;

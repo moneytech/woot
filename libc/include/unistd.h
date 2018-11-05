@@ -26,6 +26,7 @@ char *getwd(char *buf);
 char *get_current_dir_name(void);
 int fsync(int fd);
 int fdatasync(int fd);
+int unlink(const char *pathname);
 
 #ifdef __cplusplus
 }

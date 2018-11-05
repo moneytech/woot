@@ -37,12 +37,13 @@ class Mutex;
 
 class File
 {
-    File(::DEntry *dentry, int flags);
+    File(::DEntry *dentry, int flags, mode_t mode);
 public:
     ::DEntry *DEntry;
     int Flags;
     int64_t Position;
     Mutex *Lock;
+    mode_t Mode;
 
     static File *Open(::DEntry *parent, const char *name, int flags);
     static File *Open(const char *name, int flags);

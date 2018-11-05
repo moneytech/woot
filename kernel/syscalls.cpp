@@ -3,10 +3,13 @@
 #include <dentry.h>
 #include <errno.h>
 #include <file.h>
+#include <inode.h>
 #include <paging.h>
 #include <process.h>
+#include <stat.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <syscall.h>
 #include <syscalls.h>
 #include <sysdefs.h>
@@ -29,7 +32,9 @@ SysCalls::Callback SysCalls::callbacks[] =
     [SYS_time] = sys_time,
     [SYS_lseek] = sys_lseek,
     [SYS_getpid] = sys_getpid,
+    [SYS_mkdir] = sys_mkdir,
     [SYS_brk] = sys_brk,
+    [SYS_stat] = sys_stat,
     [SYS_fsync] = sys_fsync,
     [SYS_nanosleep] = sys_nanosleep,
     [SYS_getcwd] = sys_getcwd,
@@ -40,6 +45,7 @@ bool SysCalls::isr(Ints::State *state, void *context)
 {
     long args[] = { (long)state->EAX, (long)state->EBX, (long)state->ECX, (long)state->EDX,
                     (long)state->ESI, (long)state->EDI, (long)state->EBP };
+    //printf("[syscalls] syscall(%d, %p, %p, %p, %p, %p)\n", args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
     if(args[0] >= MAX_SYSCALLS || !callbacks[args[0]])
     {
         printf("[syscalls] unknown syscall %u\n", args[0]);
@@ -85,6 +91,7 @@ long SysCalls::sys_write(long *args) // 4
 
 long SysCalls::sys_open(long *args) // 5
 {
+    //printf("sys_open('%s', %d)\n", (char *)args[1], args[2]);
     if(!args[1]) return -EINVAL;
     Process *cp = Process::GetCurrent();
     if(!cp) return -ESRCH;
@@ -117,8 +124,35 @@ long SysCalls::sys_getpid(long *args) // 20
     return Process::GetCurrent()->ID;
 }
 
+long SysCalls::sys_mkdir(long *args) // 39
+{
+    if(!args[1]) return -EINVAL;
+    char *pathname = strdup((const char *)args[1]);
+    char *basename = strrpbrk(pathname, PATH_SEPARATORS);
+    char *dirname = basename ? pathname : (char *)".";
+    if(basename) *basename++ = 0;
+    else basename = pathname;
+    File *dir = File::Open(dirname, O_DIRECTORY);
+    if(!dir)
+    {
+        free(pathname);
+        return -ENOENT;
+    }
+    if(!(S_ISDIR(dir->Mode)))
+    {
+        delete dir;
+        free(pathname);
+        return -ENOTDIR;
+    }
+    bool res = dir->Create(basename, S_IFDIR | (args[2] & 0777));
+    delete dir;
+    free(pathname);
+    return res ? 0 : -EPERM;
+}
+
 long SysCalls::sys_brk(long *args) // 45
 {
+    //printf("sys_brk(%p)\n", args[1]);
     uintptr_t brk = args[1];
     Process *cp = Process::GetCurrent();
     if(!cp) return ~0;
@@ -167,6 +201,44 @@ long SysCalls::sys_brk(long *args) // 45
     cp->CurrentBrk = brk;
     cp->MemoryLock.Release();
     return brk;
+}
+
+long SysCalls::sys_stat(long *args) // 106
+{
+    if(!args[1] || !args[2]) return -EINVAL;
+    const char *filename = (const char *)args[1];
+    stat *st = (stat *)args[2];
+    File *f = File::Open(filename, 0);
+    if(!f) return -ENOENT;
+    memset(st, 0, sizeof(stat));
+    if(!DEntry::Lock())
+    {
+        delete f;
+        return -EBUSY;
+    }
+    if(!INode::Lock())
+    {
+        DEntry::UnLock();
+        delete f;
+        return -EBUSY;
+    }
+    DEntry *dentry = f->DEntry;
+    INode *inode = dentry->INode;
+    st->st_ino = inode->Number;
+    st->st_mode = inode->GetMode();
+    st->st_nlink = inode->GetLinkCount();
+    st->st_uid = inode->GetUID();
+    st->st_gid = inode->GetGID();
+    st->st_size = inode->GetSize();
+    st->st_blksize = 512;
+    st->st_blocks = align(st->st_size, st->st_blksize) / st->st_blksize;
+    st->st_atime = inode->GetAccessTime();
+    st->st_mtime = inode->GetModifyTime();
+    st->st_ctime = inode->GetCreateTime();
+    INode::UnLock();
+    DEntry::UnLock();
+    delete f;
+    return 0;
 }
 
 long SysCalls::sys_fsync(long *args) // 118

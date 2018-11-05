@@ -11,11 +11,12 @@
 #include <tokenizer.h>
 #include <volume.h>
 
-File::File(::DEntry *dentry, int flags) :
+File::File(::DEntry *dentry, int flags, mode_t mode) :
     DEntry(dentry),
     Flags(flags),
     Position(0),
-    Lock(new Mutex())
+    Lock(new Mutex()),
+    Mode(mode)
 {
 }
 
@@ -74,12 +75,12 @@ File *File::Open(::DEntry *parent, const char *name, int flags)
         INode::UnLock();
     }
     mode_t mode = dentry->INode->GetMode();
-    if((flags & O_DIRECTORY && !S_ISDIR(mode)) || (!(flags & O_DIRECTORY) && S_ISDIR(mode)))
+    if((flags & O_DIRECTORY && !S_ISDIR(mode)))
     {
         FileSystem::PutDEntry(dentry);
         return nullptr;
     }
-    File *file = new File(dentry, flags);
+    File *file = new File(dentry, flags, mode);
     if(flags & O_APPEND)
         file->Position = file->GetSize();
     DEntry::UnLock();
@@ -217,6 +218,11 @@ int64_t File::Seek(int64_t offs, int loc)
 {
     if(!Lock->Acquire(0, false))
         return -EBUSY;
+    if(S_ISDIR(Mode) && (offs != 0 || loc != SEEK_SET))
+    {
+        Lock->Release();
+        return -EISDIR;
+    }
     switch(loc)
     {
     case SEEK_SET:
@@ -238,9 +244,14 @@ int64_t File::Seek(int64_t offs, int loc)
 }
 
 int64_t File::Read(void *buffer, int64_t n)
-{
+{    
     if(!DEntry || !Lock->Acquire(0, false))
         return -EBUSY;
+    if(S_ISDIR(Mode))
+    {
+        Lock->Release();
+        return -EISDIR;
+    }
     if((Flags & O_ACCMODE) == O_WRONLY)
     {
         Lock->Release();
@@ -269,6 +280,11 @@ int64_t File::Write(const void *buffer, int64_t n)
 {
     if(!DEntry || !Lock->Acquire(0, false))
         return -EBUSY;
+    if(S_ISDIR(Mode))
+    {
+        Lock->Release();
+        return -EISDIR;
+    }
     if((Flags & O_ACCMODE) == O_RDONLY)
     {
         Lock->Release();
@@ -302,6 +318,11 @@ DirectoryEntry *File::ReadDir()
 {
     if(!DEntry || !Lock->Acquire(0, false))
         return nullptr;
+    if(!(S_ISDIR(Mode)))
+    {   // not a directory
+        Lock->Release();
+        return nullptr;
+    }
     if((Flags & O_ACCMODE) == O_WRONLY)
     {
         Lock->Release();

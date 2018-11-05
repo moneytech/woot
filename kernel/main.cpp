@@ -586,7 +586,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             {
                 delete f;
                 Semaphore finished(0);
-                Process *proc = Process::Create(args[0], &finished);
+                Process *proc = Process::Create(cmd, &finished);
                 proc->Start();
                 finished.Wait(0, false, false);
                 delete proc;

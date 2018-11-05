@@ -1,17 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[])
 {
+    for(int i = 0; i < argc; ++i)
+        printf("arg: %d val: %s\n", i, argv[i]);
+
     char testText[] = "Trololololo...\n";
-    write(0, testText, sizeof(testText) - 1);
+    write(1, testText, sizeof(testText) - 1);
 
     char cwd[256];
     printf("current directory: '%s'\n", getcwd(cwd, sizeof(cwd)));
 
     const char *filename = "modulelist";
+    struct stat st;
+    if(!stat(filename, &st))
+    {
+        printf("st_dev: %d\n", (int)st.st_dev);
+        printf("st_ino: %d\n", (int)st.st_ino);
+        printf("st_size: %d\n", (int)st.st_size);
+        printf("st_mode: %#o (%s)\n", (int)(st.st_mode & 07777), S_ISDIR(st.st_mode) ? "dir" : "file");
+    }
     FILE *f = fopen(filename, "rb");
     if(f)
     {
@@ -27,13 +39,6 @@ int main(int argc, char *argv[])
         }
         fclose(f);
     } else printf("couldn't open '%s'\n", filename);
-
-    for(int i = 0; i < 5; ++i)
-    {
-        printf("%s9000 %2d %#.8x %.5f\n", "over", i, i * 1000, 1.0 / 3);
-        struct timespec t = { 0, 500 * 1000000 };
-        nanosleep(&t, NULL);
-    }
 
     return 42;
 }

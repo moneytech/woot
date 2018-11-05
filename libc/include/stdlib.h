@@ -19,10 +19,14 @@ void *calloc(size_t n, size_t size);
 void *realloc(void *ptr, size_t size);
 void free(void *ptr);
 
+char *getenv(const char *name);
+
 long strtol(const char *str, char **endptr, int base);
 unsigned long strtoul(const char *str, char **endptr, int base);
 long long strtoll(const char *str, char **endptr, int base);
 unsigned long long strtoull(const char *str, char **endptr, int base);
+
+int atoi(const char *str);
 
 #ifdef __cplusplus
 }

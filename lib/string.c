@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+// TODO: replace definitions with code from libc
+
 void *memset(void *dst, int val, size_t n)
 {
     if(!n) return dst;
@@ -673,4 +675,26 @@ char *strrand(char *buffer, size_t nChars)
         buffer[i] = charset[rand() % sizeof(charset)];
     buffer[nChars] = 0;
     return buffer;
+}
+
+char *strpbrk(const char *str, const char *separators)
+{
+    char c;
+    while((c = *separators++))
+    {
+        char *s = strchr(str, c);
+        if(s) return s;
+    }
+    return NULL;
+}
+
+char *strrpbrk(const char *str, const char *separators)
+{
+    char c;
+    while((c = *separators++))
+    {
+        char *s = strrchr(str, c);
+        if(s) return s;
+    }
+    return NULL;
 }

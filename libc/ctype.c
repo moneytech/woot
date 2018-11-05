@@ -38,3 +38,23 @@ int isupper(int c)
 {
     return (c >= 'A' && c <= 'Z');
 }
+
+int isalnum(int c)
+{
+    return isalpha(c) || isdigit(c);
+}
+
+int isprint(int c)
+{
+    return c >= ' ' && c != 0x7F;
+}
+
+int isgraph(int c)
+{
+    return c > ' ' && c != 0x7F;
+}
+
+int iscntrl(int c)
+{
+    return !isprint(c);
+}

@@ -41,6 +41,8 @@ unsigned long strtoul(const char *nptr, char **endptr, int base);
 unsigned long long strtoull(const char *nptr, char **endptr, int base);
 double strtod(const char *string, char **endPtr);
 char *strrand(char *buffer, size_t nChars);
+char *strpbrk(const char *str, const char *separators);
+char *strrpbrk(const char *str, const char *separators);
 
 #ifdef __cplusplus
 }

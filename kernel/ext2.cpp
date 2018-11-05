@@ -914,6 +914,30 @@ time_t EXT2::FSINode::GetAccessTime()
     return res;
 }
 
+int EXT2::FSINode::GetLinkCount()
+{
+    if(!INode::Lock()) return 0;
+    int res = Data.i_links_count;
+    INode::UnLock();
+    return res;
+}
+
+uid_t EXT2::FSINode::GetUID()
+{
+    if(!INode::Lock()) return 0;
+    uid_t res = Data.i_uid;
+    INode::UnLock();
+    return res;
+}
+
+gid_t EXT2::FSINode::GetGID()
+{
+    if(!INode::Lock()) return 0;
+    gid_t res = Data.i_gid;
+    INode::UnLock();
+    return res;
+}
+
 bool EXT2::FSINode::SetCreateTime(time_t t)
 {
     if(!INode::Lock()) return false;

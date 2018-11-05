@@ -88,6 +88,8 @@ hdd.img: all
 	-sudo cp simplefb/simplefb.ko $(MOUNTPOINT)/system
 	-sudo cp ps2mouse/ps2mouse.ko $(MOUNTPOINT)/system
 	-sudo cp usertest/usertest $(MOUNTPOINT)
+	-sudo cp yasm $(MOUNTPOINT)
+	-sudo cp test.asm $(MOUNTPOINT)
 	sudo umount $(MOUNTPOINT)
 	sudo losetup -d /dev/loop1
 

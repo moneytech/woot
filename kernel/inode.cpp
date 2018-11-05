@@ -46,6 +46,21 @@ time_t INode::GetAccessTime()
     return 0;
 }
 
+int INode::GetLinkCount()
+{
+    return -ENOSYS;
+}
+
+uid_t INode::GetUID()
+{
+    return 0;
+}
+
+gid_t INode::GetGID()
+{
+    return 0;
+}
+
 bool INode::SetCreateTime(time_t t)
 {
     return false;

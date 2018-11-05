@@ -284,8 +284,14 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
         }
     } else delete f;
 
-    Elf32_Sym *cleanupSym = elf->FindSymbol("Cleanup");
-    elf->CleanupProc = (void (*)())(cleanupSym ? cleanupSym->st_value : 0);
+
+    if(!user)
+    {
+        Elf32_Sym *cleanupSym = elf->FindSymbol("Cleanup");
+        elf->CleanupProc = (void (*)())(cleanupSym ? cleanupSym->st_value : 0);
+    }
+    if(proc)
+        proc->Images.Append(elf);
     return elf;
 }
 

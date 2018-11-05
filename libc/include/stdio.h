@@ -4,6 +4,9 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
+
 #define EOF (-1)
 #define FILENAME_MAX 255
 #define SEEK_SET 0
@@ -33,9 +36,15 @@ int vfprintf(FILE *stream, const char *format, va_list arg);
 int fprintf(FILE *stream, const char *format, ...);
 int vsprintf(char *str, const char *format, va_list arg);
 int sprintf(char *str, const char *format, ...);
+int snprintf(char *str, size_t n, const char *format, ...);
+
+int sscanf(const char *s, const char *format, ...);
 
 void clearerr(FILE *stream);
 void rewind(FILE *stream);
+int remove(const char *filename);
+int puts(const char *str);
+FILE *tmpfile(void);
 
 FILE *fopen(const char *filename, const char *mode);
 int feof(FILE *stream);
@@ -46,6 +55,10 @@ int fseek(FILE *stream, long int offset, int whence);
 long int ftell(FILE *stream);
 int fgetpos(FILE *stream, fpos_t *pos);
 int fsetpos(FILE *stream, const fpos_t *pos);
+int fputc(int character, FILE *stream);
+int fputs(const char *str, FILE *stream);
+int fgetc(FILE *stream);
+char *fgets(char *str, int num, FILE *stream);
 int fclose(FILE *stream);
 
 #ifdef __cplusplus

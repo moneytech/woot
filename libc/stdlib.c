@@ -34,6 +34,12 @@ void abort()
     _exit(127);
 }
 
+char *getenv(const char *name)
+{
+    // Not implemented yet
+    return NULL;
+}
+
 long strtol(const char *str, char **endptr, int base)
 {
     while(isspace(*str)) str++; // skip leading spaces
@@ -148,3 +154,7 @@ unsigned long long strtoull(const char *str, char **endptr, int base)
     return (unsigned long long)strtoll(str, endptr, base);
 }
 
+int atoi(const char *str)
+{
+    return strtol(str, NULL, 10);
+}

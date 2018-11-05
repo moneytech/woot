@@ -39,14 +39,20 @@ static int fwriteCallback(void *arg, char c)
     return fwrite(&c, sizeof(c), 1, (FILE *)arg);
 }
 
+typedef struct stringBuffer
+{
+    char *buffer;
+    size_t pos;
+    size_t size;
+} stringBuffer;
+
 static int stringWriteCallback(void *arg, char c)
 {
-    char **str = (char **)arg;
-    if(str)
-    {
-        **str = c;
-        ++(*str);
-    }
+    stringBuffer *sb = (stringBuffer *)arg;
+    if(sb->size && sb->pos < (sb->size - 1))
+        sb->buffer[sb->pos++] = c;
+    if(sb->pos < sb->size)
+        sb->buffer[sb->pos] = 0;
     return 1;
 }
 
@@ -83,6 +89,36 @@ int writeHex(writeCallback wc, void *wcarg, uint64_t value, int caps, int minDig
         nonzero |= dig != 0;
         char c = caps ? hexTableUp[dig] : hexTableLo[dig];
         if((16 - i <= maxDigits && nonzero) || 16 - i <= minDigits)
+            buf[j++] = c;
+    }
+    buf[j] = 0;
+    return measure ? strlen(buf) : writeString(wc, wcarg, buf, 0);
+}
+
+int writeOct(writeCallback wc, void *wcarg, uint64_t value, int minDigits, int maxDigits, int measure)
+{
+    const static char *octTable = "01234567";
+
+    if(minDigits < 1)
+        minDigits = 1;
+    else if(minDigits > 22)
+        minDigits = 22;
+    if(maxDigits < 1)
+        maxDigits = 1;
+    else if(minDigits > 22)
+        maxDigits = 22;
+    if(minDigits > maxDigits)
+        maxDigits = minDigits;
+
+    char buf[24];
+    int nonzero = 0;
+    int i, j;
+    for(i = 0, j = 0; i < 22; i++)
+    {
+        int dig = (value >> (63 - i * 3)) & 0x07;
+        nonzero |= dig != 0;
+        char c = octTable[dig];
+        if((22 - i <= maxDigits && nonzero) || 22 - i <= minDigits)
             buf[j++] = c;
     }
     buf[j] = 0;
@@ -128,7 +164,7 @@ int writeDec(writeCallback wc, void *wcarg, uint64_t value, int minDigits, int m
     return measure ? strlen(buf) : writeString(wc, wcarg, buf, 0);
 }
 
-static int vncnprintf(writeCallback wc, void *wcarg, size_t n, const char *fmt, va_list arg)
+static int vncnprintf(writeCallback wc, void *wcarg, const char *fmt, va_list arg)
 {
     int hashFlag = 0;
     int dot = 0;
@@ -316,9 +352,10 @@ static int vncnprintf(writeCallback wc, void *wcarg, size_t n, const char *fmt, 
 
                 specifier = 0;
             }
-            else if(c == 'p' || c == 'P' || c == 'x' || c == 'X')
+            else if(c == 'p' || c == 'P' || c == 'x' || c == 'X' || c == 'o')
             {
                 int pointer = 0;
+                int oct = c == 'o';
                 if(c == 'p' || c == 'P')
                 {
                     pointer = 1;
@@ -351,7 +388,8 @@ static int vncnprintf(writeCallback wc, void *wcarg, size_t n, const char *fmt, 
                 } else val = (uintmax_t)(uintptr_t)va_arg(arg, void *);
 
                 int maxDigits = width ? width - (hashFlag ? 2 : 0) : 16;
-                int len = writeHex(wc, wcarg, val, upperCase, precision, maxDigits, 1);
+                int len = oct ? writeOct(wc, wcarg, val, precision, maxDigits, 1) :
+                                writeHex(wc, wcarg, val, upperCase, precision, maxDigits, 1);
                 len += hashFlag ? 2 : 0;
                 int padc = width - len;
                 padc = padc < 0 ? 0 : padc;
@@ -363,8 +401,10 @@ static int vncnprintf(writeCallback wc, void *wcarg, size_t n, const char *fmt, 
                 }
 
                 if(hashFlag)
-                    bw += writeString(wc, wcarg, upperCase ? "0X" : "0x", 0);
-                bw += writeHex(wc, wcarg, val, upperCase, precision, maxDigits, 0);
+                    bw += oct ? writeString(wc, wcarg, "0", 0) :
+                                writeString(wc, wcarg, upperCase ? "0X" : "0x", 0);
+                bw += oct ? writeOct(wc, wcarg, val, precision, maxDigits, 0) :
+                            writeHex(wc, wcarg, val, upperCase, precision, maxDigits, 0);
 
                 if(leftJustify)
                 {
@@ -430,7 +470,7 @@ static int vncnprintf(writeCallback wc, void *wcarg, size_t n, const char *fmt, 
                     bw += writeDec(wc, wcarg, i, 1, -1, showPlus, 0, 0);
                     bw += wc(wcarg, '.');
                     double f = val - i;
-                    if(!precision) precision = 4;
+                    if(!precision) precision = 6;
                     int64_t ai = (int64_t)(f * ipow(10, precision));
                     ai = ai < 0 ? - ai : ai;
                     bw += writeDec(wc, wcarg, ai, precision, -1, 0, 0, 0);
@@ -465,7 +505,7 @@ int printf(const char *format, ...)
 
 int vfprintf(FILE *stream, const char *format, va_list arg)
 {
-    return vncnprintf(fwriteCallback, stream, SIZE_MAX, format, arg);
+    return vncnprintf(fwriteCallback, stream, format, arg);
 }
 
 int fprintf(FILE *stream, const char *format, ...)
@@ -479,7 +519,8 @@ int fprintf(FILE *stream, const char *format, ...)
 
 int vsprintf(char *str, const char *format, va_list arg)
 {
-    return vncnprintf(stringWriteCallback, &str, SIZE_MAX, format, arg);
+    stringBuffer sb = { str, 0, SIZE_MAX };
+    return vncnprintf(stringWriteCallback, &sb, format, arg);
 }
 
 int sprintf(char *str, const char *format, ...)
@@ -489,6 +530,22 @@ int sprintf(char *str, const char *format, ...)
     int res = vsprintf(str, format, arg);
     va_end(arg);
     return res;
+}
+
+int snprintf(char *str, size_t n, const char *format, ...)
+{
+    stringBuffer sb = { str, 0, n };
+    va_list arg;
+    va_start(arg, format);
+    int res = vncnprintf(stringWriteCallback, &sb, format, arg);
+    va_end(arg);
+    return res;
+}
+
+int sscanf(const char *s, const char *format, ...)
+{
+    fprintf(stderr, "[stdio] sscanf not implemented\n");
+    return EOF;
 }
 
 void clearerr(FILE *stream)
@@ -503,6 +560,29 @@ void rewind(FILE *stream)
     if(!stream) return;
     lseek(stream->fd, 0, SEEK_SET);
     clearerr(stream);
+}
+
+int remove(const char *filename)
+{
+    return unlink(filename);
+}
+
+int puts(const char *str)
+{
+    size_t bw = fputs(str, stdout);
+    if(ferror(stdout))
+        return EOF;
+    bw += fputs("\n", stdout);
+    if(ferror(stdout))
+        return EOF;
+    return bw;
+}
+
+FILE *tmpfile(void)
+{
+    // not implemented yet
+    fprintf(stderr, "[stdio] tmpfile not implemented\n");
+    return NULL;
 }
 
 FILE *fopen(const char *filename, const char *mode)
@@ -570,7 +650,7 @@ size_t fwrite(const void *ptr, size_t size, size_t count, FILE *stream)
     if(res < 0)
     {
         stream->error = 1;
-        return 0;
+        return EOF;
     }
     stream->eof = res != s;
     return res / size;
@@ -624,6 +704,52 @@ int fsetpos(FILE *stream, const fpos_t *pos)
         return -1;
     }
     return 0;
+}
+
+int fputc(int character, FILE *stream)
+{
+    unsigned char c = character;
+    fwrite(&c, sizeof(c), 1, stream);
+    if(ferror(stream))
+        return EOF;
+    return character;
+}
+
+int fputs(const char *str, FILE *stream)
+{
+    size_t len = strlen(str);
+    size_t res = fwrite(str, sizeof(*str), len, stream);
+    if(ferror(stream))
+        return EOF;
+    return res;
+}
+
+int fgetc(FILE *stream)
+{
+    unsigned char c = 0;
+    fread(&c, sizeof(c), 1, stream);
+    if(ferror(stream) || feof(stream))
+        return EOF;
+    return c;
+}
+
+char *fgets(char *str, int num, FILE *stream)
+{
+    int i = 0;
+    for(i = 0; i < (num - 1); ++i)
+    {
+        int c = fgetc(stream);
+        if(c == EOF)
+            break;
+        str[i] = c;
+        if(!c || c == '\n')
+        {
+            ++i;
+            break;
+        }
+    }
+    if(i) str[i] = 0;
+    return !i || ferror(stream) ? NULL : str;
 }
 
 int fclose(FILE *stream)

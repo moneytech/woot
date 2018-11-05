@@ -98,6 +98,14 @@ char *strcpy(char *dst, const char *src)
     return ret;
 }
 
+char *strncpy(char *dst, const char *src, size_t n)
+{
+    memset(dst, 0, n);
+    char *ret = dst;
+    for(size_t i = 0; i < n && (*dst++ = *src++););
+    return ret;
+}
+
 char *strchr(const char *s, int c)
 {
     while(*s != (char)c)
@@ -139,11 +147,20 @@ size_t strcspn(const char *s1, const char *s2)
     return ret;
 }
 
-char *strcat(char *dest, const char *src)
+char *strcat(char *dst, const char *src)
 {
-    char *ret = dest;
-    while(*dest) dest++;
-    while((*dest++ = *src++));
+    char *ret = dst;
+    while(*dst) dst++;
+    while((*dst++ = *src++));
+    return ret;
+}
+
+char *strncat(char *dst, const char *src, size_t n)
+{
+    char *ret = dst;
+    size_t i = 0;
+    for(;i < n && (*dst); dst++);
+    for(;i < n && ((*dst++ = *src++)););
     return ret;
 }
 
@@ -158,4 +175,25 @@ char *strtok_r(char *str, const char *delim, char **nextp)
     if(*str) *str++ = 0;
     *nextp = str;
     return ret;
+}
+
+char *strstr(const char *haystack, const char *needle)
+{
+    const char *a, *b = needle;
+    if(!*b) return (char *)haystack;
+
+    for(; *haystack; ++haystack)
+    {
+        if(*haystack != *b)
+            continue;
+        a = haystack;
+        for(;;)
+        {
+            if(!*b) return (char *)haystack;
+            if(*a++ != *b++)
+                break;
+        }
+        b = needle;
+    }
+    return NULL;
 }

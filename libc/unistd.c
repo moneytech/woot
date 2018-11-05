@@ -130,3 +130,14 @@ int fdatasync(int fd)
     }
     return 0;
 }
+
+int unlink(const char *pathname)
+{
+    long res = syscall1(SYS_unlink, (long)pathname);
+    if(res < 0)
+    {
+        errno = -res;
+        return -1;
+    }
+    return 0;
+}
