@@ -7,17 +7,46 @@
 
 int main(int argc, char *argv[])
 {
-    printf("arguments:\n");
-    for(int i = 0; i < argc; ++i)
-        printf("arg: %d val: %s\n", i, argv[i]);
-    printf("end of arguments\n");
+    printf("WOOT test user mode console\n");
 
     char buf[128];
-    printf("type something > ");
-    int br = fread(buf, 1, sizeof(buf), stdin);
-    char *nl = strrchr(buf, '\n');
-    if(nl) *nl = 0;
-    printf("you typed: '%*s'\n", br, buf);
+    int _argc = 0;
+    char *_argv[64];
+    for(;;)
+    {
+        getcwd(buf, sizeof(buf));
+        printf("%s# ", buf);
+        int br = fread(buf, 1, sizeof(buf) - 1, stdin);
+        char *nl = strrchr(buf, '\n');
+        if(nl) *nl = 0;
+        buf[br] = 0;
+
+        memset(_argv, 0, sizeof(_argv));
+        _argc = 0;
+
+        char *token;
+        char *it = buf;
+        while((token = strtok_r(it, " \t", &it)))
+            _argv[_argc++] = token;
+        if(!_argv[0] || !_argc)
+            continue;
+
+        if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit"))
+            return 0;
+        else if(!strcmp(_argv[0], "time"))
+        {
+            time_t t = time(NULL);
+            struct tm *tm = localtime(&t);
+            printf("%.2d:%.2d:%.2d\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
+        }
+        else if(!strcmp(_argv[0], "date"))
+        {
+            time_t t = time(NULL);
+            struct tm *tm = localtime(&t);
+            printf("%.4d-%.2d-%.2d\n", tm->tm_year, tm->tm_mon, tm->tm_mday);
+        }
+        else printf("unknown command '%s'\n", _argv[0]);
+    }
 
     return 42;
 }

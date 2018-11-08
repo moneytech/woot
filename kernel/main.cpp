@@ -86,7 +86,7 @@ extern "C" void *_ubss_end;
 static byte userStack[65536] USERBSS;
 void USERCODE userTest()
 {
-    for(int a = 0; ; ++a)
+    for(int a = 0;; ++a)
     {
         asm("int $0x80":: "a"(a + 1000));
         asm("int $0x80":: "a"(123));
@@ -205,7 +205,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         cdir = Process::GetCurrentDir();
         if(cdir) cdir->GetFullPath(cwd, sizeof(cwd));
         else cwd[0] = 0;
-        printf("%s# ", cwd);
+        printf("%s! ", cwd);
         debugStream.EnableLineBuffer();
         int br = debugStream.Read(cmd, sizeof(cmd) - 1);
         if(br < 0)
