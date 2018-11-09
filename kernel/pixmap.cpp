@@ -2,17 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-PixMap::PixMap(uint width, uint heigth, PixelFormat format) :
+PixMap::PixMap(uint width, uint height, PixelFormat format) :
     releasePixels(true),
-    Width(width), Height(heigth),
+    Width(width), Height(height),
     Pitch((format.BPP >> 3) * Width),
     Format(format), Pixels(calloc(Height, Pitch))
 {
 }
 
-PixMap::PixMap(uint width, uint heigth, size_t pitch, PixMap::PixelFormat format, void *pixels) :
+PixMap::PixMap(uint width, uint height, size_t pitch, PixMap::PixelFormat format, void *pixels) :
     releasePixels(false),
-    Width(width), Height(heigth), Pitch(pitch),
+    Width(width), Height(height), Pitch(pitch),
     Format(format), Pixels(pixels)
 {
 
@@ -67,53 +67,99 @@ void PixMap::Clear(PixMap::Color c)
     FillRectangle(0, 0, Width, Height, c);
 }
 
+void PixMap::HLine(int x1, int y, int x2, PixMap::Color c)
+{
+    if(x1 > x2) swap(int, x1, x2);
+    if(y < 0 || y >= Height || (x1 < 0 && x2 < 0) || (x1 >= Width && x2 >= Width))
+        return;
+    x1 = max(0, x1);
+    x2 = min(Width - 1, x2);
+
+    uint32_t col = c.ToValue(Format);
+    int w = x2 - x1 + 1;
+
+    if(Format.BPP == 32)
+    {
+        uint32_t *line = (uint32_t *)(PixelBytes + y * Pitch);
+        lmemset(line + x1, col, w);
+    }
+    else if(Format.BPP == 24)
+    {
+        for(int X = x1; X < x2; ++X)
+        {
+            uint32_t *pixel = (uint32_t *)(PixelBytes + Pitch * y + X * 3);
+            *pixel = (*pixel & 0xFF000000) | col;
+        }
+    }
+    else if(Format.BPP == 16 || Format.BPP == 15)
+    {
+        uint16_t *line = (uint16_t *)(PixelBytes + y * Pitch);
+        wmemset(line + x1, col, w);
+    }
+}
+
+void PixMap::VLine(int x, int y1, int y2, PixMap::Color c)
+{
+    // just naive and slow implementation using SetPixel()
+    if(y1 > y2) swap(int, y1, y2);
+    if(x < 0 || x >= Width || (y1 < 0 && y2 < 0) || (y1 >= Height && y2 >= Height))
+        return;
+    for(int Y = y1; Y <= y2; ++Y)
+        SetPixel(x, Y, c);
+}
+
+void PixMap::Line(int x1, int y1, int x2, int y2, PixMap::Color c)
+{   // slightly modified version of
+    // rosettacode.org/wiki/Bitmap/Bresenham%27s_line_algorithm
+    int dx = x2 - x1, sx = dx < 0 ? -1 : 1;
+    int dy = y2 - y1, sy = dy < 0 ? -1 : 1;
+    dx *= sx; dy *= sy;
+
+    int err = (dx > dy ? dx : -dy) >> 1;
+
+    for(;;)
+    {
+        SetPixel(x1, y1, c);
+        if(x1 == x2 && y1 == y2)
+            break;
+        int e2 = err;
+        if(e2 > -dx)
+        {
+            err -= dy;
+            x1 += sx;
+        }
+        if(e2 < dy)
+        {
+            err += dx;
+            y1 += sy;
+        }
+    }
+}
+
+void PixMap::Rectangle(int x, int y, int w, int h, PixMap::Color c)
+{
+    if(w <= 0 || h <= 0) return;
+    int x2 = x + w - 1;
+    int y2 = y + h - 1;
+    HLine(x, y, x2, c);
+    HLine(x, y2, x2, c);
+    VLine(x, y, y2, c);
+    VLine(x2, y, y2, c);
+}
+
 void PixMap::FillRectangle(int x, int y, int w, int h, PixMap::Color c)
 {
     if(w <= 0 || h <= 0)
         return;
 
-    int x2 = x + w;
+    int x2 = x + w - 1;
     int y2 = y + h;
 
     if(x2 < 0 || x >= Width || y2 < 0 || y >= Height)
         return;
 
-    x = clamp(x, 0, Width);
-    y = clamp(y, 0, Height);
-    x2 = clamp(x2, 0, Width);
-    y2 = clamp(y2, 0, Height);
-    w = x2 - x;
-    h = y2 - y;
-
-    uint32_t col = c.ToValue(Format);
-
-    if(Format.BPP == 32)
-    {
-        for(int Y = y; Y < x2; ++Y)
-        {
-            uint32_t *line = (uint32_t *)(PixelBytes + Y * Pitch);
-            lmemset(line + x, col, w);
-        }
-    }
-    else if(Format.BPP == 24)
-    {
-        for(int Y = y; Y < x2; ++Y)
-        {
-            for(int X = x; X < x2; ++X)
-            {
-                uint32_t *pixel = (uint32_t *)(PixelBytes + Pitch * Y + X * 3);
-                *pixel = (*pixel & 0xFF000000) | col;
-            }
-        }
-    }
-    else if(Format.BPP == 16 || Format.BPP == 15)
-    {
-        for(int Y = y; Y < x2; ++Y)
-        {
-            uint16_t *line = (uint16_t *)(PixelBytes + Y * Pitch);
-            wmemset(line + x, col, w);
-        }
-    }
+    for(int Y = y; Y < y2; ++Y)
+        HLine(x, Y, x2, c);
 }
 
 PixMap::~PixMap()

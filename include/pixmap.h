@@ -43,11 +43,15 @@ public:
         byte *PixelBytes;
     };
 
-    PixMap(uint width, uint heigth, PixelFormat format);
-    PixMap(uint width, uint heigth, size_t pitch, PixelFormat format, void *pixels);
+    PixMap(uint width, uint height, PixelFormat format);
+    PixMap(uint width, uint height, size_t pitch, PixelFormat format, void *pixels);
     void SetPixel(int x, int y, Color c);
     Color GetPixel(int x, int y);
     void Clear(Color c);
+    void HLine(int x1, int y, int x2, Color c);
+    void VLine(int x, int y1, int y2, Color c);
+    void Line(int x1, int y1, int x2, int y2, Color c);
+    void Rectangle(int x, int y, int w, int h, Color c);
     void FillRectangle(int x, int y, int w, int h, Color c);
     ~PixMap();
 };
