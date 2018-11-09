@@ -116,9 +116,8 @@ DebugStream::DebugStream(word port)
 void DebugStream::SetFrameBuffer(FrameBuffer *fb)
 {
     this->fb = fb;
-    FrameBuffer::ModeInfo mode = fb->GetMode();
-    fbW = mode.Width / FONT_BITS;
-    fbH = mode.Height / FONT_SCANLINES;
+    fbW = fb->Pixels->Width / FONT_BITS;
+    fbH = fb->Pixels->Height / FONT_SCANLINES;
 }
 
 void DebugStream::EnableLineBuffer()
@@ -272,19 +271,18 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
             else if(!fb->Lock())
             {
                 byte *glyph = fbFont[c];
-                FrameBuffer::ModeInfo mi = fb->GetMode();
-                FrameBuffer::Color bg = fb->GetPixel(mi.Width - 1, mi.Height - 1);
+                PixMap::Color bg = fb->Pixels->GetPixel(fb->Pixels->Width - 1, fb->Pixels->Height - 1);
 
-                auto drawGlyph = [this, glyph](FrameBuffer *fb, int ox, int oy, FrameBuffer::Color c, FrameBuffer::Color bc)
+                auto drawGlyph = [this, glyph](FrameBuffer *fb, int ox, int oy, PixMap::Color c, PixMap::Color bc)
                 {
                     for(int y = 0; y < FONT_SCANLINES; ++y)
                     {
                         int glyphLine = glyph[y];
                         for(int x = 0; x < FONT_BITS; ++x)
-                            fb->SetPixel(x + fbX * FONT_BITS + ox, y + fbY * FONT_SCANLINES + oy, glyphLine & (0x80 >> x) ? c : bc);
+                            fb->Pixels->SetPixel(x + fbX * FONT_BITS + ox, y + fbY * FONT_SCANLINES + oy, glyphLine & (0x80 >> x) ? c : bc);
                     }
                 };
-                drawGlyph(fb, 0, 0, FrameBuffer::Color(255, 255, 255), bg);
+                drawGlyph(fb, 0, 0, PixMap::Color(255, 255, 255), bg);
 
                 if(!back) ++fbX;
                 fb->UnLock();
@@ -299,11 +297,11 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
             {
                 if(!fb->Lock())
                 {
+                    // TODO: Change me to blit transfer
                     byte *pixels = (byte *)fb->GetPixels();
-                    FrameBuffer::ModeInfo mode = fb->GetMode();
-                    memmove(pixels, pixels + FONT_SCANLINES * mode.Pitch, (mode.Height - FONT_SCANLINES) * mode.Pitch);
-                    FrameBuffer::Color c(48, 64, 16);
-                    fb->FillRectangle(0, mode.Height - FONT_SCANLINES, mode.Width, FONT_SCANLINES, c);
+                    memmove(pixels, pixels + FONT_SCANLINES * fb->Pixels->Pitch, (fb->Pixels->Height - FONT_SCANLINES) * fb->Pixels->Pitch);
+                    PixMap::Color c(48, 64, 16);
+                    fb->Pixels->FillRectangle(0, fb->Pixels->Height - FONT_SCANLINES, fb->Pixels->Width, FONT_SCANLINES, c);
                     fb->UnLock();
                 }
                 --fbY;

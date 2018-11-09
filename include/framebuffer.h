@@ -3,6 +3,7 @@
 
 #include <list.h>
 #include <mutex.h>
+#include <pixmap.h>
 #include <sequencer.h>
 #include <types.h>
 
@@ -15,12 +16,17 @@ class FrameBuffer
 public:
     struct ModeInfo
     {
-        int Width, Height, BPP;
+        int Width, Height;
         size_t Pitch;
+        PixMap::PixelFormat Format;
+
+        ModeInfo();
+        ModeInfo(int width, int height, size_t pitch, PixMap::PixelFormat format);
+        /*int BPP;
         int AlphaShift, RedShift, GreenShift, BlueShift;
-        int AlphaBits, RedBits, GreenBits, BlueBits;
+        int AlphaBits, RedBits, GreenBits, BlueBits;*/
     };
-    union Color
+    /*union Color
     {
         uint32_t Value;
         struct { uint8_t A, R, G, B; };
@@ -33,22 +39,23 @@ public:
         static Color FromFloatRGB(float r, float g, float b);
         uint32_t ToValue(ModeInfo &mode);
         static Color FromValue(ModeInfo &mode, uint32_t value);
-    };
+    };*/
 protected:
     int ID;
-    union
+    /*union
     {
         void *Pixels;
         uint8_t *PixelBytes;
-    };
-    ModeInfo Mode;
+    };*/
 public:
+    PixMap *Pixels;
+
     static int Add(FrameBuffer *fb);
     static FrameBuffer *GetByID(int id, bool lock);
     static int Remove(FrameBuffer *fb);
 
     FrameBuffer();
-    ModeInfo GetMode();
+    //ModeInfo GetMode();
     int Lock();
     void *GetPixels();
     void UnLock();
@@ -56,10 +63,6 @@ public:
     virtual int GetModeCount();
     virtual int GetModes(ModeInfo *buffer, size_t maxModes);
     virtual int SetMode(ModeInfo mode);
-    virtual void SetPixel(int x, int y, Color c);
-    virtual Color GetPixel(int x, int y);
-    virtual void Clear(Color c);
-    virtual void FillRectangle(int x, int y, int w, int h, Color c);
     virtual ~FrameBuffer();
 };
 

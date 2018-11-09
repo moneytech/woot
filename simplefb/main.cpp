@@ -29,7 +29,7 @@ extern "C" int Initialize()
                                 MultibootInfo->framebuffer_red_mask_size,
                                 MultibootInfo->framebuffer_green_mask_size,
                                 MultibootInfo->framebuffer_blue_mask_size);
-    fb->Clear(FrameBuffer::Color(48, 64, 16));
+    fb->Pixels->Clear(PixMap::Color(48, 64, 16));
     return FrameBuffer::Add(fb);
 }
 

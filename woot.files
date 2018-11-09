@@ -1,4 +1,8 @@
+include/kwm.h
+include/pixmap.h
 include/syscall.h
+kernel/kwm.cpp
+kernel/pixmap.cpp
 libc/asm/syscall.asm
 libc/crt0.c
 libc/ctype.c

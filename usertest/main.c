@@ -10,7 +10,6 @@ int main(int argc, char *argv[])
     printf("WOOT test user mode console\n");
 
     char buf[128];
-    int _argc = 0;
     char *_argv[64];
     for(;;)
     {
@@ -21,15 +20,10 @@ int main(int argc, char *argv[])
         if(nl) *nl = 0;
         buf[br] = 0;
 
-        memset(_argv, 0, sizeof(_argv));
-        _argc = 0;
-
-        char *token;
-        char *it = buf;
-        while((token = strtok_r(it, " \t", &it)))
+        int _argc = 0;
+        for(char *it = buf, *token; (token = strtok_r(it, " \t", &it));)
             _argv[_argc++] = token;
-        if(!_argv[0] || !_argc)
-            continue;
+        if(!_argc) continue;
 
         if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit"))
             return 0;

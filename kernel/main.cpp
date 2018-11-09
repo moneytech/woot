@@ -16,6 +16,7 @@
 #include <inputdevice.h>
 #include <ints.h>
 #include <irqs.h>
+#include <kwm.h>
 #include <malloc.h>
 #include <mbrvolume.h>
 #include <multiboot.h>
@@ -180,8 +181,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     mapUser(kernelProcess->AddressSpace, &_ubss_start, &_ubss_end);
 
     FrameBuffer *fb = FrameBuffer::GetByID(0, false);
-    FrameBuffer::ModeInfo mode = fb->GetMode();
     debugStream.SetFrameBuffer(fb);
+
+    WindowManager::Initialize(fb);
 
     Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
     Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);
@@ -343,12 +345,11 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             FrameBuffer *fb = FrameBuffer::GetByID(0, true);
             if(fb)
             {
-                FrameBuffer::ModeInfo mode = fb->GetMode();
-                for(int y = 0; y < mode.Height; ++y)
+                for(int y = 0; y < fb->Pixels->Height; ++y)
                 {
-                    FrameBuffer::Color c = FrameBuffer::Color::FromFloatRGB(0, 0, (float)y / mode.Height);
-                    for(int x = 0; x < mode.Width; ++x)
-                        fb->SetPixel(x, y, c);
+                    PixMap::Color c = PixMap::Color::FromFloatRGB(0, 0, (float)y / fb->Pixels->Height);
+                    for(int x = 0; x < fb->Pixels->Width; ++x)
+                        fb->Pixels->SetPixel(x, y, c);
                 }
                 fb->UnLock();
             }
@@ -364,7 +365,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 {
                     int x = strtol(args[1], nullptr, 0);
                     int y = strtol(args[2], nullptr, 0);
-                    FrameBuffer::Color c = fb->GetPixel(x, y);
+                    PixMap::Color c = fb->Pixels->GetPixel(x, y);
                     printf("A: %u R: %u G: %u B: %u\n", c.A, c.R, c.G, c.B);
                     fb->UnLock();
                 }
@@ -381,7 +382,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 {
                     int x = strtol(args[1], nullptr, 0);
                     int y = strtol(args[2], nullptr, 0);
-                    FrameBuffer::Color c;
+                    PixMap::Color c;
                     if(!args[4] || !args[5])
                         c.Value = strtoul(args[3], nullptr, 0);
                     else
@@ -390,7 +391,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                         c.G = strtol(args[4], nullptr, 0);
                         c.B = strtol(args[5], nullptr, 0);
                     }
-                    fb->SetPixel(x, y, c);
+                    fb->Pixels->SetPixel(x, y, c);
                     fb->UnLock();
                 }
             }
@@ -414,13 +415,12 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             if(fb)
             {
                 complex con = { args[1] ? (float)strtod(args[1], nullptr) : 0.7f, args[2] ? (float)strtod(args[2], nullptr) : 0.9f };
-                FrameBuffer::ModeInfo mode = fb->GetMode();
-                int cx = mode.Width / 2;
-                int cy = mode.Height / 2;
-                for(int y = 0; y < mode.Height; ++y)
+                int cx = fb->Pixels->Width / 2;
+                int cy = fb->Pixels->Height / 2;
+                for(int y = 0; y < fb->Pixels->Height; ++y)
                 {
                     float u = (y - cy) / (float)(cy);
-                    for(int x = 0; x < mode.Width; ++x)
+                    for(int x = 0; x < fb->Pixels->Width; ++x)
                     {
                         float v = (x - cx) / (float)(cx);
                         complex z = { u, v };
@@ -432,8 +432,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                                 break;
                         }
                         float mod = z.re * z.re + z.im * z.im;
-                        FrameBuffer::Color c = FrameBuffer::Color::FromFloatRGB(0, 0, mod);
-                        fb->SetPixel(x, y, c);
+                        PixMap::Color c = PixMap::Color::FromFloatRGB(0, 0, mod);
+                        fb->Pixels->SetPixel(x, y, c);
                     }
                 }
                 fb->UnLock();
@@ -471,6 +471,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     delete t1;
     delete t2;
 
+    WindowManager::Cleanup();
     FileSystem::PutDEntry(cdir);
 
     // call module cleanup functions in reverse order
