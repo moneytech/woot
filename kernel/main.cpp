@@ -69,8 +69,8 @@ int testThread(uintptr_t arg)
     Thread *ct = Thread::GetCurrent();
     for(; !quit;)
     {
-        //printf("test: %d\n", arg);
-        ct->Sleep(100 * ct->ID, false);
+        //WindowManager::WM->RedrawAll();
+        ct->Sleep(100, false);
     }
     return 0x11 * arg;
 }
@@ -181,9 +181,12 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     mapUser(kernelProcess->AddressSpace, &_ubss_start, &_ubss_end);
 
     FrameBuffer *fb = FrameBuffer::GetByID(0, false);
-    debugStream.SetFrameBuffer(fb);
-
     WindowManager::Initialize(fb);
+    WindowManager::Window *desktop = WindowManager::WM->GetByID(0);
+    WindowManager::Window *debugWin = WindowManager::WM->GetByID(1);
+    debugStream.SetWindow(debugWin);
+    desktop->Update();
+
 
     Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
     Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);

@@ -2,20 +2,21 @@
 #define DEBUGSTREAM_H
 
 #include <stream.h>
+#include <kwm.h>
 
-class FrameBuffer;
+class PixMap;
 
 class DebugStream : public Stream
 {
     word port;
-    FrameBuffer *fb;
-    int fbX, fbY, fbW, fbH;
+    WindowManager::Window *window;
+    int fbX, fbY, winW, winH;
     bool lineBufferState;
     char lineBuffer[256];
     int lineBufferPos;
 public:
     DebugStream(word port);
-    void SetFrameBuffer(FrameBuffer *fb);
+    void SetWindow(WindowManager::Window *window);
     void EnableLineBuffer();
     void DisableLineBuffer();
     virtual int64_t Read(void *buffer, int64_t n);

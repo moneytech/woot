@@ -13,7 +13,7 @@ void *lmemset(void *dst, int val, size_t n);
 void *memmove(void *dst, const void *src, size_t n);
 void *memcpy(void *dst, const void *src, size_t n);
 void *bltcpy(void *dst, const void *src, size_t bpl, size_t stride, size_t lines);
-void *bltmove(void *dst, const void *src, size_t bpl, size_t stride, size_t lines);
+void *bltmove(void *dst, const void *src, size_t bpl, size_t dstride, size_t sstride, size_t lines);
 int memcmp(const void *m1, const void *m2, size_t n);
 size_t strlen(const char *str);
 int strcmp(const char *s1, const char *s2);

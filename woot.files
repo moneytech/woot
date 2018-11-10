@@ -3,6 +3,8 @@ include/pixmap.h
 include/syscall.h
 kernel/kwm.cpp
 kernel/pixmap.cpp
+lib/i386/memmove.asm
+lib/i386/memset.asm
 libc/asm/syscall.asm
 libc/crt0.c
 libc/ctype.c
@@ -43,6 +45,7 @@ libc/string.c
 libc/strings.c
 libc/time.c
 libc/unistd.c
+logo.bmp
 usertest/main.c
 include/syscalls.h
 kernel/syscalls.cpp

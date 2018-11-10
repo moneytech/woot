@@ -1,10 +1,14 @@
 ROOTDIR = $(shell pwd)
-SUBDIRS = lib libc ps2mouse simplefb kernel usertest
+SUBDIRS = lib libc libwoot ps2mouse simplefb kernel usertest
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
 LIBDIR = $(ROOTDIR)/lib
 MOUNTPOINT = mnt
+DISTFILES = usertest/usertest yasm test.asm logo.bmp
+
+ARCH = i386
+export ARCH
 
 export LIBDIR
 
@@ -87,9 +91,7 @@ hdd.img: all
 	-sudo mkdir -p $(MOUNTPOINT)/system
 	-sudo cp simplefb/simplefb.ko $(MOUNTPOINT)/system
 	-sudo cp ps2mouse/ps2mouse.ko $(MOUNTPOINT)/system
-	-sudo cp usertest/usertest $(MOUNTPOINT)
-	-sudo cp yasm $(MOUNTPOINT)
-	-sudo cp test.asm $(MOUNTPOINT)
+	-sudo cp $(DISTFILES) $(MOUNTPOINT)
 	sudo umount $(MOUNTPOINT)
 	sudo losetup -d /dev/loop1
 

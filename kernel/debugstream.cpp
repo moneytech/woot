@@ -113,11 +113,11 @@ DebugStream::DebugStream(word port)
 #endif // USE_VGA_TEXT
 }
 
-void DebugStream::SetFrameBuffer(FrameBuffer *fb)
+void DebugStream::SetWindow(WindowManager::Window *pixmap)
 {
-    this->fb = fb;
-    fbW = fb->Pixels->Width / FONT_BITS;
-    fbH = fb->Pixels->Height / FONT_SCANLINES;
+    this->window = pixmap;
+    winW = pixmap->Contents->Width / FONT_BITS;
+    winH = pixmap->Contents->Height / FONT_SCANLINES;
 }
 
 void DebugStream::EnableLineBuffer()
@@ -252,7 +252,7 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
         }
         vgaSetCursorPos(vgaCurY * vgaWidth + vgaCurX);
 #endif // USE_VGA_TEXT
-        if(fb)
+        if(window)
         {
             bool back = c == '\b';
             if(back)
@@ -261,49 +261,46 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
                 if(fbX) --fbX;
                 else
                 {
-                    fbX = fbW - 1;
+                    fbX = winW - 1;
                     --fbY;
                 }
             }
 
             if(c == '\n')
                 ++fbY, fbX = 0;
-            else if(!fb->Lock())
+            else
             {
                 byte *glyph = fbFont[c];
-                PixMap::Color bg = fb->Pixels->GetPixel(fb->Pixels->Width - 1, fb->Pixels->Height - 1);
+                PixMap::Color bg = window->Contents->GetPixel(window->Contents->Width - 1, window->Contents->Height - 1);
 
-                auto drawGlyph = [this, glyph](FrameBuffer *fb, int ox, int oy, PixMap::Color c, PixMap::Color bc)
+                auto drawGlyph = [this, glyph](WindowManager::Window *window, int ox, int oy, PixMap::Color c, PixMap::Color bc)
                 {
                     for(int y = 0; y < FONT_SCANLINES; ++y)
                     {
                         int glyphLine = glyph[y];
                         for(int x = 0; x < FONT_BITS; ++x)
-                            fb->Pixels->SetPixel(x + fbX * FONT_BITS + ox, y + fbY * FONT_SCANLINES + oy, glyphLine & (0x80 >> x) ? c : bc);
+                            window->Contents->SetPixel(x + fbX * FONT_BITS + ox, y + fbY * FONT_SCANLINES + oy, glyphLine & (0x80 >> x) ? c : bc);
                     }
+                    window->Dirty.Add(WindowManager::Rectangle(fbX * FONT_BITS, fbY * FONT_SCANLINES, FONT_BITS, FONT_SCANLINES));
+                    window->Update();
                 };
-                drawGlyph(fb, 0, 0, PixMap::Color(255, 255, 255), bg);
+                drawGlyph(window, 0, 0, PixMap::Color(255, 255, 255), bg);
 
                 if(!back) ++fbX;
-                fb->UnLock();
             }
 
-            if(fbX >= fbW)
+            if(fbX >= winW)
             {
                 fbX = 0;
                 ++fbY;
             }
-            if(fbY >= fbH)
+            if(fbY >= winH)
             {
-                if(!fb->Lock())
-                {
-                    // TODO: Change me to blit transfer
-                    byte *pixels = (byte *)fb->GetPixels();
-                    memmove(pixels, pixels + FONT_SCANLINES * fb->Pixels->Pitch, (fb->Pixels->Height - FONT_SCANLINES) * fb->Pixels->Pitch);
-                    PixMap::Color c(48, 64, 16);
-                    fb->Pixels->FillRectangle(0, fb->Pixels->Height - FONT_SCANLINES, fb->Pixels->Width, FONT_SCANLINES, c);
-                    fb->UnLock();
-                }
+                window->Contents->Blit(window->Contents, 0, FONT_SCANLINES, 0, 0, window->Contents->Width, window->Contents->Height - FONT_SCANLINES);
+                PixMap::Color c(window->Contents->GetPixel(window->Contents->Width - 1, window->Contents->Height - 1));
+                window->Contents->FillRectangle(0, window->Contents->Height - FONT_SCANLINES, window->Contents->Width, FONT_SCANLINES, c);
+                window->Invalidate();
+                window->Update();
                 --fbY;
             }
         }

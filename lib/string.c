@@ -5,6 +5,7 @@
 
 // TODO: replace definitions with code from libc
 
+#ifndef __i386__ // on i386 we have implementations in assembler
 void *memset(void *dst, int val, size_t n)
 {
     if(!n) return dst;
@@ -31,8 +32,10 @@ void *lmemset(void *dst, int val, size_t n)
         *buf++ = val;
     return dst;
 }
+#endif // !__i386__
 
-void *memmove(void *dst, const void *src, size_t n)
+#ifndef __i386__ // on i386 we have an implementation in assembler
+void *__memmove(void *dst, const void *src, size_t n)
 {
     byte *d = (byte *)dst;
     byte *s = (byte *)src;
@@ -48,6 +51,7 @@ void *memmove(void *dst, const void *src, size_t n)
     while(n--) *(--d) = *(--s);
     return dst;
 }
+#endif // !__i386__
 
 void *memcpy(void *dst, const void *src, size_t n)
 {
@@ -67,7 +71,7 @@ void *bltcpy(void *dst, const void *src, size_t bpl, size_t stride, size_t lines
     return dst;
 }
 
-void *bltmove(void *dst, const void *src, size_t bpl, size_t stride, size_t lines)
+void *bltmove(void *dst, const void *src, size_t bpl, size_t dstride, size_t sstride, size_t lines)
 {
     byte *d = (byte *)dst;
     byte *s = (byte *)src;
@@ -78,18 +82,18 @@ void *bltmove(void *dst, const void *src, size_t bpl, size_t stride, size_t line
         while(lines--)
         {
             memmove(d, s, bpl);
-            d += stride;
-            s += stride;
+            d += dstride;
+            s += sstride;
         }
     }
     else
     {
-        d += stride * lines;
-        s += stride * lines;
+        d += dstride * lines;
+        s += sstride * lines;
         while(lines--)
         {
-            d -= stride;
-            s -= stride;
+            d -= dstride;
+            s -= sstride;
             memmove(d, s, bpl);
         }
     }
