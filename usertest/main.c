@@ -1,3 +1,4 @@
+#include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,8 @@ int main(int argc, char *argv[])
         if(nl) *nl = 0;
         buf[br] = 0;
 
+        malloc(100);
+
         int _argc = 0;
         for(char *it = buf, *token; (token = strtok_r(it, " \t", &it));)
             _argv[_argc++] = token;
@@ -27,6 +30,8 @@ int main(int argc, char *argv[])
 
         if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit"))
             return 0;
+        else if(!strcmp(_argv[0], "mstat"))
+            malloc_stats();
         else if(!strcmp(_argv[0], "time"))
         {
             time_t t = time(NULL);

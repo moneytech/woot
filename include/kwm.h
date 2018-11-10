@@ -65,6 +65,7 @@ public:
     static WindowManager *WM;
 
     static void Initialize(FrameBuffer *fb);
+    static bool SetWindowPosition(int id, int x, int y);
     static void Cleanup();
 
     Window *GetByID(int id);

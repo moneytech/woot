@@ -67,10 +67,10 @@ static void bufferDump(void *ptr, size_t n)
 int testThread(uintptr_t arg)
 {
     Thread *ct = Thread::GetCurrent();
-    for(; !quit;)
+    for(int i; !quit; ++i)
     {
-        //WindowManager::WM->RedrawAll();
-        ct->Sleep(100, false);
+        //WindowManager::SetWindowPosition(1, i % 800, 100);
+        ct->Sleep(1000, false);
     }
     return 0x11 * arg;
 }
@@ -444,6 +444,22 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         }
         else if(!strcmp(args[0], "mstat"))
             malloc_stats();
+        else if(!strcmp(args[0], "mvwin"))
+        {
+            if(!args[1])
+                printf("missing window id\n");
+            else if(!args[2])
+                printf("missing x position\n");
+            else if(!args[3])
+                printf("missing y position\n");
+            else
+            {
+                int id = strtol(args[1], nullptr, 0);
+                int x = strtol(args[2], nullptr, 0);
+                int y = strtol(args[3], nullptr, 0);
+                WindowManager::SetWindowPosition(id, x, y);
+            }
+        }
         else if(!strcmp(args[0], "utest"))
         {
             cpuEnterUserMode((uintptr_t)(userStack + sizeof(userStack)), (uintptr_t)userTest);

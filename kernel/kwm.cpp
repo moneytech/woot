@@ -36,6 +36,39 @@ void WindowManager::Initialize(FrameBuffer *fb)
     WM = new WindowManager(fb);
 }
 
+bool WindowManager::SetWindowPosition(int id, int x, int y)
+{
+    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *desktop = WM->GetByID(0);
+    if(!desktop)
+    {
+        WM->lock.Release();
+        return false;
+    }
+
+    Window *wnd = WM->GetByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return false;
+    }
+    if(wnd->Visible)
+    {
+        Rectangle currRect = wnd->ToRectangle();
+        wnd->Position.X = x;
+        wnd->Position.Y = y;
+        Rectangle newRect = wnd->ToRectangle();
+        Rectangle updateRect = currRect;
+        updateRect.Add(newRect);
+
+        desktop->Dirty.Add(updateRect);
+        desktop->Update();
+    }
+    WM->lock.Release();
+    return true;
+}
+
 void WindowManager::Cleanup()
 {
     if(WM) delete WM;
