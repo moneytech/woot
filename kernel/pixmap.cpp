@@ -264,8 +264,21 @@ void PixMap::Rectangle(int x, int y, int w, int h, PixMap::Color c)
     VLine(x2, y, y2, c);
 }
 
+#include <cpu.h>
 void PixMap::Blit(PixMap *src, int sx, int sy, int x, int y, int w, int h)
 {
+    if(x < 0)
+    {
+        sx -= x;
+        w += x;
+        x = 0;
+    }
+    if(y < 0)
+    {
+        sy -= y;
+        h += y;
+        y = 0;
+    }
     if(sx < 0)
     {
         x -= sx;
@@ -278,7 +291,7 @@ void PixMap::Blit(PixMap *src, int sx, int sy, int x, int y, int w, int h)
         h += sy;
         sy = 0;
     }
-    if(w < 0 || h < 0)
+    if(w < 0 || h < 0 || x >= Width || y >= Height)
         return;
 
     int x2 = min(Width, x + w);
@@ -291,12 +304,18 @@ void PixMap::Blit(PixMap *src, int sx, int sy, int x, int y, int w, int h)
 
     byte *d = PixelBytes + y * Pitch + Format.PixelsToBytes(x);
     byte *s = src->PixelBytes + sy * src->Pitch + Format.PixelsToBytes(sx);
+    if(d < PixelBytes)
+        cpuSystemHalt(100);
     if(Format == src->Format && Format.BPP >= 8)
     {   // use fast blit if pixel formats match
         int sw = sx2 - sx;
         int sh = sy2 - sy;
-        size_t bpl = Format.PixelsToBytes(min(sw, w));
-        bltmove(d, s, bpl, Pitch, src->Pitch, min(sh, h));
+        int W = x2 - x;
+        int H = y2 - y;
+        if(W < 0 || H < 0)
+            return;
+        size_t bpl = Format.PixelsToBytes(min(sw, W));
+        bltmove(d, s, bpl, Pitch, src->Pitch, min(sh, H));
         return;
     }
 

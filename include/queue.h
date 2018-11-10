@@ -54,7 +54,7 @@ public:
     T Peek()
     {
         if(IsEmpty())
-            return 0;
+            return T();
         return Data[Tail];
     }
 

@@ -461,9 +461,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             }
         }
         else if(!strcmp(args[0], "utest"))
-        {
             cpuEnterUserMode((uintptr_t)(userStack + sizeof(userStack)), (uintptr_t)userTest);
-        }
         else
         {
             if(File *f = File::Open(kernelProcess->CurrentDirectory, args[0], O_RDONLY))

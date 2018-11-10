@@ -57,6 +57,7 @@ public:
     static bool Lock();
     static bool Add(InputDevice *dev);
     static Event GetEvent(uint timeout);
+    static Event PeekEvent();
     static InputDevice *GetFirstByType(Type type);
     static bool Remove(InputDevice *dev);
     static void UnLock();

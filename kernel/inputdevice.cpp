@@ -35,6 +35,14 @@ InputDevice::Event InputDevice::GetEvent(uint timeout)
     return event;
 }
 
+InputDevice::Event InputDevice::PeekEvent()
+{
+    bool ints = cpuDisableInterrupts();
+    Event event = eventQueue.Peek();
+    cpuRestoreInterrupts(ints);
+    return event;
+}
+
 InputDevice *InputDevice::GetFirstByType(InputDevice::Type type)
 {
     if(!Lock()) return nullptr;
