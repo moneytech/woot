@@ -1,6 +1,7 @@
 #ifndef LIST_H
 #define LIST_H
 
+#include <stdlib.h>
 #include <types.h>
 
 template<class T>
@@ -139,6 +140,34 @@ public:
                 return node->Value;
         }
         return nullptr;
+    }
+
+    bool Swap(T a, T b, Comparer comparer)
+    {
+        Node *n1 = nullptr;
+        Node *n2 = nullptr;
+
+        if(!comparer) comparer = defaultComparer;
+        for(Node *prev = nullptr, *node = First; node; prev = node, node = node->Next)
+        {
+            if(comparer(node->Value, a))
+            {
+                n1 = node;
+                break;
+            }
+        }
+        if(!n1) return false;
+        for(Node *prev = nullptr, *node = First; node; prev = node, node = node->Next)
+        {
+            if(comparer(node->Value, b))
+            {
+                n2 = node;
+                break;
+            }
+        }
+        if(!n2) return false;
+        swap(T, n1->Value, n2->Value);
+        return true;
     }
 
     Iterator begin()

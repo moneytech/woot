@@ -136,6 +136,7 @@ int64_t DebugStream::Read(void *buffer, int64_t n)
     static bool shift = false, alt = false, ctrl = false, caps = false, num = false;
     static int mx = 0;
     static int my = 0;
+    static int wid = 2;
 
     if(!n) return 0;
     if(!buffer) return -EINVAL;
@@ -147,12 +148,16 @@ int64_t DebugStream::Read(void *buffer, int64_t n)
         {
             if(event.DeviceType != InputDevice::Type::Mouse)
                 continue; // ignore non keyboard and non mouse events
+            if(event.Mouse.ButtonsPressed & 1)
+                wid = wid == 2 ? 1 : 2;
+            if(event.Mouse.ButtonsPressed & 2)
+                WindowManager::BringWindowToFront(wid);
             mx += event.Mouse.Movement[0];
             my += event.Mouse.Movement[1];
             //WriteFmt("mx: %d my: %d\n", mx, my);
             InputDevice::Event ev2 = InputDevice::PeekEvent();
             if(ev2.DeviceType != InputDevice::Type::Mouse)
-                WindowManager::SetWindowPosition(2, mx, my);
+                WindowManager::SetWindowPosition(wid, mx, my);
             continue;
         }
         if(event.Keyboard.Key == VirtualKey::LShift ||

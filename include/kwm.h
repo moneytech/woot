@@ -65,10 +65,17 @@ public:
     static WindowManager *WM;
 
     static void Initialize(FrameBuffer *fb);
+    static Window *GetByID(int id);
+    static int CreateWindow(int x, int y, int w, int h);
+    static bool DestroyWindow(int id);
+    static bool ShowWindow(int id);
+    static bool HideWindow(int id);
+    static bool BringWindowToFront(int id);
     static bool SetWindowPosition(int id, int x, int y);
     static void Cleanup();
 
-    Window *GetByID(int id);
+private:
+    Window *getByID(int id);
     void RedrawAll();
 };
 

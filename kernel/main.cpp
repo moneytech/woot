@@ -182,8 +182,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 
     FrameBuffer *fb = FrameBuffer::GetByID(0, false);
     WindowManager::Initialize(fb);
-    WindowManager::Window *desktop = WindowManager::WM->GetByID(0);
-    WindowManager::Window *debugWin = WindowManager::WM->GetByID(1);
+    WindowManager::Window *desktop = WindowManager::GetByID(0);
+    WindowManager::Window *debugWin = WindowManager::GetByID(1);
     debugStream.SetWindow(debugWin);
     desktop->Update();
 
@@ -458,6 +458,59 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 int x = strtol(args[2], nullptr, 0);
                 int y = strtol(args[3], nullptr, 0);
                 WindowManager::SetWindowPosition(id, x, y);
+            }
+        }
+        else if(!strcmp(args[0], "mkwin"))
+        {
+            int w = 320;
+            int h = 240;
+            if(!args[1])
+                printf("missing x position\n");
+            else if(!args[2])
+                printf("missing y position\n");
+            else
+            {
+                int x = strtol(args[1], nullptr, 0);
+                int y = strtol(args[2], nullptr, 0);
+                if(args[3])
+                    w = strtol(args[3], nullptr, 0);
+                if(args[4])
+                    h = strtol(args[4], nullptr, 0);
+                if(!w) w = 320;
+                if(!h) w = 240;
+                int id = WindowManager::CreateWindow(x, y, w, h);
+                printf("new window id: %d\n", id);
+                WindowManager::ShowWindow(id);
+            }
+        }
+        else if(!strcmp(args[0], "fgwin"))
+        {
+            if(!args[1])
+                printf("missing window id\n");
+            else
+            {
+                int id = strtol(args[1], nullptr, 0);
+                WindowManager::BringWindowToFront(id);
+            }
+        }
+        else if(!strcmp(args[0], "showwin"))
+        {
+            if(!args[1])
+                printf("missing window id\n");
+            else
+            {
+                int id = strtol(args[1], nullptr, 0);
+                WindowManager::ShowWindow(id);
+            }
+        }
+        else if(!strcmp(args[0], "hidewin"))
+        {
+            if(!args[1])
+                printf("missing window id\n");
+            else
+            {
+                int id = strtol(args[1], nullptr, 0);
+                WindowManager::HideWindow(id);
             }
         }
         else if(!strcmp(args[0], "utest"))

@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <framebuffer.h>
 #include <kwm.h>
 #include <stdlib.h>
@@ -20,6 +21,7 @@ WindowManager::WindowManager(FrameBuffer *fb) :
     logo = new PixMap(logo, DefaultPixelFormat);
     delete ologo;
     test2->Contents->FillRectangle(0, 0, test2->Contents->Width, test2->Contents->Height, PixMap::Color::BrightBlue);
+    test2->Contents->FillRectangle(105, 105, logo->Width, logo->Height, PixMap::Color::Black);
     test2->Contents->Rectangle(100 - 1, 100 - 1, logo->Width + 2, logo->Height + 2, PixMap::Color::White);
     test2->Contents->Blit(logo, 0, 0, 100, 100, logo->Width, logo->Height);
     delete logo;
@@ -36,18 +38,119 @@ void WindowManager::Initialize(FrameBuffer *fb)
     WM = new WindowManager(fb);
 }
 
+WindowManager::Window *WindowManager::GetByID(int id)
+{
+    if(!WM || !WM->lock.Acquire(0, false))
+        return nullptr;
+    Window *wnd = WM->getByID(id);
+    WM->lock.Release();
+    return wnd;
+}
+
+int WindowManager::CreateWindow(int x, int y, int w, int h)
+{
+    if(!WM || !WM->lock.Acquire(0, false))
+        return -EBUSY;
+    Window *wnd = new Window(WM, x, y, w, h);
+    WM->windows.Append(wnd);
+    int id = wnd->ID;
+    WM->lock.Release();
+    return id;
+}
+
+bool WindowManager::DestroyWindow(int id)
+{
+    if(id <= 0 || !WM)
+        return -EINVAL;
+    if(!WM->lock.Acquire(0, false))
+        return -EBUSY;
+    WM->lock.Release();
+    return false;
+}
+
+bool WindowManager::ShowWindow(int id)
+{
+    if(id <= 0 || !WM)
+        return false;
+    if(!WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = GetByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return false;
+    }
+    wnd->Visible = true;
+    wnd->Invalidate();
+    wnd->Update();
+    WM->lock.Release();
+    return true;
+}
+
+bool WindowManager::HideWindow(int id)
+{
+    if(id <= 0 || !WM)
+        return false;
+    if(!WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = GetByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return false;
+    }
+    wnd->Visible = false;
+
+    Window *desktop = GetByID(0);
+    if(desktop)
+    {
+        Rectangle updateRect = wnd->ToRectangle();
+        desktop->Dirty.Add(updateRect);
+        desktop->Update();
+    }
+
+    WM->lock.Release();
+    return true;
+}
+
+bool WindowManager::BringWindowToFront(int id)
+{
+    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return false;
+    }
+    wnd->Visible = true;
+    Window *topWindow = nullptr;
+    for(Window *wnd : WM->windows)
+        topWindow = wnd;
+    if(!topWindow || !topWindow->ID)
+    {
+        WM->lock.Release();
+        return false;
+    }
+    WM->windows.Swap(wnd, topWindow, nullptr);
+    wnd->Invalidate();
+    wnd->Update();
+    WM->lock.Release();
+    return true;
+}
+
 bool WindowManager::SetWindowPosition(int id, int x, int y)
 {
     if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *desktop = WM->GetByID(0);
+    Window *desktop = WM->getByID(0);
     if(!desktop)
     {
         WM->lock.Release();
         return false;
     }
 
-    Window *wnd = WM->GetByID(id);
+    Window *wnd = WM->getByID(id);
     if(!wnd)
     {
         WM->lock.Release();
@@ -74,7 +177,7 @@ void WindowManager::Cleanup()
     if(WM) delete WM;
 }
 
-WindowManager::Window *WindowManager::GetByID(int id)
+WindowManager::Window *WindowManager::getByID(int id)
 {
     if(!lock.Acquire(0, false))
         return nullptr;

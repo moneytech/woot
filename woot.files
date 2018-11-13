@@ -45,6 +45,8 @@ libc/string.c
 libc/strings.c
 libc/time.c
 libc/unistd.c
+libwoot/Makefile
+libwoot/wm.cpp
 logo.bmp
 usertest/main.c
 include/syscalls.h
