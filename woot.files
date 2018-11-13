@@ -48,6 +48,7 @@ libc/unistd.c
 libwoot/Makefile
 libwoot/wm.cpp
 logo.bmp
+screenshot.png
 usertest/main.c
 include/syscalls.h
 kernel/syscalls.cpp
