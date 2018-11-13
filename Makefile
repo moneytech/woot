@@ -5,7 +5,7 @@ ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
 LIBDIR = $(ROOTDIR)/lib
 MOUNTPOINT = mnt
-DISTFILES = usertest/usertest yasm test.asm logo.bmp
+DISTFILES = usertest/usertest logo.bmp libc/libc.so
 
 ARCH = i386
 export ARCH

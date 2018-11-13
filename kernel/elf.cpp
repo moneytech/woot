@@ -158,7 +158,10 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                 return nullptr;
             }
 
-            size_t pageCount = align(phdr->p_memsz, PAGE_SIZE) / PAGE_SIZE;
+            uintptr_t endva = phdr->p_vaddr + phdr->p_memsz;
+            uintptr_t s = phdr->p_vaddr / PAGE_SIZE;
+            uintptr_t e = align(endva, PAGE_SIZE) / PAGE_SIZE;
+            size_t pageCount = e - s;
             for(uint i = 0; i < pageCount; ++i)
             {
                 uintptr_t va = phdr->p_vaddr + i * PAGE_SIZE;
@@ -170,7 +173,7 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                     return nullptr;
                 }
                 uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
-                if(pa != ~0)
+                if(!user && pa != ~0)
                 {
                     printf("[elf] Address conflict at %p in file '%s'\n", va, filename);
                     delete elf;
