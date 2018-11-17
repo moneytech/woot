@@ -384,4 +384,13 @@
 #define SYS_statx		383
 #define SYS_arch_prctl		384
 
+#define SYS_create_window           386
+#define SYS_show_window             387
+#define SYS_hide_window             388
+#define SYS_destroy_window          389
+#define SYS_draw_rectangle          390
+#define SYS_draw_filled_rectangle   391
+#define SYS_update_window           392
+#define SYS_redraw_window           393
+
 #endif // SYS_SYSCALL_H

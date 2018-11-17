@@ -6,8 +6,18 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <woot/wm.h>
+
 int main(int argc, char *argv[])
 {
+    int wnd = wmCreateWindow(50, 150, 400, 300);
+    for(;;);
+    struct wmRectangle rect = {0, 0, 400, 24};
+    wmDrawFilledRectangle(wnd, &rect , 0x40608000);
+    rect.Height = 300;
+    wmDrawRectangle(wnd, &rect, 0xFFFFFF00);
+    wmShowWindow(wnd);
+
     printf("WOOT test user mode console\n");
 
     char buf[128];
@@ -29,7 +39,7 @@ int main(int argc, char *argv[])
         if(!_argc) continue;
 
         if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit"))
-            return 0;
+            break;
         else if(!strcmp(_argv[0], "mstat"))
             malloc_stats();
         else if(!strcmp(_argv[0], "time"))
@@ -46,6 +56,8 @@ int main(int argc, char *argv[])
         }
         else printf("unknown command '%s'\n", _argv[0]);
     }
+
+    wmDestroyWindow(wnd);
 
     return 42;
 }

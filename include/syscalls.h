@@ -30,6 +30,15 @@ class SysCalls
     static long sys_nanosleep(long *args); // 162
     static long sys_getcwd(long *args); // 183
     static long sys_gettid(long *args); // 224
+
+    static long sys_create_window(long *args); // 386
+    static long sys_show_window(long *args); // 387
+    static long sys_hide_window(long *args); // 388
+    static long sys_destroy_window(long *args); // 389
+    static long sys_draw_rectangle(long *args); // 390
+    static long sys_draw_filled_rectangle(long *args); // 391
+    static long sys_update_window(long *args); // 392
+    static long sys_redraw_window(long *args); // 393
 public:
     static void Initialize();
     static void Cleanup();

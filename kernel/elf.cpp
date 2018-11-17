@@ -18,7 +18,7 @@ void ELF::Initialize(const char *kernelFile)
     ELF *elf = Load(nullptr, kernelFile, true, true);
     if(!elf) return;
     Process *proc = Process::GetCurrent();
-    proc->Images.Append(elf);
+    proc->Image = elf;
 }
 
 ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders)
@@ -148,7 +148,7 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
         for(uint i = 0; i < ehdr->e_phnum; ++i)
         {
             Elf32_Phdr *phdr = (Elf32_Phdr *)(phdrData + ehdr->e_phentsize * i);
-            if(phdr->p_type != PT_LOAD)
+            if(phdr->p_type != PT_LOAD && phdr->p_type != PT_DYNAMIC)
                 continue;
             if(f->Seek(phdr->p_offset, SEEK_SET) != phdr->p_offset)
             {
@@ -175,10 +175,11 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                 uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
                 if(!user && pa != ~0)
                 {
-                    printf("[elf] Address conflict at %p in file '%s'\n", va, filename);
+                    /*printf("[elf] Address conflict at %p in file '%s'\n", va, filename);
                     delete elf;
                     delete f;
-                    return nullptr;
+                    return nullptr;*/
+                    continue;
                 }
                 pa = Paging::AllocPage();
                 if(pa == ~0)
@@ -216,7 +217,26 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
             return (Elf32_Shdr *)(shdrData + i * ehdr->e_shentsize);
         };
 
-        // resolve symbols and apply relocations
+        // load needed shared objects
+        for(uint i = 0; i < ehdr->e_shnum; ++i)
+        {
+            Elf32_Shdr *shdr = getSHdr(i);
+            if(shdr->sh_type != SHT_DYNAMIC)
+                continue;
+            byte *dyntab = (byte *)(shdr->sh_addr + baseDelta);
+            char *_strtab = (char *)(getSHdr(shdr->sh_link)->sh_addr + baseDelta);
+            for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
+            {
+                Elf32_Dyn *dyn = (Elf32_Dyn *)(dyntab + coffs);
+                if(dyn->d_tag != DT_NEEDED)
+                    continue;
+                char *soname = _strtab + dyn->d_un.d_val;
+                printf("[elf] DT_NEEDED: %s\n", soname);
+                ELF *soELF = Load(dentry, soname, user, false);
+            }
+        }
+
+        // apply relocations
         for(uint i = 0; i < ehdr->e_shnum; ++i)
         {
             Elf32_Shdr *shdr = getSHdr(i);
@@ -238,17 +258,9 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                 char *name = _strtab + symbol->st_name;
                 if(name[0])
                 {
-                    fSymbol = proc->FindSymbol(name);
+                    fSymbol = proc->FindSymbol(name, nullptr);
                     if(!fSymbol)
-                    {
                         fSymbol = elf->FindSymbol(name);
-                        if(!fSymbol)
-                        {
-                            printf("[elf] Unresolved symbol '%s' in '%s'\n", name, filename);
-                            delete elf;
-                            return nullptr;
-                        }
-                    }
                 }
 
                 uintptr_t *val = (uintptr_t *)(rel->r_offset + baseDelta);
@@ -262,6 +274,8 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
 
                 switch(rType)
                 {
+                //case R_386_NONE:
+                //    break;
                 case R_386_32:
                     *val = S + A;
                     break;
@@ -285,6 +299,47 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                 }
             }
         }
+
+        // resolve symbols
+        for(uint i = 0; i < ehdr->e_shnum; ++i)
+        {
+            Elf32_Shdr *shdr = getSHdr(i);
+            if(shdr->sh_type != SHT_DYNSYM)
+                continue;
+
+            Elf32_Sym *_symtab = (Elf32_Sym *)(getSHdr(shdr->sh_link)->sh_addr + baseDelta);
+            char *_strtab = (char *)(getSHdr(getSHdr(shdr->sh_link)->sh_link)->sh_addr + baseDelta);
+
+            for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
+            {
+                Elf32_Sym *sym = (Elf32_Sym *)(symtab + coffs);
+                int type = ELF32_ST_TYPE(sym->st_info);
+                if(type == STT_NOTYPE || sym->st_shndx || !sym->st_name)
+                    continue;
+
+                char *name = _strtab + sym->st_name;
+                Elf32_Sym *s = elf->FindSymbol(name);
+                if((ELF32_ST_BIND(sym->st_info) & STB_WEAK) && s)
+                    continue;
+                s = nullptr;
+                //printf("resolving symbol: %s\n", name);
+
+                ELF *e = nullptr;
+                s = proc->FindSymbol(name, &e);
+                if(s)
+                {
+                    sym->st_value = s->st_value + e->baseDelta;
+                    //printf("Found symbol '%s' in %s (resolved as: %.8x)\n", name, kv.Value->filename, sym->st_value);
+                    break;
+                }
+                else
+                {
+                    printf("[elf] Couldn't resolve symbol '%s'\n", name);
+                    delete elf;
+                    return nullptr;
+                }
+            }
+        }
     } else delete f;
 
 
@@ -294,7 +349,10 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
         elf->CleanupProc = (void (*)())(cleanupSym ? cleanupSym->st_value : 0);
     }
     if(proc)
-        proc->Images.Append(elf);
+    {
+        elf->Next = proc->Image;
+        proc->Image = elf;
+    }
     return elf;
 }
 
@@ -347,7 +405,7 @@ ELF::~ELF()
         for(uint i = 0; i < ehdr->e_phnum; ++i)
         {
             Elf32_Phdr *phdr = (Elf32_Phdr *)(phdrData + ehdr->e_phentsize * i);
-            if(phdr->p_type != PT_LOAD)
+            if(phdr->p_type != PT_LOAD && phdr->p_type != PT_DYNAMIC)
                 continue;
             size_t pageCount = align(phdr->p_memsz, PAGE_SIZE) / PAGE_SIZE;
             for(uint i = 0; i < pageCount; ++i)

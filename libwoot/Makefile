@@ -1,7 +1,7 @@
 LIB = libwoot
 OBJS = wm.o
 
-CFLAGS = -m32 -ggdb -nostdinc -I./include -Wno-expansion-to-defined
+CFLAGS = -m32 -ggdb -nostdinc -I./include -I./../libc/include -Wno-expansion-to-defined
 ASMFLAGS = -f elf -gdwarf2
 LDFLAGS = -melf_i386 -shared
 
@@ -11,7 +11,9 @@ LIB_SHARED = $(LIB).so
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
-all: $(OBJS)
+all: shared
+
+static: $(OBJS)
 	$(AR) rcs $(LIB_STATIC) $(OBJS)
 
 shared: $(OBJS)

@@ -64,8 +64,23 @@ bool WindowManager::DestroyWindow(int id)
         return -EINVAL;
     if(!WM->lock.Acquire(0, false))
         return -EBUSY;
+    Window *wnd = GetByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    WM->windows.Remove(wnd, nullptr, false);
+    Window *desktop = GetByID(0);
+    if(desktop)
+    {
+        Rectangle wndRect = wnd->ToRectangle();
+        desktop->Dirty.Add(wndRect);
+        desktop->Update();
+    }
+    delete wnd;
     WM->lock.Release();
-    return false;
+    return true;
 }
 
 bool WindowManager::ShowWindow(int id)
@@ -168,6 +183,69 @@ bool WindowManager::SetWindowPosition(int id, int x, int y)
         desktop->Dirty.Add(updateRect);
         desktop->Update();
     }
+    WM->lock.Release();
+    return true;
+}
+
+bool WindowManager::DrawRectangle(int id, Rectangle rect, PixMap::Color color)
+{
+    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    wnd->Contents->Rectangle(rect.Origin.X, rect.Origin.Y, rect.Width, rect.Height, color);
+    wnd->Dirty.Add(rect);
+    WM->lock.Release();
+    return true;
+}
+
+bool WindowManager::DrawFilledRectangle(int id, Rectangle rect, PixMap::Color color)
+{
+    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    wnd->Contents->FillRectangle(rect.Origin.X, rect.Origin.Y, rect.Width, rect.Height, color);
+    wnd->Dirty.Add(rect);
+    WM->lock.Release();
+    return true;
+}
+
+bool WindowManager::UpdateWindow(int id)
+{
+    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    wnd->Update();
+    WM->lock.Release();
+    return true;
+}
+
+bool WindowManager::RedrawWindow(int id)
+{
+    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    wnd->Invalidate();
+    wnd->Update();
     WM->lock.Release();
     return true;
 }

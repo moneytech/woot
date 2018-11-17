@@ -169,7 +169,6 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 printf("[main] Couldn't load module '%s'\n", line);
                 continue;
             }
-            kernelProcess->Images.Append(module);
             int res = module->EntryPoint();
             printf("[main] module '%s' returned %d\n", line, res);
         }
@@ -339,7 +338,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 printf("missing argument\n");
                 continue;
             }
-            Elf32_Sym *sym = kernelProcess->FindSymbol(args[1]);
+            Elf32_Sym *sym = kernelProcess->FindSymbol(args[1], nullptr);
             if(!sym) printf("kernel symbol '%s' not found\n", args[1]);
             else printf("%s = %#.8x\n", args[1], sym->st_value);
         }
@@ -545,13 +544,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     FileSystem::PutDEntry(cdir);
 
     // call module cleanup functions in reverse order
-    for(int i = kernelProcess->Images.Count() - 1; i > 0; --i)
-    {
-        ELF *elf = kernelProcess->Images[i];
-        if(!elf || !elf->CleanupProc)
-            continue;
+    for(ELF *elf = kernelProcess->Image; elf; elf = elf->Next)
         elf->CleanupProc();
-    }
 
     // 'close' current kernel directory
     if(kernelProcess->CurrentDirectory)

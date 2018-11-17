@@ -121,7 +121,7 @@ int Process::processEntryPoint(const char *cmdline)
     }
 
     proc->MemoryLock.Acquire(0, false);
-    for(ELF *e : proc->Images)
+    for(ELF *e = elf; e; e = e->Next)
         proc->MinBrk = max(proc->MinBrk, align(e->GetEndPtr(), (64 << 10)));
     proc->CurrentBrk = proc->MinBrk;
     proc->MappedBrk = proc->CurrentBrk;
@@ -242,12 +242,16 @@ bool Process::RemoveThread(Thread *thread)
     return res;
 }
 
-Elf32_Sym *Process::FindSymbol(const char *name)
+Elf32_Sym *Process::FindSymbol(const char *name, ELF **elf)
 {
-    for(ELF *elf : Images)
+    for(ELF *e = Image; e; e = e->Next)
     {
-        Elf32_Sym *sym = elf->FindSymbol(name);
-        if(sym) return sym;
+        Elf32_Sym *sym = e->FindSymbol(name);
+        if(sym)
+        {
+            if(elf) *elf = e;
+            return sym;
+        }
     }
     return nullptr;
 }
@@ -316,9 +320,12 @@ Process::~Process()
             Thread::Finalize(t, -1);
         delete t;
     }
-    for(ELF *elf : Images)
+    for(ELF *elf = Image; elf;)
+    {
+        ELF *next = elf->Next;
         if(elf) delete elf;
-    Images.Clear();
+        elf = next;
+    }
     if(CurrentDirectory) FileSystem::PutDEntry(CurrentDirectory);
     processList.Remove(this, nullptr, false);
     listLock.Release();

@@ -46,7 +46,8 @@ libc/strings.c
 libc/time.c
 libc/unistd.c
 libwoot/Makefile
-libwoot/wm.cpp
+libwoot/include/woot/wm.h
+libwoot/wm.c
 logo.bmp
 screenshot.png
 usertest/main.c

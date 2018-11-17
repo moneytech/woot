@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <file.h>
 #include <inode.h>
+#include <kwm.h>
 #include <paging.h>
 #include <process.h>
 #include <stat.h>
@@ -39,6 +40,15 @@ SysCalls::Callback SysCalls::callbacks[] =
     [SYS_nanosleep] = sys_nanosleep,
     [SYS_getcwd] = sys_getcwd,
     [SYS_gettid] = sys_gettid,
+
+    [SYS_create_window] = sys_create_window,
+    [SYS_show_window] = sys_show_window,
+    [SYS_hide_window] = sys_hide_window,
+    [SYS_destroy_window] = sys_destroy_window,
+    [SYS_draw_rectangle] = sys_draw_rectangle,
+    [SYS_draw_filled_rectangle] = sys_draw_filled_rectangle,
+    [SYS_update_window] = sys_update_window,
+    [SYS_redraw_window] = sys_redraw_window,
 };
 
 bool SysCalls::isr(Ints::State *state, void *context)
@@ -295,6 +305,50 @@ long SysCalls::sys_gettid(long *args) // 224
     Process *cp = Process::GetCurrent();
     if(!cp) return -ESRCH;
     return cp->ID;
+}
+
+long SysCalls::sys_create_window(long *args) // 386
+{
+    return WindowManager::CreateWindow(args[1], args[2], args[3], args[4]);
+}
+
+long SysCalls::sys_show_window(long *args) // 387
+{
+    return WindowManager::ShowWindow(args[1]) ? 0 : -EINVAL;
+}
+
+long SysCalls::sys_hide_window(long *args) // 388
+{
+    return WindowManager::HideWindow(args[1]) ? 0 : -EINVAL;
+}
+
+long SysCalls::sys_destroy_window(long *args) // 389
+{
+    return WindowManager::DestroyWindow(args[1]) ? 0 : -EINVAL;
+}
+
+long SysCalls::sys_draw_rectangle(long *args) // 390
+{
+    WindowManager::wmRectangle *wmRect = (WindowManager::wmRectangle *)args[2];
+    WindowManager::Rectangle rect(wmRect->X, wmRect->Y, wmRect->Width, wmRect->Height);
+    return WindowManager::DrawRectangle(args[1], rect, args[3]);
+}
+
+long SysCalls::sys_draw_filled_rectangle(long *args) // 391
+{
+    WindowManager::wmRectangle *wmRect = (WindowManager::wmRectangle *)args[2];
+    WindowManager::Rectangle rect(wmRect->X, wmRect->Y, wmRect->Width, wmRect->Height);
+    return WindowManager::DrawFilledRectangle(args[1], rect, args[3]);
+}
+
+long SysCalls::sys_update_window(long *args) // 392
+{
+    return WindowManager::UpdateWindow(args[1]) ? 0 : -EINVAL;
+}
+
+long SysCalls::sys_redraw_window(long *args) // 393
+{
+    return WindowManager::RedrawWindow(args[1]) ? 0 : -EINVAL;
 }
 
 void SysCalls::Initialize()

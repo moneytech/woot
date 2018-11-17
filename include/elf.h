@@ -269,6 +269,7 @@ class ELF
 public:
     int (*EntryPoint)();
     void (*CleanupProc)();
+    ELF *Next;
     static void Initialize(const char *kernelFile);
     static ELF *Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders);
 

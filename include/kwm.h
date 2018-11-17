@@ -15,6 +15,12 @@ public:
     static PixMap::PixelFormat DefaultPixelFormat;
     struct Rectangle;
 
+    // user mode rectangle structure
+    struct wmRectangle
+    {
+        int X, Y, Width, Height;
+    };
+
     struct Point
     {
         int X, Y;
@@ -72,6 +78,10 @@ public:
     static bool HideWindow(int id);
     static bool BringWindowToFront(int id);
     static bool SetWindowPosition(int id, int x, int y);
+    static bool DrawRectangle(int id, Rectangle rect, PixMap::Color color);
+    static bool DrawFilledRectangle(int id, Rectangle rect, PixMap::Color color);
+    static bool UpdateWindow(int id);
+    static bool RedrawWindow(int id);
     static void Cleanup();
 
 private:

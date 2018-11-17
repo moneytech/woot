@@ -4,6 +4,8 @@ libc/include/sys
 libc/internal
 libc/asm
 
+libwoot/include
+
 ./include
 kernel
 lib
@@ -14,3 +16,5 @@ ps2mouse
 usertest
 lib/i386
 libwoot
+libwoot/woot
+libwoot/include/woot
