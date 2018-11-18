@@ -1,0 +1,8 @@
+SECTIONS
+{
+    .text : { *(.text*) }
+    .data : { *(.data*) }
+    .rodata : { *(.rodata*) }
+    .dynamic : { *(.dynamic*) }
+    .bss : { *(.bss*) *(COMMON) }
+}

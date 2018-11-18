@@ -30,10 +30,10 @@ public:
     pid_t ID;
     char *Name;
     uintptr_t AddressSpace;
+    List<ELF *> Images;
     uid_t UID, EUID;
     gid_t GID, EGID;
     DEntry *CurrentDirectory;
-    ELF *Image;
     uintptr_t UserStackPtr;
     File *FileDescriptors[MAX_FILE_DESCRIPTORS];
 
@@ -55,7 +55,11 @@ public:
     bool Start();
     bool AddThread(Thread *thread);
     bool RemoveThread(Thread *thread);
-    Elf32_Sym *FindSymbol(const char *name, ELF **elf);
+    bool AddELF(ELF *elf);
+    ELF *GetELF(const char *name);
+    Elf32_Sym *FindSymbol(const char *name, ELF *skip, ELF **elf);
+    bool ResolveSymbols();
+    bool ApplyRelocations();
     int Open(const char *filename, int flags);
     int Close(int fd);
     File *GetFileDescriptor(int fd);

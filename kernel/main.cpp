@@ -148,13 +148,12 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     // set kernel process root directory
     if(File *rootDir = File::Open("0:/", O_DIRECTORY))
     {
-        // hijack f's DEntry
         Thread::GetCurrent()->Process->CurrentDirectory = FileSystem::GetDEntry(rootDir->DEntry);
         delete rootDir;
     }
 
     // load modules
-    ELF::Initialize("WOOT_OS:/woot");
+    ELF::Load(nullptr, "WOOT_OS:/woot", false, true);
     if(File *f = File::Open("WOOT_OS:/modulelist", O_RDONLY))
     {
         FileStream fs(f);
@@ -163,12 +162,27 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         {
             if(line[0] == '#' || !line[0])
                 continue;
+            printf("[main] Loading module '%s'\n", line);
             ELF *module = ELF::Load(nullptr, line, false, false);
             if(!module)
             {
                 printf("[main] Couldn't load module '%s'\n", line);
                 continue;
             }
+            if(!module->ResolveSymbols())
+            {
+                printf("[main] Couldn't resolve all symbols for module '%s'\n", line);
+                delete module;
+                continue;
+            }
+            if(!module->ApplyRelocations())
+            {
+                printf("[main] Couldn't apply all relocations for module '%s'\n", line);
+                delete module;
+                continue;
+            }
+            Elf32_Sym *cleanupSym = module->FindSymbol("Cleanup");
+            module->CleanupProc = (void (*)())(cleanupSym ? cleanupSym->st_value : 0);
             int res = module->EntryPoint();
             printf("[main] module '%s' returned %d\n", line, res);
         }
@@ -180,12 +194,14 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     mapUser(kernelProcess->AddressSpace, &_ubss_start, &_ubss_end);
 
     FrameBuffer *fb = FrameBuffer::GetByID(0, false);
-    WindowManager::Initialize(fb);
-    WindowManager::Window *desktop = WindowManager::GetByID(0);
-    WindowManager::Window *debugWin = WindowManager::GetByID(1);
-    debugStream.SetWindow(debugWin);
-    desktop->Update();
-
+    if(fb)
+    {
+        WindowManager::Initialize(fb);
+        WindowManager::Window *desktop = WindowManager::GetByID(0);
+        WindowManager::Window *debugWin = WindowManager::GetByID(1);
+        debugStream.SetWindow(debugWin);
+        desktop->Update();
+    }
 
     Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
     Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);
@@ -197,11 +213,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     t2->Resume(false);
 
     Thread *ct = Thread::GetCurrent();
-    bool shift = false, num = false, caps = false, alt = false, ctrl = false;
     char cmd[256];
     char cwd[256];
     int cmdPos = 0;
-    int x = 0, y = 0;
     DEntry *cdir = Process::GetCurrentDir();
     printf("\nDebug (s)hell started. Don't type help for help.\n");
     for(; !quit;)
@@ -338,7 +352,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 printf("missing argument\n");
                 continue;
             }
-            Elf32_Sym *sym = kernelProcess->FindSymbol(args[1], nullptr);
+            Elf32_Sym *sym = kernelProcess->FindSymbol(args[1], nullptr, nullptr);
             if(!sym) printf("kernel symbol '%s' not found\n", args[1]);
             else printf("%s = %#.8x\n", args[1], sym->st_value);
         }
@@ -540,12 +554,16 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     delete t1;
     delete t2;
 
-    WindowManager::Cleanup();
     FileSystem::PutDEntry(cdir);
 
     // call module cleanup functions in reverse order
-    for(ELF *elf = kernelProcess->Image; elf; elf = elf->Next)
+    for(int i = kernelProcess->Images.Count() - 1; i > 0; --i)
+    {
+        ELF *elf = kernelProcess->Images[i];
+        if(!elf || !elf->CleanupProc)
+            continue;
         elf->CleanupProc();
+    }
 
     // 'close' current kernel directory
     if(kernelProcess->CurrentDirectory)
@@ -557,11 +575,12 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Volume::FlushAll();
     Volume::Cleanup();
     Drive::Cleanup();
+
+    printf("[main] System closed.\n");
+    WindowManager::Cleanup();
     PS2Keyboard::Cleanup();
     InputDevice::Cleanup();
     PCI::Cleanup();
-
-    printf("[main] System closed.\n");
     return 0xD007D007;
 }
 

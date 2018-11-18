@@ -1,5 +1,7 @@
 [bits 32]
 
+segment .text
+
 ; segments must match ones in sysdefs.h
 SEG_CODE32_USER equ 0x002B
 SEG_DATA32_USER equ 0x0033
@@ -1298,6 +1300,8 @@ _INTJumpTable:
     dd _INTD0, _INTD1, _INTD2, _INTD3, _INTD4, _INTD5, _INTD6, _INTD7, _INTD8, _INTD9, _INTDA, _INTDB, _INTDC, _INTDD, _INTDE, _INTDF
     dd _INTE0, _INTE1, _INTE2, _INTE3, _INTE4, _INTE5, _INTE6, _INTE7, _INTE8, _INTE9, _INTEA, _INTEB, _INTEC, _INTED, _INTEE, _INTEF
     dd _INTF0, _INTF1, _INTF2, _INTF3, _INTF4, _INTF5, _INTF6, _INTF7, _INTF8, _INTF9, _INTFA, _INTFB, _INTFC, _INTFD, _INTFE, _INTFF
+
+segment .text
 
 global cpuFXSave
 cpuFXSave:

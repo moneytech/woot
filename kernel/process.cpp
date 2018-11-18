@@ -107,22 +107,16 @@ int Process::processEntryPoint(const char *cmdline)
 {
     Tokenizer cmd(cmdline, " ", 2);
     ELF *elf = ELF::Load(GetCurrentDir(), cmd[0], true, false);
-    if(!elf) return 127;
-    if(!elf->EntryPoint)
-    {
-        delete elf;
-        return 126;
-    }
     Process *proc = GetCurrent();
-    if(!proc->lock.Acquire(0, false))
-    {
-        delete elf;
+    if(!proc || !elf) return 127;
+    if(!elf->EntryPoint || !proc->ResolveSymbols() || !proc->ApplyRelocations())
         return 126;
-    }
+    if(!proc->lock.Acquire(0, false))
+        return 126;
 
     proc->MemoryLock.Acquire(0, false);
-    for(ELF *e = elf; e; e = e->Next)
-        proc->MinBrk = max(proc->MinBrk, align(e->GetEndPtr(), (64 << 10)));
+    for(ELF *elf : proc->Images)
+        proc->MinBrk = max(proc->MinBrk, align(elf->GetEndPtr(), (64 << 10)));
     proc->CurrentBrk = proc->MinBrk;
     proc->MappedBrk = proc->CurrentBrk;
     proc->MaxBrk = KERNEL_BASE - 0x10000000;
@@ -131,7 +125,7 @@ int Process::processEntryPoint(const char *cmdline)
     uintptr_t esp = Thread::GetCurrent()->AllocUserStack();
     const char *envVars[] =
     {
-        "PATH=WOOT_OS~/:WOOT_OS~/system",
+        "PATH=WOOT_OS:/;WOOT_OS:/system",
         "TEST=value"
     };
     esp = buildUserStack(esp, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf);
@@ -242,18 +236,81 @@ bool Process::RemoveThread(Thread *thread)
     return res;
 }
 
-Elf32_Sym *Process::FindSymbol(const char *name, ELF **elf)
+bool Process::AddELF(ELF *elf)
 {
-    for(ELF *e = Image; e; e = e->Next)
+    if(!elf || !lock.Acquire(0, false)) return false;
+    Images.Append(elf);
+    lock.Release();
+    return true;
+}
+
+ELF *Process::GetELF(const char *name)
+{
+    if(!lock.Acquire(0, false))
+        return nullptr;
+    ELF *res = nullptr;
+    for(ELF *elf : Images)
     {
+        if(!strcmp(name, elf->Name))
+        {
+            res = elf;
+            break;
+        }
+    }
+    lock.Release();
+    return res;
+}
+
+Elf32_Sym *Process::FindSymbol(const char *name, ELF *skip, ELF **elf)
+{
+    if(!lock.Acquire(0, false))
+        return nullptr;
+    for(ELF *e : Images)
+    {
+        if(e == skip)
+            continue;
         Elf32_Sym *sym = e->FindSymbol(name);
         if(sym)
         {
             if(elf) *elf = e;
+            lock.Release();
             return sym;
         }
     }
+    lock.Release();
     return nullptr;
+}
+
+bool Process::ResolveSymbols()
+{
+    if(!lock.Acquire(0, false))
+        return false;
+    for(ELF *e : Images)
+    {
+        if(!e->ResolveSymbols())
+        {
+            lock.Release();
+            return false;
+        }
+    }
+    lock.Release();
+    return true;
+}
+
+bool Process::ApplyRelocations()
+{
+    if(!lock.Acquire(0, false))
+        return false;
+    for(ELF *e : Images)
+    {
+        if(!e->ApplyRelocations())
+        {
+            lock.Release();
+            return false;
+        }
+    }
+    lock.Release();
+    return true;
 }
 
 int Process::Open(const char *filename, int flags)
@@ -320,12 +377,8 @@ Process::~Process()
             Thread::Finalize(t, -1);
         delete t;
     }
-    for(ELF *elf = Image; elf;)
-    {
-        ELF *next = elf->Next;
+    for(ELF *elf : Images)
         if(elf) delete elf;
-        elf = next;
-    }
     if(CurrentDirectory) FileSystem::PutDEntry(CurrentDirectory);
     processList.Remove(this, nullptr, false);
     listLock.Release();

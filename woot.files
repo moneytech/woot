@@ -8,6 +8,7 @@ lib/i386/memset.asm
 libc/asm/syscall.asm
 libc/crt0.c
 libc/ctype.c
+libc/errno.c
 libc/fcntl.c
 libc/include/assert.h
 libc/include/ctype.h
@@ -32,6 +33,7 @@ libc/include/sys/syscall.h
 libc/include/sys/types.h
 libc/include/time.h
 libc/include/unistd.h
+libc/init.c
 libc/internal/syscall.h
 libc/inttypes.c
 libc/libgen.c
@@ -50,6 +52,7 @@ libwoot/include/woot/wm.h
 libwoot/wm.c
 logo.bmp
 screenshot.png
+shared.ldscript
 usertest/main.c
 include/syscalls.h
 kernel/syscalls.cpp

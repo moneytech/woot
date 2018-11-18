@@ -1,5 +1,5 @@
 ROOTDIR = $(shell pwd)
-SUBDIRS = lib libc libwoot ps2mouse simplefb kernel usertest
+SUBDIRS = lib kernel libc libwoot ps2mouse simplefb usertest
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
@@ -19,8 +19,8 @@ ASM = yasm
 LD = ld
 AR = ar
 
-COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -mno-sse -fno-pic -fshort-wchar
-COMMONFLAGS += -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
+COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -mno-sse -fpic -fshort-wchar
+COMMONFLAGS += -I. -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -fno-exceptions -fno-rtti -nostdinc++
 ASMFLAGS = -gdwarf2 -f elf32 -w

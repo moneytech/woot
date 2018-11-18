@@ -8,7 +8,6 @@
 #include <types.h>
 
 extern "C" uintptr_t __dso_handle;
-uintptr_t __dso_handle = 0;
 
 typedef void (*atexitHandler)(void *ptr, void *dso);
 class atexitTableEntry

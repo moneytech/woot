@@ -3,7 +3,8 @@ OBJS = wm.o
 
 CFLAGS = -m32 -ggdb -nostdinc -I./include -I./../libc/include -Wno-expansion-to-defined
 ASMFLAGS = -f elf -gdwarf2
-LDFLAGS = -melf_i386 -shared
+LDFLAGS = -melf_i386
+SHLDFLAGS = -shared -Ttext=0x12000000 -T../shared.ldscript
 
 LIB_STATIC = $(LIB).a
 LIB_SHARED = $(LIB).so
@@ -11,13 +12,13 @@ LIB_SHARED = $(LIB).so
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
-all: shared
+all: shared static
 
 static: $(OBJS)
 	$(AR) rcs $(LIB_STATIC) $(OBJS)
 
 shared: $(OBJS)
-	$(LD) $(LDFLAGS) $(OBJS) -o $(LIB_SHARED)
+	$(LD) $(LDFLAGS) $(OBJS) -o $(LIB_SHARED) $(SHLDFLAGS)
 
 clean:
 	rm -rf $(LIB_STATIC) $(LIB_SHARED) $(OBJS)

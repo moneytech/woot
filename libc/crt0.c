@@ -1,15 +1,9 @@
 #include <stdlib.h>
 #include <stdint.h>
-#include <sys/syscall.h>
 #include <unistd.h>
 
-#include "internal/syscall.h"
-
-int errno = 0;
-
 extern int main(int argc, char *argv[], char *envp[]);
-
-extern uintptr_t __current_brk;
+extern void __init_libc();
 
 asm(
 ".globl _start\n"
@@ -24,7 +18,7 @@ asm(
 
 void __attribute__((noreturn)) __start(int argc)
 {
-    __current_brk = (uintptr_t)syscall1(SYS_brk, 0);
+    __init_libc();
     unsigned char *args = (unsigned char *)&argc;
     char **argv = (char **)(args + sizeof(argc));
     char **envp = (char **)(args + sizeof(argc) + sizeof(void *) * (argc + 1));

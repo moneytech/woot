@@ -11,7 +11,6 @@
 int main(int argc, char *argv[])
 {
     int wnd = wmCreateWindow(50, 150, 400, 300);
-    for(;;);
     struct wmRectangle rect = {0, 0, 400, 24};
     wmDrawFilledRectangle(wnd, &rect , 0x40608000);
     rect.Height = 300;
