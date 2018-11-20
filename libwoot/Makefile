@@ -1,13 +1,13 @@
 LIB = libwoot
 OBJS = wm.o
 
+LIB_STATIC = $(LIB).a
+LIB_SHARED = $(LIB).so
+
 CFLAGS = -m32 -ggdb -nostdinc -I./include -I./../libc/include -Wno-expansion-to-defined
 ASMFLAGS = -f elf -gdwarf2
 LDFLAGS = -melf_i386
-SHLDFLAGS = -shared -T../shared.ldscript
-
-LIB_STATIC = $(LIB).a
-LIB_SHARED = $(LIB).so
+SHLDFLAGS = -shared -T../shared.ldscript -soname $(LIB_SHARED)
 
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<

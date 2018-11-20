@@ -20,3 +20,4 @@ libwoot/woot
 libwoot/include/woot
 zlib/include
 zlib/lib
+zlib

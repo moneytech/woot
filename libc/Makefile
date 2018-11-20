@@ -4,13 +4,13 @@ OBJS = ctype.o errno.o fcntl.o init.o inttypes.o libgen.o malloc.o math.o softdi
 OBJS += stat.o stdio.o stdlib.o string.o strings.o time.o unistd.o
 OBJS += asm/syscall.o
 
+LIB_STATIC = $(LIB).a
+LIB_SHARED = $(LIB).so
+
 CFLAGS = -m32 -ggdb -nostdinc -I./include -Wno-expansion-to-defined
 ASMFLAGS = -f elf -gdwarf2
 LDFLAGS = -melf_i386
-SHLDFLAGS = -shared -T../shared.ldscript
-
-LIB_STATIC = $(LIB).a
-LIB_SHARED = $(LIB).so
+SHLDFLAGS = -shared -T../shared.ldscript -soname $(LIB_SHARED)
 
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
