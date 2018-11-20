@@ -26,6 +26,12 @@ Elf32_Shdr *ELF::getShdr(int i)
 
 ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders)
 {
+    // HACKHACK: temporary hack for loading versioned .so files (no symlink support for now)
+    char *fn = (char *)filename;
+    char *so = strstr(filename, ".so");
+    if(so) so[3] = 0;
+    filename = fn;
+
     File *f = dentry ? File::Open(dentry, filename, O_RDONLY) : File::Open(filename, O_RDONLY);
     if(!f)
     {

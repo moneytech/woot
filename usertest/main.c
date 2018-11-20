@@ -8,6 +8,26 @@
 
 #include <woot/wm.h>
 #include <zlib.h>
+#include <png.h>
+
+// For some weird reason libpng need these symbols
+// like it has something to do with profiling
+
+void __cxa_finalize()
+{
+}
+
+void _ITM_registerTMCloneTable()
+{
+}
+
+void _ITM_deregisterTMCloneTable()
+{
+}
+
+void __gmon_start__()
+{
+}
 
 int main(int argc, char *argv[])
 {
@@ -23,9 +43,7 @@ int main(int argc, char *argv[])
     printf("exit at: %p\n", exit);
     printf("wmCreateWindow at: %p\n", wmCreateWindow);
     printf("zlib version: %s\n", zlibVersion());
-
-    double v = strtod("-1.0e+1", NULL);
-    printf("%f\n", v);
+    printf("libpng version: %s\n", png_get_libpng_ver(NULL));
 
     char buf[128];
     char *_argv[64];

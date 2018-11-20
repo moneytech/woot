@@ -232,6 +232,27 @@ size_t strcspn(const char *s1, const char *s2)
     return ret;
 }
 
+char *strstr(const char *haystack, const char *needle)
+{
+    const char *a, *b = needle;
+    if(!*b) return (char *)haystack;
+
+    for(; *haystack; ++haystack)
+    {
+        if(*haystack != *b)
+            continue;
+        a = haystack;
+        for(;;)
+        {
+            if(!*b) return (char *)haystack;
+            if(*a++ != *b++)
+                break;
+        }
+        b = needle;
+    }
+    return NULL;
+}
+
 char *strcat(char *dest, const char *src)
 {
     char *ret = dest;

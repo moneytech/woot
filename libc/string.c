@@ -51,7 +51,7 @@ int memcmp(const void *ptr1, const void *ptr2, size_t n)
 void *memchr(const void *ptr, int value, size_t num)
 {
     char *s = (char *)ptr;
-    while(num--)
+    while(num)
     {
         if(!*s++)
             return 0;

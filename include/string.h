@@ -27,6 +27,7 @@ char *strchr(const char *s, int c);
 char *strrchr(const char *s, int c);
 size_t strspn(const char *s1, const char *s2);
 size_t strcspn(const char *s1, const char *s2);
+char *strstr(const char *haystack, const char *needle);
 char *strcat(char *dest, const char *src);
 char *strtok_r(char *str, const char *delim, char **nextp);
 int isdigit(int c);
