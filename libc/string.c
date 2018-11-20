@@ -48,6 +48,17 @@ int memcmp(const void *ptr1, const void *ptr2, size_t n)
     return 0;
 }
 
+void *memchr(const void *ptr, int value, size_t num)
+{
+    char *s = (char *)ptr;
+    while(num--)
+    {
+        if(!*s++)
+            return 0;
+    }
+    return (char *)s;
+}
+
 size_t strlen(const char *str)
 {
     if(!str) return 0;

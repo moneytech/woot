@@ -37,6 +37,7 @@ int fprintf(FILE *stream, const char *format, ...);
 int vsprintf(char *str, const char *format, va_list arg);
 int sprintf(char *str, const char *format, ...);
 int snprintf(char *str, size_t n, const char *format, ...);
+int vsnprintf(char *s, size_t n, const char *format, va_list arg);
 
 int sscanf(const char *s, const char *format, ...);
 
@@ -46,6 +47,9 @@ int remove(const char *filename);
 int puts(const char *str);
 int getc(FILE *stream);
 FILE *tmpfile(void);
+char *strerror(int errnum);
+void perror(const char *s);
+int fileno(FILE *stream);
 
 FILE *fopen(const char *filename, const char *mode);
 int feof(FILE *stream);

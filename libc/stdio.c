@@ -554,6 +554,12 @@ int snprintf(char *str, size_t n, const char *format, ...)
     return res;
 }
 
+int vsnprintf(char *s, size_t n, const char *format, va_list arg)
+{
+    stringBuffer sb = { s, 0, n };
+    return internalPrintf(stringWriteCallback, &sb, format, arg);
+}
+
 int sscanf(const char *s, const char *format, ...)
 {
     fprintf(stderr, "[stdio] sscanf not implemented\n");
@@ -600,6 +606,28 @@ FILE *tmpfile(void)
     // not implemented yet
     fprintf(stderr, "[stdio] tmpfile not implemented\n");
     return NULL;
+}
+
+char *strerror(int errnum)
+{
+    return "[stdio] strerror not implemented\n";
+}
+
+void perror(const char *s)
+{
+    if(s && s[0])
+        fprintf(stderr, "%s: %s\n", s, strerror(errno));
+    else fprintf(stderr, "%s\n", strerror(errno));
+}
+
+int fileno(FILE *stream)
+{
+    if(!stream)
+    {
+        errno = EBADF;
+        return -1;
+    }
+    return stream->fd;
 }
 
 FILE *fopen(const char *filename, const char *mode)

@@ -18,3 +18,5 @@ lib/i386
 libwoot
 libwoot/woot
 libwoot/include/woot
+zlib/include
+zlib/lib

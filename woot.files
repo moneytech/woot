@@ -1,3 +1,7 @@
+zlib/lib/libz.so
+zlib/lib/libz.a
+zlib/include/zlib.h
+zlib/include/zconf.h
 include/kwm.h
 include/pixmap.h
 include/syscall.h
