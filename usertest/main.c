@@ -7,10 +7,11 @@
 #include <unistd.h>
 
 #include <woot/wm.h>
+#include <zlib.h>
 
 int main(int argc, char *argv[])
 {
-    int wnd = wmCreateWindow(50, 350, 400, 300);
+    int wnd = wmCreateWindow(50, 450, 400, 300);
     struct wmRectangle rect = {0, 0, 400, 24};
     wmDrawFilledRectangle(wnd, &rect , 0x40608000);
     rect.Height = 300;
@@ -21,6 +22,10 @@ int main(int argc, char *argv[])
     printf("main at: %p\n", main);
     printf("exit at: %p\n", exit);
     printf("wmCreateWindow at: %p\n", wmCreateWindow);
+    printf("zlib version: %s\n", zlibVersion());
+
+    double v = strtod("-1.0e+1", NULL);
+    printf("%f\n", v);
 
     char buf[128];
     char *_argv[64];

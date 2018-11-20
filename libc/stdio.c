@@ -140,8 +140,8 @@ int writeDec(writeCallback wc, void *wcarg, uint64_t value, int minDigits, int m
     else if(minDigits > 19)
         minDigits = 19;
     if(maxDigits < 1)
-        maxDigits = 1;
-    else if(minDigits > 19)
+        maxDigits = 19;
+    else if(maxDigits > 19)
         maxDigits = 19;
     if(minDigits > maxDigits)
         maxDigits = minDigits;
@@ -630,6 +630,27 @@ int fileno(FILE *stream)
     return stream->fd;
 }
 
+int putc(int character, FILE *stream)
+{
+    return fputc(character, stream);
+}
+
+int getchar(void)
+{
+    return getc(stdin);
+}
+
+int putchar(int character)
+{
+    return putc(character, stdout);
+}
+
+int rename(const char *oldpath, const char *newpath)
+{
+    errno = -ENOSYS;
+    return -1;
+}
+
 FILE *fopen(const char *filename, const char *mode)
 {
     // TODO: add proper '+' handling
@@ -804,6 +825,18 @@ int fscanf(FILE *stream, const char *format, ...)
     int res = internalScanf(freadCallback, stream, format, arg);
     va_end(arg);
     return res;
+}
+
+int fflush(FILE *stream)
+{
+    if(!stream) return EOF;
+    int res = fsync(stream->fd);
+    if(res < 0)
+    {
+        stream->error = 1;
+        return EOF;
+    }
+    return 0;
 }
 
 int fclose(FILE *stream)

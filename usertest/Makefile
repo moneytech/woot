@@ -1,11 +1,13 @@
 OUTFILE = usertest
 OBJS = main.o
 
-COMMONFLAGS = -m32 -ggdb -nostdinc -I../libc/include -I../libwoot/include
+COMMONFLAGS = -m32 -ggdb -nostdinc
+COMMONFLAGS += -I../libc/include -I../libwoot/include -I../zlib/include
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS)
-LDFLAGS = -melf_i386 -nostdlib -shared -Bdynamic -L../libc -L../libwoot -T../user.ldscript
-LIBS = -lc -lwoot
+LDFLAGS = -melf_i386 -nostdlib -shared -Bdynamic
+LDFLAGS += -L../libc -L../libwoot -L../zlib/lib -T../user.ldscript
+LIBS = -lc -lwoot -lz
 CRT0 = ../libc/crt0.o
 
 all: $(OBJS)

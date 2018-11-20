@@ -21,12 +21,16 @@ void free(void *ptr);
 
 char *getenv(const char *name);
 
+double strtod(const char *str, char **endptr);
 long strtol(const char *str, char **endptr, int base);
 unsigned long strtoul(const char *str, char **endptr, int base);
 long long strtoll(const char *str, char **endptr, int base);
 unsigned long long strtoull(const char *str, char **endptr, int base);
 
+int abs(int n);
 int atoi(const char *str);
+double atof(const char *str);
+long int atol(const char *str);
 
 #ifdef __cplusplus
 }

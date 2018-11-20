@@ -9,10 +9,16 @@
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 
+#define F_OK    0
+#define X_OK    1
+#define W_OK    2
+#define R_OK    4
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
+int access(const char *pathname, int mode);
 void _exit(int status) __attribute__((noreturn));
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, const void *buf, size_t count);

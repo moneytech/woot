@@ -109,8 +109,8 @@ int64_t Stream::WriteDec(uint64_t value, uintn minDigits, uintn maxDigits, bool 
     else if(minDigits > 19)
         minDigits = 19;
     if(maxDigits < 1)
-        maxDigits = 1;
-    else if(minDigits > 19)
+        maxDigits = 19;
+    else if(maxDigits > 19)
         maxDigits = 19;
     if(minDigits > maxDigits)
         maxDigits = minDigits;

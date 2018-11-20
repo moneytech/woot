@@ -93,6 +93,11 @@ time_t time(time_t *t)
     return syscall1(SYS_time, (long)t);
 }
 
+struct tm *gmtime(const time_t *timer)
+{
+    return localtime(timer);
+}
+
 struct tm *localtime(const time_t *timer)
 {
     static struct tm result;

@@ -21,3 +21,7 @@ libwoot/include/woot
 zlib/include
 zlib/lib
 zlib
+libpng
+libpng/lib
+libpng/include
+libpng/include/libpng16

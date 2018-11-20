@@ -8,6 +8,11 @@
 extern void *end;
 uintptr_t __current_brk = (uintptr_t)&end;
 
+int access(const char *pathname, int mode)
+{
+    return 0;
+}
+
 void _exit(int status)
 {
     for(;;)

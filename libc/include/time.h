@@ -24,6 +24,7 @@ struct tm
 
 int nanosleep(const struct timespec *req, struct timespec *rem);
 time_t time(time_t *t);
+struct tm *gmtime(const time_t *timer);
 struct tm *localtime(const time_t *timer); // not thread safe
 time_t mktime(struct tm *timeptr);
 

@@ -50,6 +50,10 @@ FILE *tmpfile(void);
 char *strerror(int errnum);
 void perror(const char *s);
 int fileno(FILE *stream);
+int putc(int character, FILE *stream);
+int getchar(void);
+int putchar(int character);
+int rename(const char *oldpath, const char *newpath);
 
 FILE *fopen(const char *filename, const char *mode);
 int feof(FILE *stream);
@@ -65,6 +69,7 @@ int fputs(const char *str, FILE *stream);
 int fgetc(FILE *stream);
 char *fgets(char *str, int num, FILE *stream);
 int fscanf(FILE *stream, const char *format, ...);
+int fflush(FILE *stream);
 int fclose(FILE *stream);
 
 #ifdef __cplusplus
