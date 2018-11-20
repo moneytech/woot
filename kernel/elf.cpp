@@ -91,16 +91,78 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
     Process *proc = Process::GetCurrent();
     proc->AddELF(elf);
 
+    // calculate boundaries
+    uintptr_t lowest_vaddr = ~0;
+    uintptr_t highest_vaddr = 0;
+    for(int i = 0; i < ehdr->e_phnum; ++i)
+    {
+        Elf32_Phdr *phdr = (Elf32_Phdr *)(phdrData + ehdr->e_phentsize * i);
+        if(phdr->p_type != PT_LOAD)
+            continue;
+        if(phdr->p_vaddr < lowest_vaddr)
+            lowest_vaddr = phdr->p_vaddr;
+        if((phdr->p_vaddr + phdr->p_memsz) > highest_vaddr)
+            highest_vaddr = phdr->p_vaddr + phdr->p_memsz;
+    }
+    elf->base = lowest_vaddr = PAGE_SIZE * (lowest_vaddr / PAGE_SIZE);
+    highest_vaddr = align(highest_vaddr, PAGE_SIZE);
+
+    //printf("%s la: %p ha %p\n", elf->Name, lowest_vaddr, highest_vaddr);
+
     if(!onlyHeaders && proc)
     {
         elf->process = proc;
         elf->releaseData = true;
 
+        // check if image can be mapped where it wants
+        bool fits = true;
+        if(lowest_vaddr >= (1 << 20))
+        {
+            for(uintptr_t va = lowest_vaddr; va < highest_vaddr; va += PAGE_SIZE)
+            {
+                uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
+                if(pa != ~0)
+                {
+                    fits = false;
+                    break;
+                }
+            }
+        } else fits = false;
+        if(!fits)
+        {   // nope, we have to find some other place
+            uintptr_t candidateStart = user ? max(1 << 20, lowest_vaddr) : lowest_vaddr;
+
+            while(candidateStart < (user ? KERNEL_BASE : 0xFFFFE000))
+            {
+                uintptr_t candidateEnd = candidateStart + highest_vaddr - lowest_vaddr;
+                fits = true;
+                size_t checkedBytes = 0;
+                for(uintptr_t va = candidateStart; va < candidateEnd; va += PAGE_SIZE)
+                {
+                    checkedBytes += PAGE_SIZE;
+                    uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
+                    if(pa != ~0)
+                    {
+                        fits = false;
+                        break;
+                    }
+                }
+                if(!fits)
+                {
+                    candidateStart += checkedBytes;
+                    continue;
+                } else break;
+            }
+
+            elf->baseDelta = candidateStart - lowest_vaddr;
+        }
+        elf->base += elf->baseDelta;
+
         // load the data
         for(uint i = 0; i < ehdr->e_phnum; ++i)
         {
             Elf32_Phdr *phdr = (Elf32_Phdr *)(phdrData + ehdr->e_phentsize * i);
-            if(phdr->p_type != PT_LOAD)// && phdr->p_type != PT_DYNAMIC)
+            if(phdr->p_type != PT_LOAD)
                 continue;
             if(f->Seek(phdr->p_offset, SEEK_SET) != phdr->p_offset)
             {
@@ -115,7 +177,7 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
             size_t pageCount = e - s;
             for(uint i = 0; i < pageCount; ++i)
             {
-                uintptr_t va = phdr->p_vaddr + i * PAGE_SIZE;
+                uintptr_t va = elf->baseDelta + phdr->p_vaddr + i * PAGE_SIZE;
                 if(user && va >= KERNEL_BASE)
                 {   // user elf can't map any kernel memory
                     printf("[elf] Invalid user address %p in file '%s'\n", va, filename);
@@ -145,7 +207,7 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                 }
                 elf->endPtr = max(elf->endPtr, va + PAGE_SIZE);
             }
-            byte *buffer = (byte *)phdr->p_vaddr;
+            byte *buffer = (byte *)(phdr->p_vaddr + elf->baseDelta);
             memset(buffer, 0, phdr->p_memsz);
             if(f->Read(buffer, phdr->p_filesz) != phdr->p_filesz)
             {
@@ -156,8 +218,6 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
         }
         delete f;
 
-        uintptr_t baseDelta = 0;
-
         // load needed shared objects
         if(user)
         { // ignore DT_NEEDED for kernel modules for now
@@ -166,8 +226,8 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                 Elf32_Shdr *shdr = elf->getShdr(i);
                 if(shdr->sh_type != SHT_DYNAMIC)
                     continue;
-                byte *dyntab = (byte *)(shdr->sh_addr + baseDelta);
-                char *_strtab = (char *)(elf->getShdr(shdr->sh_link)->sh_addr + baseDelta);
+                byte *dyntab = (byte *)(shdr->sh_addr + elf->baseDelta);
+                char *_strtab = (char *)(elf->getShdr(shdr->sh_link)->sh_addr + elf->baseDelta);
                 for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
                 {
                     Elf32_Dyn *dyn = (Elf32_Dyn *)(dyntab + coffs);
@@ -180,6 +240,19 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
             }
         }
     } else delete f;
+
+    if(!elf->ApplyRelocations())
+    {
+        delete elf;
+        return nullptr;
+    }
+
+    if(elf->baseDelta)
+    {   // adjust entry point and cleanup proc (if exists)
+        elf->EntryPoint = (int (*)())((byte *)elf->EntryPoint + elf->baseDelta);
+        if(elf->CleanupProc)
+            elf->CleanupProc = (void (*)())((byte *)elf->CleanupProc + elf->baseDelta);
+    }
     return elf;
 }
 
@@ -207,49 +280,6 @@ Elf32_Sym *ELF::FindSymbol(const char *name)
     return nullptr;
 }
 
-bool ELF::ResolveSymbols()
-{
-    for(uint i = 0; i < ehdr->e_shnum; ++i)
-    {
-        Elf32_Shdr *shdr = getShdr(i);
-        if(shdr->sh_type != SHT_DYNSYM)
-            continue;
-
-        char *symtab = (char *)(shdr->sh_addr + baseDelta);
-        char *strtab = (char *)(getShdr(shdr->sh_link)->sh_addr + baseDelta);
-
-        for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
-        {
-            Elf32_Sym *sym = (Elf32_Sym *)(symtab + coffs);
-            int type = ELF32_ST_TYPE(sym->st_info);
-            char *name = strtab + sym->st_name;
-            if(type == STT_NOTYPE || sym->st_shndx || !name[0])
-                continue;
-
-            Elf32_Sym *s = FindSymbol(name);
-            if((ELF32_ST_BIND(sym->st_info) & STB_WEAK) && s)
-                continue;
-            s = nullptr;
-            //printf("resolving symbol: %s\n", name);
-
-            ELF *e = nullptr;
-            s = process->FindSymbol(name, this, &e);
-            if(s)
-            {
-                sym->st_value = s->st_value + e->baseDelta;
-                //printf("Found symbol '%s' in %s (resolved as: %.8x)\n", name, e->Name, sym->st_value);
-                break;
-            }
-            else
-            {
-                printf("[elf] Couldn't resolve symbol '%s' for '%s'\n", name, Name);
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 bool ELF::ApplyRelocations()
 {
     for(uint i = 0; i < ehdr->e_shnum; ++i)
@@ -270,48 +300,66 @@ bool ELF::ApplyRelocations()
             Elf32_Sym *symbol = _symtab + symIdx;
             Elf32_Sym *fSymbol = nullptr;
 
+            uintptr_t symAddr = 0;
             char *name = _strtab + symbol->st_name;
-            if(name[0])
+            ELF *fElf = nullptr;
+            if(symIdx && name[0])
             {
-                fSymbol = process->FindSymbol(name, this, nullptr);
+                fSymbol = process->FindSymbol(name, this, &fElf);
                 if(!fSymbol)
+                {
                     fSymbol = FindSymbol(name);
+                    if(fSymbol) fElf = this;
+                }
+                if(fSymbol)
+                    symAddr = fSymbol->st_value + (fElf ? fElf->baseDelta : 0);
+                else
+                {
+                    printf("[elf] Couldn't find symbol '%s' for '%s'\n", name, Name);
+                    return false;
+                }
             }
+            else symAddr = symbol->st_value;
 
             uintptr_t *val = (uintptr_t *)(rel->r_offset + baseDelta);
-            uintptr_t A = *val;
-            uintptr_t B = baseDelta;
-            uintptr_t P = rel->r_offset + baseDelta;
-            uintptr_t S = fSymbol ? fSymbol->st_value : symbol->st_value;
 
-            //printf("%s: rel: %d ", elf->name, rType);
+            //printf("%s: rel: %d ", Name, rType);
             //printf("sym: %s S: %.8x A: %.8x P: %.8x\n", symbol->st_name ? name : "<no symbol>", S, A, P);
+            uintptr_t prevVal = *val;
 
             switch(rType)
             {
+            case R_386_NONE:
+                break;
             case R_386_32:
-                *val = S + A;
+                *val += symAddr;
                 break;
             case R_386_PC32:
-                *val = S + A - P;
+                *val += symAddr - (uintptr_t)val;
                 break;
             case R_386_COPY:
-                memcpy(val, (void *)S, symbol->st_size);
+                memcpy(val, (void *)symAddr, symbol->st_size);
                 break;
             case R_386_GLOB_DAT:
             case R_386_JMP_SLOT:
-                *val = S;
+                *val = symAddr;
                 break;
             case R_386_RELATIVE:
-                *val = B + A;
+                *val += baseDelta;
                 break;
             default:
                 printf("[elf] Unsupported relocation type: %d in '%s'\n", rType, Name);
                 return false;
             }
+            //printf("%-16s  %p ->(%d)-> %p\n", name, prevVal, rType, *val);
         }
     }
     return true;
+}
+
+uintptr_t ELF::GetBase()
+{
+    return base;
 }
 
 uintptr_t ELF::GetEndPtr()

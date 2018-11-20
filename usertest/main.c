@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[])
 {
-    int wnd = wmCreateWindow(50, 150, 400, 300);
+    int wnd = wmCreateWindow(50, 350, 400, 300);
     struct wmRectangle rect = {0, 0, 400, 24};
     wmDrawFilledRectangle(wnd, &rect , 0x40608000);
     rect.Height = 300;
@@ -18,6 +18,9 @@ int main(int argc, char *argv[])
     wmShowWindow(wnd);
 
     printf("WOOT test user mode console\n");
+    printf("main at: %p\n", main);
+    printf("exit at: %p\n", exit);
+    printf("wmCreateWindow at: %p\n", wmCreateWindow);
 
     char buf[128];
     char *_argv[64];
@@ -29,8 +32,6 @@ int main(int argc, char *argv[])
         char *nl = strrchr(buf, '\n');
         if(nl) *nl = 0;
         buf[br] = 0;
-
-        malloc(100);
 
         int _argc = 0;
         for(char *it = buf, *token; (token = strtok_r(it, " \t", &it));)

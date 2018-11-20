@@ -58,7 +58,6 @@ public:
     bool AddELF(ELF *elf);
     ELF *GetELF(const char *name);
     Elf32_Sym *FindSymbol(const char *name, ELF *skip, ELF **elf);
-    bool ResolveSymbols();
     bool ApplyRelocations();
     int Open(const char *filename, int flags);
     int Close(int fd);

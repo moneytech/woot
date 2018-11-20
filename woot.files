@@ -53,6 +53,7 @@ libwoot/wm.c
 logo.bmp
 screenshot.png
 shared.ldscript
+user.ldscript
 usertest/main.c
 include/syscalls.h
 kernel/syscalls.cpp

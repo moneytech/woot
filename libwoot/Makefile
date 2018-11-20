@@ -4,7 +4,7 @@ OBJS = wm.o
 CFLAGS = -m32 -ggdb -nostdinc -I./include -I./../libc/include -Wno-expansion-to-defined
 ASMFLAGS = -f elf -gdwarf2
 LDFLAGS = -melf_i386
-SHLDFLAGS = -shared -Ttext=0x12000000 -T../shared.ldscript
+SHLDFLAGS = -shared -T../shared.ldscript
 
 LIB_STATIC = $(LIB).a
 LIB_SHARED = $(LIB).so

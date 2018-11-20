@@ -169,22 +169,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 printf("[main] Couldn't load module '%s'\n", line);
                 continue;
             }
-            if(!module->ResolveSymbols())
-            {
-                printf("[main] Couldn't resolve all symbols for module '%s'\n", line);
-                delete module;
-                continue;
-            }
-            if(!module->ApplyRelocations())
-            {
-                printf("[main] Couldn't apply all relocations for module '%s'\n", line);
-                delete module;
-                continue;
-            }
             Elf32_Sym *cleanupSym = module->FindSymbol("Cleanup");
             module->CleanupProc = (void (*)())(cleanupSym ? cleanupSym->st_value : 0);
             int res = module->EntryPoint();
-            printf("[main] module '%s' returned %d\n", line, res);
+            printf("[main] module '%s'(%p) returned %d\n", line, module->GetBase(), res);
         }
         delete f;
     } else printf("[main] Couldn't open modulelist\n");

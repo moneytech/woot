@@ -109,7 +109,7 @@ int Process::processEntryPoint(const char *cmdline)
     ELF *elf = ELF::Load(GetCurrentDir(), cmd[0], true, false);
     Process *proc = GetCurrent();
     if(!proc || !elf) return 127;
-    if(!elf->EntryPoint || !proc->ResolveSymbols() || !proc->ApplyRelocations())
+    if(!elf->EntryPoint)// || !proc->ApplyRelocations())
         return 126;
     if(!proc->lock.Acquire(0, false))
         return 126;
@@ -279,22 +279,6 @@ Elf32_Sym *Process::FindSymbol(const char *name, ELF *skip, ELF **elf)
     }
     lock.Release();
     return nullptr;
-}
-
-bool Process::ResolveSymbols()
-{
-    if(!lock.Acquire(0, false))
-        return false;
-    for(ELF *e : Images)
-    {
-        if(!e->ResolveSymbols())
-        {
-            lock.Release();
-            return false;
-        }
-    }
-    lock.Release();
-    return true;
 }
 
 bool Process::ApplyRelocations()

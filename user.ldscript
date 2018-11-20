@@ -1,9 +1,11 @@
-ENTRY(Initialize)
 SECTIONS
 {
-    . = 0xC8000000;
+    . = 0x00100000;
     .text : { *(.text*) }
+    .plt : { *(.plt*) }
     .data : { *(.data*) }
     .rodata : { *(.rodata*) }
+    .dynamic : { *(.dynamic*) }
     .bss : { *(.bss*) *(COMMON) }
+    end = .;
 }

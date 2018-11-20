@@ -256,6 +256,7 @@ class ELF
     Elf32_Ehdr *ehdr;
     byte *phdrData;
     byte *shdrData;
+    uintptr_t base;
     uintptr_t baseDelta;
     bool releaseData;
     Process *process;
@@ -270,8 +271,8 @@ public:
     static ELF *Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders);
 
     Elf32_Sym *FindSymbol(const char *Name);
-    bool ResolveSymbols();
     bool ApplyRelocations();
+    uintptr_t GetBase();
     uintptr_t GetEndPtr();
     ~ELF();
 };
