@@ -6,6 +6,7 @@ ISOFILE = woot.iso
 LIBDIR = $(ROOTDIR)/lib
 MOUNTPOINT = mnt
 DISTFILES = usertest/usertest logo.bmp libc/libc.so libwoot/libwoot.so zlib/lib/libz.so libpng/lib/libpng.so libpng/lib/libpng16.so
+DISTFILES += wallpaper.png
 
 ARCH = i386
 export ARCH
@@ -19,12 +20,12 @@ ASM = yasm
 LD = ld
 AR = ar
 
-COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -msse2 -fpic -fshort-wchar
+COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -mno-sse -fpic -fshort-wchar
 COMMONFLAGS += -I. -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -fno-exceptions -fno-rtti -nostdinc++
 ASMFLAGS = -gdwarf2 -f elf32 -w
-LDFLAGS = -melf_i386 -nostdlib -L $(LIBDIR) --no-eh-frame-hdr
+LDFLAGS = -melf_i386 -nostdlib -L $(LIBDIR) --no-eh-frame-hdr --unresolved-symbols=report-all
 
 export MAKE
 export CC

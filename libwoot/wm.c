@@ -1,4 +1,5 @@
 #include <sys/syscall.h>
+#include <woot/pixmap.h>
 #include <woot/wm.h>
 
 #include <../internal/syscall.h>
@@ -49,3 +50,10 @@ int wmDrawLine(int window, int x1, int y1, int x2, int y2, int color)
 {
     return syscall6(SYS_draw_line, window, x1, y1, x2, y2, color);
 }
+
+int wmBlit(int window, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h)
+{
+    struct wmBlitInfo bi = { sx, sy, x, y, w, h };
+    return syscall3(SYS_blit, window, (long)src, (long)&bi);
+}
+

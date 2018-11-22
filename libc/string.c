@@ -36,6 +36,15 @@ void *memset(void *dst, int val, size_t n)
     return dst;
 }
 
+void *wmemset(void *dst, int val, size_t n)
+{
+    if(!n) return dst;
+    unsigned short *buf = (unsigned short *)dst;
+    while(n--)
+        *buf++ = val;
+    return dst;
+}
+
 int memcmp(const void *ptr1, const void *ptr2, size_t n)
 {
     unsigned char *p1 = (unsigned char *)ptr1;

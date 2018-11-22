@@ -393,5 +393,6 @@
 #define SYS_update_window           392
 #define SYS_redraw_window           393
 #define SYS_draw_line               394
+#define SYS_blit                    395
 
 #endif // SYS_SYSCALL_H

@@ -15,11 +15,51 @@ public:
     static PixMap::PixelFormat DefaultPixelFormat;
     struct Rectangle;
 
-    // user mode rectangle structure
+    // start of user mode structs/unions
     struct wmRectangle
     {
         int X, Y, Width, Height;
     };
+
+    struct wmBlitInfo
+    {
+        int SX, SY;
+        int X, Y;
+        int Width, Height;
+    };
+
+    struct pmPixelFormat
+    {
+        int BPP;
+        int AlphaShift, RedShift, GreenShift, BlueShift;
+        int AlphaBits, RedBits, GreenBits, BlueBits;
+    };
+
+    union pmColor
+    {
+        unsigned int Value;
+        struct
+        {
+            unsigned char A;
+            unsigned char R;
+            unsigned char G;
+            unsigned char B;
+        };
+    };
+
+    struct pmPixMap
+    {
+        int Width, Height;
+        int Pitch;
+        struct pmPixelFormat Format;
+        int ReleasePixels;
+        union
+        {
+            void *Pixels;
+            unsigned char *PixelBytes;
+        };
+    };
+    // end of user mode structs/unions
 
     struct Point
     {
@@ -83,6 +123,7 @@ public:
     static bool UpdateWindow(int id);
     static bool RedrawWindow(int id);
     static bool DrawLine(int id, int x1, int y1, int x2, int y2, PixMap::Color color);
+    static bool Blit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
     static void Cleanup();
 
 private:

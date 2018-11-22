@@ -7,6 +7,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <woot/pixmap.h>
 #include <woot/wm.h>
 #include <zlib.h>
 #include <png.h>
@@ -69,10 +70,58 @@ int main(int argc, char *argv[])
 
         if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit"))
             break;
-        if(!strcmp(_argv[0], "args"))
+        else if(!strcmp(_argv[0], "args"))
         {
             for(int i = 0; i < argc; ++i)
                 printf("%d: %s\n", i, argv[i]);
+        }
+        else if(!strcmp(_argv[0], "blit"))
+        {
+            png_bytepp image;
+            int width = 640, height = 480;
+            int pngok = 0;
+            int pitch = 0;
+            png_byte color_type;
+            png_byte bpp;
+            FILE *f = fopen("WOOT_OS:/wallpaper.png", "rb");
+            if(f)
+            {
+                png_byte header[8];
+                fread(header, sizeof(header), 1, f);
+                if(!png_sig_cmp(header, 0, sizeof(header)))
+                {
+                    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+                    png_infop info = png_create_info_struct(png);
+                    png_init_io(png, f);
+                    png_set_sig_bytes(png, sizeof(header));
+                    png_read_info(png, info);
+                    width = png_get_image_width(png, info);
+                    height = png_get_image_height(png, info);
+                    color_type = png_get_color_type(png, info);
+                    bpp = png_get_bit_depth(png, info);
+                    printf("w: %d h: %d bpp: %d\n", width, height, bpp);
+                    png_set_interlace_handling(png);
+                    png_read_update_info(png, info);
+                    image = (png_bytepp)calloc(height, sizeof(png_bytep));
+                    pitch = png_get_rowbytes(png, info);
+                    for(int y = 0; y < height; y++)
+                        image[y] = (png_bytep)calloc(1, pitch);
+                    png_read_image(png, image);
+                    pngok = 1;
+                }
+                fclose(f);
+            } else printf("couldn't open wallpaper\n");
+
+            if(pngok && bpp == 8 && (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_RGBA))
+            {
+                struct pmPixelFormat pf = { 32, 0, 0, 8, 16, 0, 8, 8, 8 };
+                struct pmPixMap *pm = pmCreate(width, height, pf);
+                for(int i = 0; i < height; ++i)
+                    memcpy(pm->PixelBytes + i * pm->Pitch, image[i], min(pm->Pitch, pitch));
+                wmBlit(0, pm, 0, 0, 0, 0, width, height);
+                pmDelete(pm);
+                wmUpdateWindow(0);
+            }
         }
         else if(!strcmp(_argv[0], "mstat"))
             malloc_stats();

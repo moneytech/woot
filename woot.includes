@@ -25,3 +25,4 @@ libpng
 libpng/lib
 libpng/include
 libpng/include/libpng16
+libwoot/asm

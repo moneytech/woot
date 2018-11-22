@@ -1,7 +1,7 @@
 OUTFILE = usertest
 OBJS = main.o
 
-COMMONFLAGS = -m32 -ggdb -nostdinc
+COMMONFLAGS = -m32 -ggdb -nostdinc -mno-sse
 COMMONFLAGS += -I../libc/include -I../libwoot/include -I../zlib/include -I../libpng/include
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS)

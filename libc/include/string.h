@@ -10,6 +10,7 @@ extern "C" {
 void *memcpy(void *dst, const void *src, size_t n);
 void *memmove(void *dst, const void *src, size_t n);
 void *memset(void *dst, int val, size_t n);
+void *wmemset(void *dst, int val, size_t n);
 int memcmp(const void *ptr1, const void *ptr2, size_t n);
 void *memchr(const void *ptr, int value, size_t num);
 

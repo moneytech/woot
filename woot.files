@@ -25,8 +25,10 @@ libpng/lib/libpng16.la
 libpng/lib/libpng16.so
 libpng/lib/libpng16.so.16
 libpng/lib/libpng16.so.16.35.0
+libwoot/asm/lmemset.asm
 libwoot/include/woot/pixmap.h
 libwoot/pixmap.c
+wallpaper.png
 zlib/configure
 zlib/lib/libz.so.1.2.11
 zlib/lib/libz.so.1

@@ -112,7 +112,6 @@ PixMap::PixMap(int width, int height, size_t pitch, PixMap::PixelFormat format, 
     Width(width), Height(height), Pitch(pitch),
     Format(format), Pixels(pixels)
 {
-
 }
 
 PixMap::PixMap(PixMap *src, PixMap::PixelFormat format) :
@@ -264,7 +263,6 @@ void PixMap::Rectangle(int x, int y, int w, int h, PixMap::Color c)
     VLine(x2, y, y2, c);
 }
 
-#include <cpu.h>
 void PixMap::Blit(PixMap *src, int sx, int sy, int x, int y, int w, int h)
 {
     if(x < 0)
@@ -304,8 +302,6 @@ void PixMap::Blit(PixMap *src, int sx, int sy, int x, int y, int w, int h)
 
     byte *d = PixelBytes + y * Pitch + Format.PixelsToBytes(x);
     byte *s = src->PixelBytes + sy * src->Pitch + Format.PixelsToBytes(sx);
-    if(d < PixelBytes)
-        cpuSystemHalt(100);
     if(Format == src->Format && Format.BPP >= 8)
     {   // use fast blit if pixel formats match
         int sw = sx2 - sx;
@@ -320,7 +316,6 @@ void PixMap::Blit(PixMap *src, int sx, int sy, int x, int y, int w, int h)
     }
 
     // fall back to slow GetPixel/SetPixel implementation
-    // FIXME: fix overlapping blits
     if(s == d)
         return; // nothing to do
     else if(s > d)

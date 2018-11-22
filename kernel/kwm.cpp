@@ -189,7 +189,7 @@ bool WindowManager::SetWindowPosition(int id, int x, int y)
 
 bool WindowManager::DrawRectangle(int id, Rectangle rect, PixMap::Color color)
 {
-    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+    if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
     Window *wnd = WM->getByID(id);
     if(!wnd)
@@ -205,7 +205,7 @@ bool WindowManager::DrawRectangle(int id, Rectangle rect, PixMap::Color color)
 
 bool WindowManager::DrawFilledRectangle(int id, Rectangle rect, PixMap::Color color)
 {
-    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+    if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
     Window *wnd = WM->getByID(id);
     if(!wnd)
@@ -221,7 +221,7 @@ bool WindowManager::DrawFilledRectangle(int id, Rectangle rect, PixMap::Color co
 
 bool WindowManager::UpdateWindow(int id)
 {
-    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+    if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
     Window *wnd = WM->getByID(id);
     if(!wnd)
@@ -236,7 +236,7 @@ bool WindowManager::UpdateWindow(int id)
 
 bool WindowManager::RedrawWindow(int id)
 {
-    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+    if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
     Window *wnd = WM->getByID(id);
     if(!wnd)
@@ -252,7 +252,7 @@ bool WindowManager::RedrawWindow(int id)
 
 bool WindowManager::DrawLine(int id, int x1, int y1, int x2, int y2, PixMap::Color color)
 {
-    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+    if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
     Window *wnd = WM->getByID(id);
     if(!wnd)
@@ -266,6 +266,22 @@ bool WindowManager::DrawLine(int id, int x1, int y1, int x2, int y2, PixMap::Col
     int w = x2 - x1 + 1;
     int h = y2 - y1 + 1;
     wnd->Dirty.Add(Rectangle(x1, y1, w, h));
+    WM->lock.Release();
+    return true;
+}
+
+bool WindowManager::Blit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h)
+{
+    if(id < 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    wnd->Contents->Blit(src, sx, sy, x, y, w, h);
+    wnd->Dirty.Add(Rectangle(x, y, w, h));
     WM->lock.Release();
     return true;
 }
