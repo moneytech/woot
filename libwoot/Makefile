@@ -1,5 +1,5 @@
 LIB = libwoot
-OBJS = wm.o
+OBJS = pixmap.o wm.o
 
 LIB_STATIC = $(LIB).a
 LIB_SHARED = $(LIB).so

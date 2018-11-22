@@ -2,6 +2,9 @@
 
 segment .text
 global cos, cosf, cosl
+type cos function
+type cosf function
+type cosl function
 
 cosf:
     fld dword [esp + 4]

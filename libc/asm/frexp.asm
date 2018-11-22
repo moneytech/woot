@@ -1,6 +1,10 @@
 [bits 32]
 
+segment .text
 global frexp, frexpf, frexpl
+type frexp function
+type frexpf function
+type frexpl function
 
 frexpf:
     fld dword [esp + 4]

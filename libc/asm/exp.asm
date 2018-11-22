@@ -1,6 +1,10 @@
 [bits 32]
 
+segment .text
 global exp, expf, expl
+type exp function
+type expf function
+type expl function
 
 expf:
     fldl2e

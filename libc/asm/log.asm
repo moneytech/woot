@@ -1,6 +1,10 @@
 [bits 32]
 
+segment .text
 global log, logf, logl
+type log function
+type logf function
+type logl function
 
 logf:
     fldln2

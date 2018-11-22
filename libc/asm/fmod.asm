@@ -1,6 +1,10 @@
 [bits 32]
 
+segment .text
 global fmod, fmodf, fmodl
+type fmod function
+type fmodf function
+type fmodl function
 
 fmodf:
     fld dword [esp + 8]

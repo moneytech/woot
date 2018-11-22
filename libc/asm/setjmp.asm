@@ -1,6 +1,9 @@
 [bits 32]
 
+segment .text
+
 global setjmp
+type setjmp function
 setjmp:
     push ebp
     mov ebp, esp
@@ -34,6 +37,7 @@ setjmp:
     ret
 
 global longjmp
+type longjmp function
 longjmp:
     push ebp
     mov ebp, esp

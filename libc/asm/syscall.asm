@@ -2,13 +2,14 @@
 
 segment .text
 
-global syscall0
-global syscall1
-global syscall2
-global syscall3
-global syscall4
-global syscall5
-global syscall6
+global syscall0, syscall1, syscall2, syscall3, syscall4, syscall5, syscall6
+type syscall0 function
+type syscall1 function
+type syscall2 function
+type syscall3 function
+type syscall4 function
+type syscall5 function
+type syscall6 function
 
 syscall0:
     mov eax, [esp + 4]

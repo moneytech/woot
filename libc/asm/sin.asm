@@ -2,6 +2,9 @@
 
 segment .text
 global sin, sinf, sinl
+type sin function
+type sinf function
+type sinl function
 
 sinf:
     fld dword [esp + 4]
