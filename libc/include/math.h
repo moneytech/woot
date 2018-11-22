@@ -32,29 +32,50 @@
 double ceil(double x);
 float ceilf(float x);
 long double ceill(long double x);
+
+double cos(double x);
+float cosf(float x);
+long double cosl(long double x);
+
 double exp(double x);
 float expf(float x);
 long double expl(long double x);
+
 double fabs(double x);
 float fabsf(float x);
 long double fabsl(long double x);
+
 double floor(double x);
 float floorf(float x);
 long double floorl(long double x);
+
 double fmod(double numer, double denom);
 float fmodf(float numer, float denom);
 long double fmodl(long double numer, long double denom);
+
 double frexp(double x, int *exp);
 float frexpf(float x, int *exp);
 long double frexpl(long double x, int *exp);
+
 int isinf(double x);
 int isnan(double x);
+
 double log(double x);
 float logf(float x);
 long double logl(long double x);
+
 double modf(double x, double *intpart);
 float modff(float x, float *intpart);
 long double modfl (long double x, long double *intpart);
+
 double pow(double base, double exponent);
+
+double sin(double x);
+float sinf(float x);
+long double sinl(long double x);
+
+double sqrt(double x);
+float sqrtf(float x);
+long double sqrtl(long double x);
 
 #endif // MATH_H

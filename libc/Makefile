@@ -1,8 +1,12 @@
 LIB = libc
+
 CRT0 = crt0.o
+
 OBJS = ctype.o errno.o fcntl.o init.o inttypes.o libgen.o malloc.o math.o signal.o
 OBJS += softdiv.o stat.o stdio.o stdlib.o string.o strings.o time.o unistd.o
-OBJS += asm/exp.o asm/fmod.o asm/frexp.o asm/log.o asm/setjmp.o asm/syscall.o
+
+OBJS += asm/cos.o asm/exp.o asm/fmod.o asm/frexp.o asm/log.o asm/setjmp.o
+OBJS += asm/sin.o asm/sqrt.o asm/syscall.o
 
 LIB_STATIC = $(LIB).a
 LIB_SHARED = $(LIB).so

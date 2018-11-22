@@ -18,6 +18,7 @@ int wmDrawRectangle(int window, struct wmRectangle *rect, int color);
 int wmDrawFilledRectangle(int window, struct wmRectangle *rect, int color);
 int wmUpdateWindow(int window);
 int wmRedrawWindow(int window);
+int wmDrawLine(int window, int x1, int y1, int x2, int y2, int color);
 
 #ifdef __cplusplus
 }

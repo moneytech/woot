@@ -1,8 +1,11 @@
+libc/asm/cos.asm
 libc/asm/exp.asm
 libc/asm/fmod.asm
 libc/asm/frexp.asm
 libc/asm/log.asm
 libc/asm/setjmp.asm
+libc/asm/sin.asm
+libc/asm/sqrt.asm
 libc/include/setjmp.h
 libc/include/signal.h
 libc/signal.c

@@ -5,13 +5,6 @@
 extern int main(int argc, char *argv[], char *envp[]);
 extern void __init_libc();
 
-/*asm(
-".globl _start\n"
-"_start:\n"
-"mov %esp, %ebp\n"
-"jmp __start\n"
-);*/
-
 void __attribute__((noreturn)) _start(int argc)
 {
     __init_libc();

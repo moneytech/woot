@@ -82,6 +82,7 @@ public:
     static bool DrawFilledRectangle(int id, Rectangle rect, PixMap::Color color);
     static bool UpdateWindow(int id);
     static bool RedrawWindow(int id);
+    static bool DrawLine(int id, int x1, int y1, int x2, int y2, PixMap::Color color);
     static void Cleanup();
 
 private:

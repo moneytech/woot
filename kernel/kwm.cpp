@@ -250,6 +250,26 @@ bool WindowManager::RedrawWindow(int id)
     return true;
 }
 
+bool WindowManager::DrawLine(int id, int x1, int y1, int x2, int y2, PixMap::Color color)
+{
+    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    wnd->Contents->Line(x1, y1, x2, y2, color);
+    if(x2 < x1) swap(int, x1, x2);
+    if(y2 < y1) swap(int, y1, y2);
+    int w = x2 - x1 + 1;
+    int h = y2 - y1 + 1;
+    wnd->Dirty.Add(Rectangle(x1, y1, w, h));
+    WM->lock.Release();
+    return true;
+}
+
 void WindowManager::Cleanup()
 {
     if(WM) delete WM;

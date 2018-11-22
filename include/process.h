@@ -24,7 +24,7 @@ class Process
     List<Thread *> threads;
     Mutex lock;
 
-    static uintptr_t buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf);
+    static uintptr_t buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf, uintptr_t retAddr, uintptr_t basePointer);
     static int processEntryPoint(const char *cmdline);
 public:
     pid_t ID;

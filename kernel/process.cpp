@@ -40,7 +40,7 @@ typedef struct AuxVector
 #define AT_EGID         14              /* Effective gid */
 #define AT_CLKTCK       17              /* Frequency of times() */
 
-uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf)
+uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf, uintptr_t retAddr, uintptr_t basePointer)
 {
     auto stackPush = [](uintptr_t stackPtr, void *data, size_t size) -> uintptr_t
     {
@@ -71,7 +71,8 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
     }
 
     // align stack pointer
-    uintptr_t padding = 0;
+    uintptr_t padding[4];
+    memset(&padding, 0, sizeof(padding));
     stackPtr = stackPush(stackPtr, &padding, stackPtr % sizeof(padding));
 
     AuxVector auxVectors[] =
@@ -99,7 +100,8 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
     for(i = 0; i < argCount; ++i)
         stackPtr = stackPush(stackPtr, &argPtrs[argCount - i - 1], sizeof(uintptr_t));
     stackPtr = stackPush(stackPtr, &argCount, sizeof argCount);
-
+    stackPtr = stackPush(stackPtr, &basePointer, sizeof basePointer);
+    stackPtr = stackPush(stackPtr, &retAddr, sizeof retAddr);
     return stackPtr;
 }
 
@@ -128,7 +130,7 @@ int Process::processEntryPoint(const char *cmdline)
         "PATH=WOOT_OS:/;WOOT_OS:/system",
         "TEST=value"
     };
-    esp = buildUserStack(esp, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf);
+    esp = buildUserStack(esp, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf, 0, 0);
     proc->lock.Release();
     cpuEnterUserMode(esp, (uintptr_t)elf->EntryPoint);
     return 0;

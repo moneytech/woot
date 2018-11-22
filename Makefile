@@ -19,7 +19,7 @@ ASM = yasm
 LD = ld
 AR = ar
 
-COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -mno-sse -fpic -fshort-wchar
+COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -msse2 -fpic -fshort-wchar
 COMMONFLAGS += -I. -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -fno-exceptions -fno-rtti -nostdinc++

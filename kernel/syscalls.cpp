@@ -49,6 +49,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     [SYS_draw_filled_rectangle] = sys_draw_filled_rectangle,
     [SYS_update_window] = sys_update_window,
     [SYS_redraw_window] = sys_redraw_window,
+    [SYS_draw_line] = sys_draw_line
 };
 
 bool SysCalls::isr(Ints::State *state, void *context)
@@ -349,6 +350,11 @@ long SysCalls::sys_update_window(long *args) // 392
 long SysCalls::sys_redraw_window(long *args) // 393
 {
     return WindowManager::RedrawWindow(args[1]) ? 0 : -EINVAL;
+}
+
+long SysCalls::sys_draw_line(long *args) // 394
+{
+    return WindowManager::DrawLine(args[1], args[2], args[3], args[4], args[5], args[6]) ? 0 : -EINVAL;
 }
 
 void SysCalls::Initialize()

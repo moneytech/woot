@@ -1,4 +1,5 @@
 #include <malloc.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,12 +30,17 @@ void __gmon_start__()
 {
 }
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
 int main(int argc, char *argv[])
 {
-    int wnd = wmCreateWindow(50, 450, 400, 300);
-    struct wmRectangle rect = {0, 0, 400, 24};
+    int w = 400, h = 300;
+
+    int wnd = wmCreateWindow(50, 450, w, h);
+    struct wmRectangle rect = {0, 0, w, 24};
     wmDrawFilledRectangle(wnd, &rect , 0x40608000);
-    rect.Height = 300;
+    rect.Height = h;
     wmDrawRectangle(wnd, &rect, 0xFFFFFF00);
     wmShowWindow(wnd);
 
@@ -63,13 +69,113 @@ int main(int argc, char *argv[])
 
         if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit"))
             break;
+        if(!strcmp(_argv[0], "args"))
+        {
+            for(int i = 0; i < argc; ++i)
+                printf("%d: %s\n", i, argv[i]);
+        }
         else if(!strcmp(_argv[0], "mstat"))
             malloc_stats();
         else if(!strcmp(_argv[0], "time"))
         {
-            time_t t = time(NULL);
-            struct tm *tm = localtime(&t);
-            printf("%.2d:%.2d:%.2d\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
+            for(int i = 0; i < 100; ++i)
+            {
+                time_t t = time(NULL);
+                struct tm *tm = localtime(&t);
+                if(!i) printf("%.2d:%.2d:%.2d\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+                struct wmRectangle rect = { 1, 25, w - 2, h - 26 };
+                wmDrawFilledRectangle(wnd, &rect, 0x80000000);
+
+                int cx = w / 2;
+                int cy = ((h - 24) / 2) + 24;
+                int sz = min(cx, cy - 24);
+                for(int i = 0; i < 12; ++i)
+                {
+                    double angle = i * (2 * M_PI / 12);
+                    double s = sin(angle);
+                    double c = -cos(angle);
+                    wmDrawLine(wnd,
+                               cx + s * sz * 0.8,
+                               cy + c * sz * 0.8,
+                               cx + s * sz * 0.9,
+                               cy + c * sz * 0.9,
+                               0xFFFFFF00);
+                }
+
+                // second hand
+                double angle = tm->tm_sec * (2 * M_PI / 60);
+                double s = sin(angle);
+                double c = -cos(angle);
+                wmDrawLine(wnd,
+                           cx + s * sz * -0.2,
+                           cy + c * sz * -0.2,
+                           cx + s * sz * 0.75,
+                           cy + c * sz * 0.75,
+                           0xFFFFFF00);
+
+                // minute hand
+                angle = tm->tm_min * (2 * M_PI / 60);
+                s = sin(angle);
+                c = -cos(angle);
+                wmDrawLine(wnd,
+                           cx + s * sz * -0.15,
+                           cy + c * sz * -0.15,
+                           cx + -c * sz * 0.05,
+                           cy + s * sz * 0.05,
+                           0xFFFFFF00);
+                wmDrawLine(wnd,
+                           cx + -c * sz * 0.05,
+                           cy + s * sz * 0.05,
+                           cx + s * sz * 0.6,
+                           cy + c * sz * 0.6,
+                           0xFFFFFF00);
+                wmDrawLine(wnd,
+                           cx + s * sz * -0.15,
+                           cy + c * sz * -0.15,
+                           cx + c * sz * 0.05,
+                           cy + -s * sz * 0.05,
+                           0xFFFFFF00);
+                wmDrawLine(wnd,
+                           cx + c * sz * 0.05,
+                           cy + -s * sz * 0.05,
+                           cx + s * sz * 0.6,
+                           cy + c * sz * 0.6,
+                           0xFFFFFF00);
+
+                // hour hand
+                angle = tm->tm_hour * (2 * M_PI / 12);
+                s = sin(angle);
+                c = -cos(angle);
+                wmDrawLine(wnd,
+                           cx + s * sz * -0.1,
+                           cy + c * sz * -0.1,
+                           cx + -c * sz * 0.05,
+                           cy + s * sz * 0.05,
+                           0xFFFFFF00);
+                wmDrawLine(wnd,
+                           cx + -c * sz * 0.05,
+                           cy + s * sz * 0.05,
+                           cx + s * sz * 0.5,
+                           cy + c * sz * 0.5,
+                           0xFFFFFF00);
+                wmDrawLine(wnd,
+                           cx + s * sz * -0.1,
+                           cy + c * sz * -0.1,
+                           cx + c * sz * 0.05,
+                           cy + -s * sz * 0.05,
+                           0xFFFFFF00);
+                wmDrawLine(wnd,
+                           cx + c * sz * 0.05,
+                           cy + -s * sz * 0.05,
+                           cx + s * sz * 0.5,
+                           cy + c * sz * 0.5,
+                           0xFFFFFF00);
+
+                wmUpdateWindow(wnd);
+                struct timespec ts = { 0, 100 * 1000000 };
+                nanosleep(&ts, NULL);
+            }
         }
         else if(!strcmp(_argv[0], "date"))
         {

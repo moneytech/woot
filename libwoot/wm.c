@@ -44,3 +44,8 @@ int wmRedrawWindow(int window)
 {
     return syscall1(SYS_redraw_window, window);
 }
+
+int wmDrawLine(int window, int x1, int y1, int x2, int y2, int color)
+{
+    return syscall6(SYS_draw_line, window, x1, y1, x2, y2, color);
+}

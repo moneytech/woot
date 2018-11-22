@@ -251,7 +251,7 @@ void Thread::Switch(Ints::State *state, Thread *thread)
 
     state->ESP = thread->StackPointer;
 
-    GDT::MainTSS.ESP0 = thread->StackPointer; //thread->KernelStackSize + (uintptr_t)thread->KernelStack;
+    GDT::MainTSS.ESP0 = thread->KernelStackSize + (uintptr_t)thread->KernelStack; // without that stack overflow happens
     state->GS = SEG_TLS; // make sure GS points to SEG_TLS
     //gdtSetEntry(SEG_TLS >> 3, (uintptr_t)thread->PThread, 0xFFFFF, 0xF2, 0xC); // make SEG_TLS point to PThread structure
     GDT::Reload();

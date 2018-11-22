@@ -147,8 +147,8 @@ void Ints::DumpState(Ints::State *state)
            state->EAX, state->EBX, state->ECX, state->EDX);
     printf("ESI: %.8X EDI: %.8X ESP: %.8X EBP: %.8X\n",
            state->ESI, state->EDI, state->ESP, state->EBP);
-    printf("CS: %.4X EIP: %.8X EFLAGS: %.8X\n",
-           state->CS, state->EIP, state->EFLAGS);
+    printf("CS: %.4X EIP: %.8X EFLAGS: %.8X ErrorCode: %.8x\n",
+           state->CS, state->EIP, state->EFLAGS, state->ErrorCode);
     printf("DS: %.4X ES: %.4X FS: %.4X GS: %.4X SS: %.4X\n",
            state->DS, state->ES, state->FS, state->GS, state->SS);
     printf("CR0: %.8x CR2: %.8X CR3: %.8X\n",

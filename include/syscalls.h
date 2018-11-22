@@ -39,6 +39,7 @@ class SysCalls
     static long sys_draw_filled_rectangle(long *args); // 391
     static long sys_update_window(long *args); // 392
     static long sys_redraw_window(long *args); // 393
+    static long sys_draw_line(long *args); // 394
 public:
     static void Initialize();
     static void Cleanup();
