@@ -129,7 +129,7 @@ long SysCalls::sys_lseek(long *args) // 19
     if(!cp) return -ESRCH;
     File *f = cp->GetFileDescriptor(args[1]);
     if(!f) return -EBADF;
-    return f->Seek(args[1], args[2]);
+    return f->Seek(args[2], args[3]);
 }
 
 long SysCalls::sys_getpid(long *args) // 20
