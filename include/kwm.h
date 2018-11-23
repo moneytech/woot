@@ -124,6 +124,7 @@ public:
     static bool RedrawWindow(int id);
     static bool DrawLine(int id, int x1, int y1, int x2, int y2, PixMap::Color color);
     static bool Blit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
+    static bool AlphaBlit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
     static void Cleanup();
 
 private:

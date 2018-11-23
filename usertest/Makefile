@@ -7,6 +7,7 @@ CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS)
 LDFLAGS = -melf_i386 -nostdlib -shared -Bdynamic --no-allow-shlib-undefined
 LDFLAGS += -L../libc -L../libwoot -L../zlib/lib -L../libpng/lib -T../user.ldscript
+LDFLAGS += --unresolved-symbols=report-all
 LIBS = -lc -lwoot -lz -lpng
 CRT0 = ../libc/crt0.o
 

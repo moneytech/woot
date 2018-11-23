@@ -172,6 +172,13 @@ union pmColor pmGetPixel(struct pmPixMap *pixMap, int x, int y)
     return pmColorFromValue(pixMap->Format, 0);
 }
 
+union pmColor pmBlendPixel(union pmColor a, union pmColor b)
+{
+    unsigned int A = b.A + 1;
+    unsigned int iA = 256 - b.A;
+    return pmColorFromARGB(a.A, (A * b.R + iA * a.R) >> 8, (A * b.G + iA * a.G) >> 8, (A * b.B + iA * a.B) >> 8);
+}
+
 void pmHLine(struct pmPixMap *pixMap, int x1, int y, int x2, union pmColor c)
 {
     if(x1 > x2) swap(int, x1, x2);
@@ -358,4 +365,68 @@ void pmDelete(struct pmPixMap *pixMap)
     if(pixMap->ReleasePixels && pixMap->Pixels)
         free(pixMap->Pixels);
     free(pixMap);
+}
+
+void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h)
+{
+    if(!src->Format.AlphaBits)
+        return pmBlit(dst, src, sx, sy, x, y, w, h);
+
+    if(x < 0)
+    {
+        sx -= x;
+        w += x;
+        x = 0;
+    }
+    if(y < 0)
+    {
+        sy -= y;
+        h += y;
+        y = 0;
+    }
+    if(sx < 0)
+    {
+        x -= sx;
+        w += sx;
+        sx = 0;
+    }
+    if(sy < 0)
+    {
+        y -= sy;
+        h += sy;
+        sy = 0;
+    }
+    if(w < 0 || h < 0 || x >= dst->Width || y >= dst->Height)
+        return;
+
+    int x2 = min(dst->Width, x + w);
+    int y2 = min(dst->Height, y + h);
+    if(x2 <= 0 || y2 <= 0 || sx >= src->Width || sy >= src->Height)
+        return;
+
+    int sx2 = min(src->Width, sx + w);
+    int sy2 = min(src->Height, sy + h);
+
+    unsigned char *d = dst->PixelBytes + y * dst->Pitch + pmFormatPixelsToBytes(dst->Format, x);
+    unsigned char *s = src->PixelBytes + sy * src->Pitch + pmFormatPixelsToBytes(src->Format, sx);
+
+    // slow !!!
+    if(s == d)
+        return; // nothing to do
+    else if(s > d)
+    {   // forward
+        for(int Y = y, sY = sy; Y < y2 && sY < sy2; ++Y, ++sY)
+        {
+            for(int X = x, sX = sx; X < x2 && sX < sx2; ++X, ++sX)
+                pmSetPixel(dst, X, Y, pmBlendPixel(pmGetPixel(dst, X, Y), pmGetPixel(src, sX, sY)));
+        }
+    }
+    else
+    {   // backward
+        for(int Y = y2 - 1, sY = sy2 - 1; Y >= y && sY >= sy; --Y, --sY)
+        {
+            for(int X = x2 - 1, sX = sx2 - 1; X >= x && sX >= sx; --X, --sX)
+                pmSetPixel(dst, X, Y, pmBlendPixel(pmGetPixel(dst, X, Y), pmGetPixel(src, sX, sY)));
+        }
+    }
 }

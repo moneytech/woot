@@ -57,3 +57,9 @@ int wmBlit(int window, struct pmPixMap *src, int sx, int sy, int x, int y, int w
     return syscall3(SYS_blit, window, (long)src, (long)&bi);
 }
 
+
+int wmAlphaBlit(int window, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h)
+{
+    struct wmBlitInfo bi = { sx, sy, x, y, w, h };
+    return syscall3(SYS_alpha_blit, window, (long)src, (long)&bi);
+}

@@ -336,6 +336,70 @@ void PixMap::Blit(PixMap *src, int sx, int sy, int x, int y, int w, int h)
     }
 }
 
+void PixMap::AlphaBlit(PixMap *src, int sx, int sy, int x, int y, int w, int h)
+{
+    if(!src->Format.AlphaBits)
+        return Blit(src, sx, sy, x, y, w, h);
+
+    if(x < 0)
+    {
+        sx -= x;
+        w += x;
+        x = 0;
+    }
+    if(y < 0)
+    {
+        sy -= y;
+        h += y;
+        y = 0;
+    }
+    if(sx < 0)
+    {
+        x -= sx;
+        w += sx;
+        sx = 0;
+    }
+    if(sy < 0)
+    {
+        y -= sy;
+        h += sy;
+        sy = 0;
+    }
+    if(w < 0 || h < 0 || x >= Width || y >= Height)
+        return;
+
+    int x2 = min(Width, x + w);
+    int y2 = min(Height, y + h);
+    if(x2 <= 0 || y2 <= 0 || sx >= src->Width || sy >= src->Height)
+        return;
+
+    int sx2 = min(src->Width, sx + w);
+    int sy2 = min(src->Height, sy + h);
+
+    byte *d = PixelBytes + y * Pitch + Format.PixelsToBytes(x);
+    byte *s = src->PixelBytes + sy * src->Pitch + Format.PixelsToBytes(sx);
+
+    // slow !!!
+    if(s == d)
+        return; // nothing to do
+    else if(s > d)
+    {   // forward
+        for(int Y = y, sY = sy; Y < y2 && sY < sy2; ++Y, ++sY)
+        {
+            for(int X = x, sX = sx; X < x2 && sX < sx2; ++X, ++sX)
+                SetPixel(X, Y, GetPixel(X, Y).Blend(src->GetPixel(sX, sY)));
+        }
+    }
+    else
+    {   // backward
+        for(int Y = y2 - 1, sY = sy2 - 1; Y >= y && sY >= sy; --Y, --sY)
+        {
+            for(int X = x2 - 1, sX = sx2 - 1; X >= x && sX >= sx; --X, --sX)
+                SetPixel(X, Y, GetPixel(X, Y).Blend(src->GetPixel(sX, sY)));
+        }
+    }
+}
+
 void PixMap::FillRectangle(int x, int y, int w, int h, PixMap::Color c)
 {
     if(w <= 0 || h <= 0)
@@ -404,6 +468,13 @@ PixMap::Color PixMap::Color::FromValue(PixelFormat &format, uint32_t value)
     uint32_t G = ((value >> format.GreenShift) << (8 - format.GreenBits)) & 0xFF;
     uint32_t B = ((value >> format.BlueShift) << (8 - format.BlueBits)) & 0xFF;
     return Color(A, R, G, B);
+}
+
+PixMap::Color PixMap::Color::Blend(PixMap::Color c)
+{
+    unsigned int A = c.A + 1;
+    unsigned int iA = 256 - c.A;
+    return Color(this->A, (A * c.R + iA * R) >> 8, (A * c.G + iA * G) >> 8, (A * c.B + iA * B) >> 8);
 }
 
 PixMap::PixelFormat::PixelFormat()

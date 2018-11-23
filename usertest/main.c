@@ -114,11 +114,12 @@ int main(int argc, char *argv[])
 
             if(pngok && bpp == 8 && (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_RGBA))
             {
-                struct pmPixelFormat pf = { 32, 0, 0, 8, 16, 0, 8, 8, 8 };
+                int a = color_type == PNG_COLOR_TYPE_RGBA;
+                struct pmPixelFormat pf = { 32, a ? 24 : 0, 0, 8, 16, a ? 8 : 0, 8, 8, 8 };
                 struct pmPixMap *pm = pmCreate(width, height, pf);
                 for(int i = 0; i < height; ++i)
                     memcpy(pm->PixelBytes + i * pm->Pitch, image[i], min(pm->Pitch, pitch));
-                wmBlit(0, pm, 0, 0, 0, 0, width, height);
+                wmAlphaBlit(0, pm, 0, 0, 0, 0, width, height);
                 pmDelete(pm);
                 wmUpdateWindow(0);
             }

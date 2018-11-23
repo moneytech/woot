@@ -50,6 +50,7 @@ struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelForma
 struct pmPixMap *pmFromPixMap(struct pmPixMap *src, struct pmPixelFormat format);
 void pmSetPixel(struct pmPixMap *pixMap, int x, int y, union pmColor color);
 union pmColor pmGetPixel(struct pmPixMap *pixMap, int x, int y);
+union pmColor pmBlendPixel(union pmColor a, union pmColor b);
 void pmHLine(struct pmPixMap *pixMap, int x1, int y, int x2, union pmColor c);
 void pmVLine(struct pmPixMap *pixMap, int x, int y1, int y2, union pmColor c);
 void pmVFlip(struct pmPixMap *pixMap);
@@ -57,6 +58,7 @@ void pmLine(struct pmPixMap *pixMap, int x1, int y1, int x2, int y2, union pmCol
 void pmRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union pmColor c);
 void pmFillRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union pmColor c);
 void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
+void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
 void pmDelete(struct pmPixMap *pixMap);
 
 #ifdef __cplusplus

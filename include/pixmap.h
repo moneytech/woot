@@ -52,6 +52,7 @@ public:
         static Color FromFloatRGB(float r, float g, float b);
         uint32_t ToValue(PixelFormat &format);
         static Color FromValue(PixelFormat &format, uint32_t value);
+        Color Blend(Color c);
     };
 
     int Width, Height;
@@ -77,6 +78,7 @@ public:
     void Line(int x1, int y1, int x2, int y2, Color c);
     void Rectangle(int x, int y, int w, int h, Color c);
     void Blit(PixMap *src, int sx, int sy, int x, int y, int w, int h);
+    void AlphaBlit(PixMap *src, int sx, int sy, int x, int y, int w, int h);
     void FillRectangle(int x, int y, int w, int h, Color c);
     ~PixMap();
 };

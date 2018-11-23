@@ -286,6 +286,22 @@ bool WindowManager::Blit(int id, PixMap *src, int sx, int sy, int x, int y, int 
     return true;
 }
 
+bool WindowManager::AlphaBlit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h)
+{
+    if(id < 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    wnd->Contents->AlphaBlit(src, sx, sy, x, y, w, h);
+    wnd->Dirty.Add(Rectangle(x, y, w, h));
+    WM->lock.Release();
+    return true;
+}
+
 void WindowManager::Cleanup()
 {
     if(WM) delete WM;

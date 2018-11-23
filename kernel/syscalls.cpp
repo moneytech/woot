@@ -51,6 +51,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     [SYS_redraw_window] = sys_redraw_window,
     [SYS_draw_line] = sys_draw_line,
     [SYS_blit] = sys_blit,
+    [SYS_alpha_blit] = sys_alpha_blit
 };
 
 bool SysCalls::isr(Ints::State *state, void *context)
@@ -365,6 +366,15 @@ long SysCalls::sys_blit(long *args) // 395
     PixMap::PixelFormat pf(src->Format.BPP, src->Format.AlphaShift, src->Format.RedShift, src->Format.GreenShift, src->Format.BlueShift, src->Format.AlphaBits, src->Format.RedBits, src->Format.GreenBits, src->Format.BlueBits);
     PixMap pm(src->Width, src->Height, src->Pitch, pf, src->Pixels, false);
     return WindowManager::Blit(args[1], &pm, bi->SX, bi->SY, bi->X, bi->Y, bi->Width, bi->Height) ? 0 : -EINVAL;
+}
+
+long SysCalls::sys_alpha_blit(long *args) // 396
+{
+    WindowManager::pmPixMap *src = (WindowManager::pmPixMap *)args[2];
+    WindowManager::wmBlitInfo *bi = (WindowManager::wmBlitInfo *)args[3];
+    PixMap::PixelFormat pf(src->Format.BPP, src->Format.AlphaShift, src->Format.RedShift, src->Format.GreenShift, src->Format.BlueShift, src->Format.AlphaBits, src->Format.RedBits, src->Format.GreenBits, src->Format.BlueBits);
+    PixMap pm(src->Width, src->Height, src->Pitch, pf, src->Pixels, false);
+    return WindowManager::AlphaBlit(args[1], &pm, bi->SX, bi->SY, bi->X, bi->Y, bi->Width, bi->Height) ? 0 : -EINVAL;
 }
 
 void SysCalls::Initialize()

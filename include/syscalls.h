@@ -41,6 +41,7 @@ class SysCalls
     static long sys_redraw_window(long *args); // 393
     static long sys_draw_line(long *args); // 394
     static long sys_blit(long *args); // 395
+    static long sys_alpha_blit(long *args); // 396
 public:
     static void Initialize();
     static void Cleanup();

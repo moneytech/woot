@@ -27,6 +27,7 @@ int wmUpdateWindow(int window);
 int wmRedrawWindow(int window);
 int wmDrawLine(int window, int x1, int y1, int x2, int y2, int color);
 int wmBlit(int window, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
+int wmAlphaBlit(int window, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
 
 #ifdef __cplusplus
 }
