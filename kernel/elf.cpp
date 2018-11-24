@@ -227,6 +227,25 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
         // load needed shared objects
         if(user)
         { // ignore DT_NEEDED for kernel modules for now
+            // find soname if possible
+            for(uint i = 0; i < ehdr->e_shnum; ++i)
+            {
+                Elf32_Shdr *shdr = elf->getShdr(i);
+                if(shdr->sh_type != SHT_DYNAMIC)
+                    continue;
+                byte *dyntab = (byte *)(shdr->sh_addr + elf->baseDelta);
+                char *_strtab = (char *)(elf->getShdr(shdr->sh_link)->sh_addr + elf->baseDelta);
+                for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
+                {
+                    Elf32_Dyn *dyn = (Elf32_Dyn *)(dyntab + coffs);
+                    if(dyn->d_tag != DT_SONAME)
+                        continue;
+                    if(elf->Name) free(elf->Name);
+                    char *soname = _strtab + dyn->d_un.d_val;
+                    elf->Name = strdup(soname);
+                }
+            }
+
             for(uint i = 0; i < ehdr->e_shnum; ++i)
             {
                 Elf32_Shdr *shdr = elf->getShdr(i);
@@ -240,7 +259,9 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                     if(dyn->d_tag != DT_NEEDED)
                         continue;
                     char *soname = _strtab + dyn->d_un.d_val;
-                    //printf("[elf] DT_NEEDED: %s\n", soname);
+                    if(proc->GetELF(soname))
+                        continue;
+                    //printf("[elf] loading DT_NEEDED %s for %s\n", soname, elf->Name);
                     ELF *soELF = Load(dentry, soname, user, false);
                 }
             }

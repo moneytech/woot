@@ -302,6 +302,21 @@ bool WindowManager::AlphaBlit(int id, PixMap *src, int sx, int sy, int x, int y,
     return true;
 }
 
+bool WindowManager::InvalidateRectangle(int id, WindowManager::Rectangle &rect)
+{
+    if(id < 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    wnd->Dirty.Add(rect);
+    WM->lock.Release();
+    return true;
+}
+
 void WindowManager::Cleanup()
 {
     if(WM) delete WM;

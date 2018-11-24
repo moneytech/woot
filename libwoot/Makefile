@@ -5,10 +5,11 @@ OBJS += pixmap.o wm.o
 LIB_STATIC = $(LIB).a
 LIB_SHARED = $(LIB).so
 
-CFLAGS = -m32 -ggdb -nostdinc -I./include -I./../libc/include -Wno-expansion-to-defined
+CC = woot-gcc
+CFLAGS = -ggdb -fno-stack-protector
 ASMFLAGS = -f elf -gdwarf2
-LDFLAGS = -melf_i386
-SHLDFLAGS = -shared -T../shared.ldscript -soname $(LIB_SHARED)
+LDFLAGS = -Wl,-lpng16
+SHLDFLAGS = -Wl,-shared,-T../shared.ldscript,-soname,$(LIB_SHARED),-Ttext=0x00300000
 
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
@@ -19,7 +20,7 @@ static: $(OBJS)
 	$(AR) rcs $(LIB_STATIC) $(OBJS)
 
 shared: $(OBJS)
-	$(LD) $(LDFLAGS) $(OBJS) -o $(LIB_SHARED) $(SHLDFLAGS)
+	$(CC) $(LDFLAGS) $(OBJS) -o $(LIB_SHARED) $(SHLDFLAGS)
 
 clean:
 	rm -rf $(LIB_STATIC) $(LIB_SHARED) $(OBJS)

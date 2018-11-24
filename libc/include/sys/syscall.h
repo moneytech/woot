@@ -395,5 +395,9 @@
 #define SYS_draw_line               394
 #define SYS_blit                    395
 #define SYS_alpha_blit              396
+#define SYS_map_window              397
+#define SYS_invalidate_rect         398
+#define SYS_get_window_size         399
+#define SYS_get_pixel_format        400
 
 #endif // SYS_SYSCALL_H

@@ -17,6 +17,10 @@ struct wmBlitInfo
     int Width, Height;
 };
 
+extern struct wmRectangle wmRectangleEmpty;
+struct wmRectangle wmRectangleAdd(struct wmRectangle a, struct wmRectangle b);
+struct wmRectangle wmRectangleIntersection(struct wmRectangle a, struct wmRectangle b);
+
 int wmCreateWindow(int x, int y, int width, int height);
 int wmShowWindow(int window);
 int wmHideWindow(int window);
@@ -28,6 +32,11 @@ int wmRedrawWindow(int window);
 int wmDrawLine(int window, int x1, int y1, int x2, int y2, int color);
 int wmBlit(int window, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
 int wmAlphaBlit(int window, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
+int wmMapWindow(int window, void **result); // maps window pixels to userspace
+int wmInvalidateRectangle(int window, struct wmRectangle *rect);
+int wmGetWindowSize(int window, int *w, int *h);
+int wmGetPixelFormat(int window, struct pmPixelFormat *format, int *pitch);
+struct pmPixMap *wmWindowToPixMap(int window);
 
 #ifdef __cplusplus
 }

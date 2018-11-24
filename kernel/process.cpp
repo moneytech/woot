@@ -121,7 +121,7 @@ int Process::processEntryPoint(const char *cmdline)
         proc->MinBrk = max(proc->MinBrk, align(elf->GetEndPtr(), (64 << 10)));
     proc->CurrentBrk = proc->MinBrk;
     proc->MappedBrk = proc->CurrentBrk;
-    proc->MaxBrk = KERNEL_BASE - 0x10000000;
+    proc->MaxBrk = 0x80000000;
     proc->MemoryLock.Release();
 
     uintptr_t esp = Thread::GetCurrent()->AllocUserStack();

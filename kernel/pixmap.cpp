@@ -1,7 +1,9 @@
 #include <file.h>
+#include <malloc.h>
 #include <pixmap.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysdefs.h>
 
 PixMap::Color PixMap::Color::Black(0x00, 0x00, 0x00);
 PixMap::Color PixMap::Color::Blue(0x00, 0x00, 0xAA);
@@ -103,8 +105,9 @@ PixMap::PixMap(int width, int height, PixelFormat format) :
     releasePixels(true),
     Width(width), Height(height),
     Pitch((format.BPP >> 3) * Width),
-    Format(format), Pixels(calloc(Height, Pitch))
+    Format(format), Pixels(valloc(align(PAGE_SIZE, Height * Pitch)))
 {
+    memset(Pixels, 0, align(PAGE_SIZE, Height * Pitch));
 }
 
 PixMap::PixMap(int width, int height, size_t pitch, PixMap::PixelFormat format, void *pixels, bool freePixels) :

@@ -1,10 +1,16 @@
 #include <stdlib.h>
 #include <string.h>
+#include <png.h>
 #include <woot/pixmap.h>
+#include <woot/wm.h>
 
 #define swap(type, a, b) { type tmp = a; a = b; b = tmp; }
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
+
+union pmColor pmColorBlack =    { 0x00, 0x00, 0x00 };
+union pmColor pmColorBlue =     { 0x00, 0x00, 0xFF };
+union pmColor pmColorWhite =    { 0xFF, 0xFF, 0xFF };
 
 extern void lmemset(void *ptr, unsigned int value, unsigned long num);
 
@@ -97,6 +103,7 @@ struct pmPixMap *pmCreate(int width, int height, struct pmPixelFormat format)
     pixMap->Pitch = width * (format.BPP + 7) / 8;
     pixMap->Format = format;
     pixMap->Pixels = calloc(height, pixMap->Pitch);
+    pixMap->ReleasePixels = 1;
     if(!pixMap->Pixels)
     {
         pmDelete(pixMap);
@@ -116,6 +123,7 @@ struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelForma
     pixMap->Pitch = pitch;
     pixMap->Format = format;
     pixMap->Pixels = pixels;
+    pixMap->ReleasePixels = releasePixels;
     return pixMap;
 }
 
@@ -125,6 +133,99 @@ struct pmPixMap *pmFromPixMap(struct pmPixMap *src, struct pmPixelFormat format)
     if(!pixMap) return NULL;
     pmBlit(pixMap, src, 0, 0, 0, 0, pixMap->Width, pixMap->Height);
     return pixMap;
+}
+
+struct pmPixMap *pmSubPixMap(struct pmPixMap *src, int x, int y, int w, int h)
+{
+    struct wmRectangle srcRect = { 0, 0, src->Width, src->Height };
+    struct wmRectangle newRect = { x, y, w, h };
+    newRect = wmRectangleIntersection(srcRect, newRect);
+    if(newRect.Width <= 0 || newRect.Height <= 0)
+        return NULL;
+    return pmCreate2(newRect.Width, newRect.Height, src->Pitch, src->Format, src->PixelBytes + newRect.Y * src->Pitch + pmFormatPixelsToBytes(src->Format, newRect.X), 0);
+}
+
+struct pmPixMap *pmLoadPNG(const char *filename)
+{
+    FILE *f = fopen(filename, "rb");
+    if(!f) return NULL;
+    char header[8];
+    if(fread(header, sizeof(header), 1, f) != 1 || png_sig_cmp(header, 0, sizeof(header)))
+    {
+        fclose(f);
+        return NULL;
+    }
+    png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if(!png_ptr)
+    {
+        fclose(f);
+        return NULL;
+    }
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+    if(!info_ptr)
+    {
+        png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
+        fclose(f);
+        return NULL;
+    }
+    png_init_io(png_ptr, f);
+    png_set_sig_bytes(png_ptr, sizeof(header));
+    png_read_info(png_ptr, info_ptr);
+
+    png_uint_32 width = png_get_image_width(png_ptr, info_ptr);
+    png_uint_32 height = png_get_image_height(png_ptr, info_ptr);
+    png_byte color_type = png_get_color_type(png_ptr, info_ptr);
+    png_byte bit_depth = png_get_bit_depth(png_ptr, info_ptr);
+    png_read_update_info(png_ptr, info_ptr);
+
+    // only 24 and 32 bit pngs are supported for now
+    if(bit_depth != 8 || (color_type != PNG_COLOR_TYPE_RGB && color_type != PNG_COLOR_TYPE_RGBA))
+    {
+        png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+        fclose(f);
+        return NULL;
+    }
+
+    png_bytep *row_pointers = (png_bytep *)calloc(height, sizeof(png_bytep));
+    if(!row_pointers)
+    {
+        png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+        fclose(f);
+        return NULL;
+    }
+
+    size_t row_bytes = png_get_rowbytes(png_ptr, info_ptr);
+    void *pixels = calloc(height, row_bytes);
+    if(!pixels)
+    {
+        free(row_pointers);
+        png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+        fclose(f);
+        return NULL;
+    }
+
+    int a = color_type == PNG_COLOR_TYPE_RGBA;
+    struct pmPixelFormat pf = { 32, a ? 24 : 0, 0, 8, 16, a ? 8 : 0, 8, 8, 8 };
+    struct pmPixMap *pm = pmCreate2(width, height, row_bytes, pf, pixels, 1);
+    if(!pm)
+    {
+        free(pixels);
+        free(row_pointers);
+        png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+        fclose(f);
+        return NULL;
+    }
+
+    for(png_uint_32 y = 0; y < height; ++y)
+        row_pointers[y] = pm->PixelBytes + pm->Pitch * y;
+
+    png_read_image(png_ptr, row_pointers);
+    png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+    fclose(f);
+
+    free(row_pointers);
+
+    return pm;
 }
 
 void pmSetPixel(struct pmPixMap *pixMap, int x, int y, union pmColor color)
@@ -284,6 +385,11 @@ void pmFillRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union 
 
     for(int Y = y; Y < y2; ++Y)
         pmHLine(pixMap, x, Y, x2, c);
+}
+
+void pmClear(struct pmPixMap *pixMap, union pmColor color)
+{
+    pmFillRectangle(pixMap, 0, 0, pixMap->Width, pixMap->Height, color);
 }
 
 void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h)

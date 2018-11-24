@@ -23,35 +23,42 @@
 extern DebugStream debugStream;
 
 Ints::Handler SysCalls::handler = { nullptr, SysCalls::isr, nullptr };
+
+// syscall table
 SysCalls::Callback SysCalls::callbacks[] =
 {
-    [SYS_exit] = sys_exit,
-    [SYS_read] = sys_read,
-    [SYS_write] = sys_write,
-    [SYS_open] = sys_open,
-    [SYS_close] = sys_close,
-    [SYS_time] = sys_time,
-    [SYS_lseek] = sys_lseek,
-    [SYS_getpid] = sys_getpid,
-    [SYS_mkdir] = sys_mkdir,
-    [SYS_brk] = sys_brk,
-    [SYS_stat] = sys_stat,
-    [SYS_fsync] = sys_fsync,
-    [SYS_nanosleep] = sys_nanosleep,
-    [SYS_getcwd] = sys_getcwd,
-    [SYS_gettid] = sys_gettid,
-
-    [SYS_create_window] = sys_create_window,
-    [SYS_show_window] = sys_show_window,
-    [SYS_hide_window] = sys_hide_window,
-    [SYS_destroy_window] = sys_destroy_window,
-    [SYS_draw_rectangle] = sys_draw_rectangle,
-    [SYS_draw_filled_rectangle] = sys_draw_filled_rectangle,
-    [SYS_update_window] = sys_update_window,
-    [SYS_redraw_window] = sys_redraw_window,
-    [SYS_draw_line] = sys_draw_line,
-    [SYS_blit] = sys_blit,
-    [SYS_alpha_blit] = sys_alpha_blit
+    nullptr, sys_exit, nullptr, sys_read, sys_write, sys_open, sys_close, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_time, nullptr, nullptr, // 0 - 15
+    nullptr, nullptr, nullptr, sys_lseek, sys_getpid, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 16 - 31
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_mkdir, nullptr, nullptr, nullptr, nullptr, nullptr, sys_brk, nullptr, nullptr, // 32 - 47
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 48 - 63
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 64 - 79
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 80 - 95
+    nullptr, nullptr, nullptr, nullptr, sys_stat, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 96 - 111
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_fsync, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 112 - 127
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 128 - 143
+    nullptr, nullptr, nullptr, nullptr, sys_fdatasync, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 144 - 159
+    nullptr, nullptr, sys_nanosleep, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 160 - 175
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_getcwd, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 176 - 191
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 192 - 207
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 208 - 223
+    sys_gettid, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 224 - 239
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 240 - 255
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 256 - 271
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 272 - 287
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 288 - 303
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 304 - 319
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 320 - 335
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 336 - 351
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 352 - 367
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 368 - 383
+    nullptr, nullptr, sys_create_window, sys_show_window, sys_hide_window, sys_destroy_window, sys_draw_rectangle, sys_draw_filled_rectangle, sys_update_window, sys_redraw_window, sys_draw_line, sys_blit, sys_alpha_blit, sys_map_window, sys_invalidate_rect, sys_get_window_size, // 384 - 399
+    sys_get_pixel_format, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 400 - 415
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 416 - 431
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 432 - 447
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 448 - 463
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 464 - 479
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 480 - 495
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr  // 496 - 511
 };
 
 bool SysCalls::isr(Ints::State *state, void *context)
@@ -375,6 +382,93 @@ long SysCalls::sys_alpha_blit(long *args) // 396
     PixMap::PixelFormat pf(src->Format.BPP, src->Format.AlphaShift, src->Format.RedShift, src->Format.GreenShift, src->Format.BlueShift, src->Format.AlphaBits, src->Format.RedBits, src->Format.GreenBits, src->Format.BlueBits);
     PixMap pm(src->Width, src->Height, src->Pitch, pf, src->Pixels, false);
     return WindowManager::AlphaBlit(args[1], &pm, bi->SX, bi->SY, bi->X, bi->Y, bi->Width, bi->Height) ? 0 : -EINVAL;
+}
+
+long SysCalls::sys_map_window(long *args) // 397
+{
+    if(!args[2]) return -EINVAL;
+    WindowManager::Window *wnd = WindowManager::GetByID(args[1]);
+    if(!wnd) return -EINVAL;
+    uintptr_t pixels = (uintptr_t)wnd->Contents->Pixels;
+    size_t size = (wnd->Contents->Height * wnd->Contents->Pitch) + (PAGE_SIZE - 1);
+    uintptr_t va = 0x80000000;
+    Process *cp = Process::GetCurrent();
+
+    bool ok = false;
+    while(va < (KERNEL_BASE - 0x10000000))
+    {
+        ok = true;
+        for(uintptr_t addr = va, checked = 0; addr < (va + size); addr += PAGE_SIZE)
+        {
+            checked += PAGE_SIZE;
+            uintptr_t pa = Paging::GetPhysicalAddress(cp->AddressSpace, addr);
+            if(pa != ~0)
+            {
+                ok = false;
+                va += checked;
+                break;
+            }
+        }
+        if(ok) break;
+    }
+    if(!ok) return -ENOMEM;
+
+    for(uintptr_t addr = va, offs = 0; addr < (va + size); addr += PAGE_SIZE, offs += PAGE_SIZE)
+    {
+        uintptr_t pa = Paging::GetPhysicalAddress(cp->AddressSpace, pixels + offs);
+        ok = Paging::MapPage(cp->AddressSpace, addr, pa, false, true, true);
+        if(!ok)
+        {
+            for(uintptr_t addr = va; addr < (va + size); addr += PAGE_SIZE)
+                Paging::UnMapPage(cp->AddressSpace, va, false);
+            return -ENOMEM;
+        }
+    }
+
+    void **ptr = (void **)args[2];
+    *ptr = (void *)va;
+    return 0;
+}
+
+long SysCalls::sys_invalidate_rect(long *args) // 398
+{
+    WindowManager::wmRectangle *wmRect = (WindowManager::wmRectangle *)args[2];
+    WindowManager::Rectangle rect(wmRect->X, wmRect->Y, wmRect->Width, wmRect->Height);
+    return WindowManager::InvalidateRectangle(args[1], rect) ? 0 : -EINVAL;
+}
+
+long SysCalls::sys_get_window_size(long *args) // 399
+{
+    WindowManager::Window *wnd = WindowManager::GetByID(args[1]);
+    if(!wnd) return -EINVAL;
+    int *w = (int *)args[2];
+    int *h = (int *)args[3];
+    if(w) *w = wnd->Contents->Width;
+    if(h) *h = wnd->Contents->Height;
+    return 0;
+}
+
+long SysCalls::sys_get_pixel_format(long *args) // 400
+{
+    WindowManager::Window *wnd = WindowManager::GetByID(args[1]);
+    if(!wnd) return -EINVAL;
+    PixMap::PixelFormat fmt = wnd->Contents->Format;
+    WindowManager::pmPixelFormat *pmFmt = (WindowManager::pmPixelFormat *)args[2];
+    int *pitch = (int *)args[3];
+    if(pmFmt)
+    {
+        pmFmt->BPP = fmt.BPP;
+        pmFmt->AlphaShift = fmt.AlphaShift;
+        pmFmt->RedShift = fmt.RedShift;
+        pmFmt->GreenShift = fmt.GreenShift;
+        pmFmt->BlueShift = fmt.BlueShift;
+        pmFmt->AlphaBits = fmt.AlphaBits;
+        pmFmt->RedBits = fmt.RedBits;
+        pmFmt->GreenBits = fmt.GreenBits;
+        pmFmt->BlueBits = fmt.BlueBits;
+    }
+    if(pitch) *pitch = wnd->Contents->Pitch;
+    return 0;
 }
 
 void SysCalls::Initialize()

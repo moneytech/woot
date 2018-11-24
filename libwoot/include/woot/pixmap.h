@@ -14,7 +14,6 @@ struct pmPixelFormat
 
 union pmColor
 {
-    unsigned int Value;
     struct
     {
         unsigned char A;
@@ -22,7 +21,12 @@ union pmColor
         unsigned char G;
         unsigned char B;
     };
+    unsigned int Value;
 };
+
+extern union pmColor pmColorBlack;
+extern union pmColor pmColorBlue;
+extern union pmColor pmColorWhite;
 
 struct pmPixMap
 {
@@ -48,6 +52,8 @@ union pmColor pmColorFromValue(struct pmPixelFormat format, unsigned int value);
 struct pmPixMap *pmCreate(int width, int height, struct pmPixelFormat format);
 struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelFormat format, void *pixels, int releasePixels);
 struct pmPixMap *pmFromPixMap(struct pmPixMap *src, struct pmPixelFormat format);
+struct pmPixMap *pmSubPixMap(struct pmPixMap *src, int x, int y, int w, int h);
+struct pmPixMap *pmLoadPNG(const char *filename);
 void pmSetPixel(struct pmPixMap *pixMap, int x, int y, union pmColor color);
 union pmColor pmGetPixel(struct pmPixMap *pixMap, int x, int y);
 union pmColor pmBlendPixel(union pmColor a, union pmColor b);
@@ -57,6 +63,7 @@ void pmVFlip(struct pmPixMap *pixMap);
 void pmLine(struct pmPixMap *pixMap, int x1, int y1, int x2, int y2, union pmColor c);
 void pmRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union pmColor c);
 void pmFillRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union pmColor c);
+void pmClear(struct pmPixMap *pixMap, union pmColor color);
 void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
 void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
 void pmDelete(struct pmPixMap *pixMap);

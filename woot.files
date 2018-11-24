@@ -1,3 +1,5 @@
+directory.png
+file.png
 libc/asm/cos.asm
 libc/asm/exp.asm
 libc/asm/fmod.asm

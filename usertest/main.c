@@ -76,6 +76,12 @@ int main(int argc, char *argv[])
                     96);       /* vertical device resolution      */
     }
 
+    struct pmPixMap *dirIcon = pmLoadPNG("WOOT_OS:/directory.png");
+    struct pmPixMap *fileIcon = pmLoadPNG("WOOT_OS:/file.png");
+
+    struct pmPixMap *pm = wmWindowToPixMap(wnd);
+    struct pmPixMap *spm = pmSubPixMap(pm, 1, 24, pm->Width - 2, pm->Height - 25);
+
     char buf[128];
     char *_argv[64];
     for(;;)
@@ -101,88 +107,10 @@ int main(int argc, char *argv[])
         }
         else if(!strcmp(_argv[0], "blit"))
         {
-            png_bytepp image;
-            int width = 640, height = 480;
-            int pngok = 0;
-            int pitch = 0;
-            png_byte color_type;
-            png_byte bpp;
-            FILE *f = fopen("WOOT_OS:/wallpaper.png", "rb");
-            if(f)
+            struct pmPixMap *pm = pmLoadPNG("WOOT_OS:/wallpaper.png");
+            if(pm)
             {
-                png_byte header[8];
-                fread(header, sizeof(header), 1, f);
-                if(!png_sig_cmp(header, 0, sizeof(header)))
-                {
-                    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-                    png_infop info = png_create_info_struct(png);
-                    png_init_io(png, f);
-                    png_set_sig_bytes(png, sizeof(header));
-                    png_read_info(png, info);
-                    width = png_get_image_width(png, info);
-                    height = png_get_image_height(png, info);
-                    color_type = png_get_color_type(png, info);
-                    bpp = png_get_bit_depth(png, info);
-                    printf("w: %d h: %d bpp: %d\n", width, height, bpp);
-                    png_set_interlace_handling(png);
-                    png_read_update_info(png, info);
-                    image = (png_bytepp)calloc(height, sizeof(png_bytep));
-                    pitch = png_get_rowbytes(png, info);
-                    for(int y = 0; y < height; y++)
-                        image[y] = (png_bytep)calloc(1, pitch);
-                    png_read_image(png, image);
-                    pngok = 1;
-                }
-                fclose(f);
-            } else printf("couldn't open wallpaper\n");
-
-            if(pngok && bpp == 8 && (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_RGBA))
-            {
-                int a = color_type == PNG_COLOR_TYPE_RGBA;
-                struct pmPixelFormat pf = { 32, a ? 24 : 0, 0, 8, 16, a ? 8 : 0, 8, 8, 8 };
-                struct pmPixMap *pm = pmCreate(width, height, pf);
-                for(int i = 0; i < height; ++i)
-                    memcpy(pm->PixelBytes + i * pm->Pitch, image[i], min(pm->Pitch, pitch));
-
-                // add some text
-                char str[] = "This is a test text";
-                int X = 0;
-                for(int i = 0; i < sizeof(str) - 1; ++i)
-                {
-                    FT_ULong chr = (FT_ULong)(str[i]);
-                    FT_UInt glyph_index = FT_Get_Char_Index(face, chr);
-                    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
-                    if(!err)
-                    {
-                        err = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
-                        if(!err)
-                        {
-                            for(int y = 0; y < face->glyph->bitmap.rows; ++y)
-                            {
-                                unsigned char *line = (unsigned char *)(face->glyph->bitmap.buffer + y * face->glyph->bitmap.pitch);
-                                for(int x = 0; x < face->glyph->bitmap.width; ++x)
-                                {
-                                    int _x = face->glyph->bitmap_left + 64 + X + x + 6;
-                                    int _y = -face->glyph->bitmap_top + 128 + y + 6;
-                                    pmSetPixel(pm, _x, _y, pmBlendPixel(pmGetPixel(pm, _x, _y), pmColorFromARGB(line[x], 16, 16, 16)));
-                                }
-                            }
-                            for(int y = 0; y < face->glyph->bitmap.rows; ++y)
-                            {
-                                unsigned char *line = (unsigned char *)(face->glyph->bitmap.buffer + y * face->glyph->bitmap.pitch);
-                                for(int x = 0; x < face->glyph->bitmap.width; ++x)
-                                {
-                                    int _x = face->glyph->bitmap_left + 64 + X + x;
-                                    int _y = -face->glyph->bitmap_top + 128 + y;
-                                    pmSetPixel(pm, _x, _y, pmBlendPixel(pmGetPixel(pm, _x, _y), pmColorFromARGB(line[x], 255, 255, 255)));
-                                }
-                            }
-                            X += face->glyph->advance.x / 64;
-                        }
-                    }
-                }
-
-                wmAlphaBlit(0, pm, 0, 0, 0, 0, width, height);
+                wmBlit(0, pm, 0, 0, 0, 0, pm->Width, pm->Height);
                 pmDelete(pm);
                 wmUpdateWindow(0);
             }
@@ -197,98 +125,54 @@ int main(int argc, char *argv[])
                 struct tm *tm = localtime(&t);
                 if(!i) printf("%.2d:%.2d:%.2d\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
 
-                struct wmRectangle rect = { 1, 25, w - 2, h - 26 };
-                wmDrawFilledRectangle(wnd, &rect, 0x80000000);
+                pmClear(spm, pmColorFromRGB(0, 0, 255));
+                wmInvalidateRectangle(wnd, NULL);
 
-                int cx = w / 2;
-                int cy = ((h - 24) / 2) + 24;
-                int sz = min(cx, cy - 24);
+                int cx = spm->Width / 2;
+                int cy = spm->Height / 2;
+                int sz = min(cx, cy);
                 for(int i = 0; i < 12; ++i)
                 {
                     double angle = i * (2 * M_PI / 12);
                     double s = sin(angle);
                     double c = -cos(angle);
-                    wmDrawLine(wnd,
-                               cx + s * sz * 0.8,
-                               cy + c * sz * 0.8,
-                               cx + s * sz * 0.9,
-                               cy + c * sz * 0.9,
-                               0xFFFFFF00);
+                    pmLine(spm, cx + s * sz * 0.8, cy + c * sz * 0.8, cx + s * sz * 0.9, cy + c * sz * 0.9, pmColorWhite);
                 }
 
                 // second hand
                 double angle = tm->tm_sec * (2 * M_PI / 60);
                 double s = sin(angle);
                 double c = -cos(angle);
-                wmDrawLine(wnd,
-                           cx + s * sz * -0.2,
-                           cy + c * sz * -0.2,
-                           cx + s * sz * 0.75,
-                           cy + c * sz * 0.75,
-                           0xFFFFFF00);
+                pmLine(spm, cx + s * sz * -0.2, cy + c * sz * -0.2, cx + s * sz * 0.75, cy + c * sz * 0.75, pmColorWhite);
 
                 // minute hand
                 angle = tm->tm_min * (2 * M_PI / 60);
                 s = sin(angle);
                 c = -cos(angle);
-                wmDrawLine(wnd,
-                           cx + s * sz * -0.15,
-                           cy + c * sz * -0.15,
-                           cx + -c * sz * 0.05,
-                           cy + s * sz * 0.05,
-                           0xFFFFFF00);
-                wmDrawLine(wnd,
-                           cx + -c * sz * 0.05,
-                           cy + s * sz * 0.05,
-                           cx + s * sz * 0.6,
-                           cy + c * sz * 0.6,
-                           0xFFFFFF00);
-                wmDrawLine(wnd,
-                           cx + s * sz * -0.15,
-                           cy + c * sz * -0.15,
-                           cx + c * sz * 0.05,
-                           cy + -s * sz * 0.05,
-                           0xFFFFFF00);
-                wmDrawLine(wnd,
-                           cx + c * sz * 0.05,
-                           cy + -s * sz * 0.05,
-                           cx + s * sz * 0.6,
-                           cy + c * sz * 0.6,
-                           0xFFFFFF00);
+                pmLine(spm, cx + s * sz * -0.15, cy + c * sz * -0.15, cx + -c * sz * 0.05, cy + s * sz * 0.05, pmColorWhite);
+                pmLine(spm, cx + -c * sz * 0.05, cy + s * sz * 0.05, cx + s * sz * 0.6, cy + c * sz * 0.6, pmColorWhite);
+                pmLine(spm, cx + s * sz * -0.15, cy + c * sz * -0.15, cx + c * sz * 0.05, cy + -s * sz * 0.05, pmColorWhite);
+                pmLine(spm, cx + c * sz * 0.05, cy + -s * sz * 0.05, cx + s * sz * 0.6, cy + c * sz * 0.6, pmColorWhite);
 
                 // hour hand
                 angle = tm->tm_hour * (2 * M_PI / 12);
                 s = sin(angle);
                 c = -cos(angle);
-                wmDrawLine(wnd,
-                           cx + s * sz * -0.1,
-                           cy + c * sz * -0.1,
-                           cx + -c * sz * 0.05,
-                           cy + s * sz * 0.05,
-                           0xFFFFFF00);
-                wmDrawLine(wnd,
-                           cx + -c * sz * 0.05,
-                           cy + s * sz * 0.05,
-                           cx + s * sz * 0.5,
-                           cy + c * sz * 0.5,
-                           0xFFFFFF00);
-                wmDrawLine(wnd,
-                           cx + s * sz * -0.1,
-                           cy + c * sz * -0.1,
-                           cx + c * sz * 0.05,
-                           cy + -s * sz * 0.05,
-                           0xFFFFFF00);
-                wmDrawLine(wnd,
-                           cx + c * sz * 0.05,
-                           cy + -s * sz * 0.05,
-                           cx + s * sz * 0.5,
-                           cy + c * sz * 0.5,
-                           0xFFFFFF00);
+                pmLine(spm, cx + s * sz * -0.1, cy + c * sz * -0.1, cx + -c * sz * 0.05, cy + s * sz * 0.05, pmColorWhite);
+                pmLine(spm, cx + -c * sz * 0.05, cy + s * sz * 0.05, cx + s * sz * 0.5, cy + c * sz * 0.5, pmColorWhite);
+                pmLine(spm, cx + s * sz * -0.1, cy + c * sz * -0.1, cx + c * sz * 0.05, cy + -s * sz * 0.05, pmColorWhite);
+                pmLine(spm, cx + c * sz * 0.05, cy + -s * sz * 0.05, cx + s * sz * 0.5, cy + c * sz * 0.5, pmColorWhite);
 
                 wmUpdateWindow(wnd);
                 struct timespec ts = { 0, 100 * 1000000 };
                 nanosleep(&ts, NULL);
             }
+        }
+        else if(!strcmp(_argv[0], "dir"))
+        {
+            pmAlphaBlit(spm, dirIcon, 0, 0, 0, 0, dirIcon->Width, dirIcon->Height);
+            pmAlphaBlit(spm, fileIcon, 0, 0, 48, 0, fileIcon->Width, fileIcon->Height);
+            wmRedrawWindow(wnd);
         }
         else if(!strcmp(_argv[0], "date"))
         {
