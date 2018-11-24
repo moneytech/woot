@@ -1,0 +1,24 @@
+*asm:
+--32
+
+*cc1_options:
+-m32 -mno-sse -fPIC %{g*} -nostdinc -I<<ROOT_DIR>>/libc/include -I<<ROOT_DIR>>/libwoot/include -I<<ROOT_DIR>>/zlib/include -I<<ROOT_DIR>>/libpng/include -I<<ROOT_DIR>>/libfreetype/include/freetype2
+
+*startfile:
+%{!shared:<<ROOT_DIR>>/libc/crt0.o} %{static:<<ROOT_DIR>>/libc/crt0.o}
+
+*endfile:
+
+
+*libgcc:
+
+
+*linker:
+ld
+
+*link:
+-melf_i386 %{shared:-shared -Bsymbolic} %{!shared:-lc} -L<<ROOT_DIR>>/libc -rpath-link=<<ROOT_DIR>>/libc -L<<ROOT_DIR>>/libwoot -rpath-link=<<ROOT_DIR>>/libwoot -L<<ROOT_DIR>>/zlib/lib -rpath-link=<<ROOT_DIR>>/zlib/lib -L<<ROOT_DIR>>/libpng/lib -rpath-link=<<ROOT_DIR>>/libpng/lib -L<<ROOT_DIR>>/libfreetype/lib -rpath-link=<<ROOT_DIR>>/libfreetype/lib
+
+*link_command:
+%{!c:%(linker) %(link) %o %{!nostdlib:%{!nostartfiles:%S}} %{o*}}
+

@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 static int rsx = 0x1BADB002, rsy = 0xBAADF00D, rsz = 0xB16B00B2, rsw = 0x10121337;
@@ -220,3 +221,22 @@ long int atol(const char *str)
     return strtol(str, NULL, 10);
 }
 
+void qsort(void *base, size_t num, size_t size, int (*compar)(const void *,const void *))
+{
+    unsigned char *arr = (unsigned char *)base;
+    void *tmp = calloc(1, size);
+    for(int c = 0; c < num; ++c)
+    {
+        for(int d = 0; d < num - c - 1; ++d)
+        {
+            void *a = arr + d * size;
+            void *b = arr + (d + 1) * size;
+            if(compar(a, b) > 0)
+            {
+                memcpy(tmp, a, size);
+                memcpy(a, b, size);
+                memcpy(b, tmp, size);
+            }
+        }
+    }
+}

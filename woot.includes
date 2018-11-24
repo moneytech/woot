@@ -26,3 +26,8 @@ libpng/lib
 libpng/include
 libpng/include/libpng16
 libwoot/asm
+libfreetype
+libfreetype/include/freetype2
+libfreetype/include/freetype2/freetype
+libfreetype/include/freetype2/freetype/config
+libfreetype/lib

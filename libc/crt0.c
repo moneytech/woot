@@ -14,13 +14,3 @@ void __attribute__((noreturn)) _start(int argc)
     int result = main(argc, argv, envp);
     exit(result);
 }
-
-void __stack_chk_fail_local()
-{
-    abort();
-}
-
-void __stack_chk_fail()
-{
-    abort();
-}

@@ -6,12 +6,15 @@ ISOFILE = woot.iso
 LIBDIR = $(ROOTDIR)/lib
 MOUNTPOINT = mnt
 DISTFILES = usertest/usertest logo.bmp libc/libc.so libwoot/libwoot.so zlib/lib/libz.so libpng/lib/libpng.so libpng/lib/libpng16.so
-DISTFILES += wallpaper.png alpha.png
+DISTFILES += wallpaper.png alpha.png libfreetype/lib/libfreetype.so test.ttf
+CONFIGURE = woot.specs woot-gcc
+ADD_EXEC = woot-gcc
 
 ARCH = i386
 export ARCH
-
+export PATH := $(ROOTDIR):$(PATH)
 export LIBDIR
+export PATH
 
 MAKE = make
 CC = clang
@@ -19,6 +22,7 @@ CXX = clang++
 ASM = yasm
 LD = ld
 AR = ar
+SED = sed
 
 COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -mno-sse -fpic -fshort-wchar
 COMMONFLAGS += -I. -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
@@ -39,7 +43,7 @@ export CXXFLAGS
 export ASMFLAGS
 export LDFLAGS
 
-all: subdirs
+all: $(CONFIGURE) add-exec subdirs
 
 subdirs:
 	for dir in $(SUBDIRS); do \
@@ -50,7 +54,7 @@ clean:
 	for dir in $(SUBDIRS); do \
 		$(MAKE) -C $$dir clean; \
 	done
-	rm -f $(ISODIR)/$(KERNELFILE)
+	rm -f $(ISODIR)/$(KERNELFILE) $(CONFIGURE)
 
 distclean: clean
 	rm -f $(ISOFILE) hdd.img
@@ -110,4 +114,10 @@ try-unmount:
 # alias for try-unmount
 try-umount: try-unmount
 
-.PHONY: subdirs clean distclean iso clean-img setup-grub try-mount try-unmount
+$(CONFIGURE): % : %.template
+	$(SED) 's?<<ROOT_DIR>>?'`pwd`'?g' $< > $@
+
+add-exec: $(ADD_EXEC)
+	chmod +x $<
+
+.PHONY: subdirs clean distclean iso clean-img setup-grub try-mount try-unmount add-exec

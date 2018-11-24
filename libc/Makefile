@@ -11,10 +11,10 @@ OBJS += asm/sin.o asm/sqrt.o asm/syscall.o
 LIB_STATIC = $(LIB).a
 LIB_SHARED = $(LIB).so
 
-CFLAGS = -m32 -ggdb -nostdinc -I./include -Wno-expansion-to-defined
+CFLAGS = -m32 -ggdb -nostdinc -I./include -Wno-expansion-to-defined -fno-stack-protector
 ASMFLAGS = -f elf -gdwarf2
 LDFLAGS = -melf_i386
-SHLDFLAGS = -shared -T../shared.ldscript -soname $(LIB_SHARED)
+SHLDFLAGS = -shared -T../shared.ldscript -soname $(LIB_SHARED) -Ttext=0x00800000 # setting unique base makes debugging easier
 
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<

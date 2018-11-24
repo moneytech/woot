@@ -32,6 +32,8 @@ int atoi(const char *str);
 double atof(const char *str);
 long int atol(const char *str);
 
+void qsort(void *base, size_t num, size_t size, int (*compar)(const void *,const void *));
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

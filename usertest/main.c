@@ -7,6 +7,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_ERRORS_H
+
 #include <woot/pixmap.h>
 #include <woot/wm.h>
 #include <zlib.h>
@@ -51,6 +55,26 @@ int main(int argc, char *argv[])
     printf("wmCreateWindow at: %p\n", wmCreateWindow);
     printf("zlib version: %s\n", zlibVersion());
     printf("libpng version: %s\n", png_get_libpng_ver(NULL));
+    FT_Library freetype;
+    FT_Init_FreeType(&freetype);
+    FT_Int ftmajor, ftminor, ftpatch;
+    FT_Library_Version(freetype, &ftmajor, &ftminor, &ftpatch);
+    printf("freetype version: %d.%d.%d\n", ftmajor, ftminor, ftpatch);
+
+    FT_Face face;
+    FT_Error err;
+    err = FT_New_Face(freetype, "WOOT_OS:/test.ttf", 0, &face);
+    if(err) printf("FT_New_Face failed: %d\n", err);
+    else
+    {
+        printf("font: %s\n", face->family_name);
+        err = FT_Set_Char_Size(
+                    face,      /* handle to face object           */
+                    0,         /* char_width in 1/64th of points  */
+                    64 * 64,   /* char_height in 1/64th of points */
+                    0,         /* horizontal device resolution    */
+                    96);       /* vertical device resolution      */
+    }
 
     char buf[128];
     char *_argv[64];
@@ -119,6 +143,45 @@ int main(int argc, char *argv[])
                 struct pmPixMap *pm = pmCreate(width, height, pf);
                 for(int i = 0; i < height; ++i)
                     memcpy(pm->PixelBytes + i * pm->Pitch, image[i], min(pm->Pitch, pitch));
+
+                // add some text
+                char str[] = "This is a test text";
+                int X = 0;
+                for(int i = 0; i < sizeof(str) - 1; ++i)
+                {
+                    FT_ULong chr = (FT_ULong)(str[i]);
+                    FT_UInt glyph_index = FT_Get_Char_Index(face, chr);
+                    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
+                    if(!err)
+                    {
+                        err = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+                        if(!err)
+                        {
+                            for(int y = 0; y < face->glyph->bitmap.rows; ++y)
+                            {
+                                unsigned char *line = (unsigned char *)(face->glyph->bitmap.buffer + y * face->glyph->bitmap.pitch);
+                                for(int x = 0; x < face->glyph->bitmap.width; ++x)
+                                {
+                                    int _x = face->glyph->bitmap_left + 64 + X + x + 6;
+                                    int _y = -face->glyph->bitmap_top + 128 + y + 6;
+                                    pmSetPixel(pm, _x, _y, pmBlendPixel(pmGetPixel(pm, _x, _y), pmColorFromARGB(line[x], 16, 16, 16)));
+                                }
+                            }
+                            for(int y = 0; y < face->glyph->bitmap.rows; ++y)
+                            {
+                                unsigned char *line = (unsigned char *)(face->glyph->bitmap.buffer + y * face->glyph->bitmap.pitch);
+                                for(int x = 0; x < face->glyph->bitmap.width; ++x)
+                                {
+                                    int _x = face->glyph->bitmap_left + 64 + X + x;
+                                    int _y = -face->glyph->bitmap_top + 128 + y;
+                                    pmSetPixel(pm, _x, _y, pmBlendPixel(pmGetPixel(pm, _x, _y), pmColorFromARGB(line[x], 255, 255, 255)));
+                                }
+                            }
+                            X += face->glyph->advance.x / 64;
+                        }
+                    }
+                }
+
                 wmAlphaBlit(0, pm, 0, 0, 0, 0, width, height);
                 pmDelete(pm);
                 wmUpdateWindow(0);
@@ -240,3 +303,4 @@ int main(int argc, char *argv[])
 
     return 42;
 }
+
