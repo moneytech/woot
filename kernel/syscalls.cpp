@@ -32,7 +32,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_mkdir, nullptr, nullptr, nullptr, nullptr, nullptr, sys_brk, nullptr, nullptr, // 32 - 47
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 48 - 63
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 64 - 79
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 80 - 95
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_munmap, nullptr, nullptr, nullptr, nullptr, // 80 - 95
     nullptr, nullptr, nullptr, nullptr, sys_stat, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 96 - 111
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_fsync, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 112 - 127
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 128 - 143
@@ -221,6 +221,17 @@ long SysCalls::sys_brk(long *args) // 45
     cp->CurrentBrk = brk;
     cp->MemoryLock.Release();
     return brk;
+}
+
+long SysCalls::sys_munmap(long *args) // 91
+{
+    uintptr_t addr = (uintptr_t)args[1];
+    size_t n = (size_t)args[2] / PAGE_SIZE;
+    if(addr % PAGE_SIZE || args[2] % PAGE_SIZE || addr >= KERNEL_BASE || (addr + n * PAGE_SIZE) >= KERNEL_BASE)
+        return -EINVAL;
+    Process *cp = Process::GetCurrent();
+    bool res = Paging::UnMapPages(cp->AddressSpace, addr, false, n);
+    return res ? 0 : -EINVAL;
 }
 
 long SysCalls::sys_stat(long *args) // 106

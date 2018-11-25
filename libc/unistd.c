@@ -13,6 +13,11 @@ int access(const char *pathname, int mode)
     return 0;
 }
 
+int getpagesize(void)
+{
+    return 4096;
+}
+
 void _exit(int status)
 {
     for(;;)

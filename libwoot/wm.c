@@ -1,5 +1,10 @@
+#include <errno.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
 #include <sys/syscall.h>
+#include <unistd.h>
+#include <woot/font.h>
 #include <woot/pixmap.h>
 #include <woot/wm.h>
 
@@ -7,6 +12,11 @@
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
+
+static struct fntFont *titleFont;
+static union pmColor backColor;
+static union pmColor titleForeground;
+static union pmColor titleBackground;
 
 struct wmRectangle wmRectangleEmpty = { 0, 0, 0, 0 };
 
@@ -47,16 +57,78 @@ struct wmRectangle wmRectangleIntersection(struct wmRectangle a, struct wmRectan
     return a;
 }
 
-int wmCreateWindow(int x, int y, int width, int height)
+int wmInitialize()
 {
-    int wnd = syscall4(SYS_create_window, x, y, width, height);
-    if(wnd < 0) return wnd;
+    titleFont = fntLoad("WOOT_OS:/test.ttf");
+    //if(titleFont) fntSetPixelSize(titleFont, 16);
+    if(titleFont) fntSetPointSize(titleFont, 12, 96);
+    backColor = pmColorGray;
+    titleForeground = pmColorWhite;
+    titleBackground = pmColorBlue;
+    return 0;
+}
+
+struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char *title, int decorate)
+{
+    struct wmWindow *wnd = (struct wmWindow *)calloc(1, sizeof(struct wmWindow));
+    errno = ENOMEM;
+    if(!wnd) return NULL;
+
+    wnd->Name = strdup(title ? title : "");
+    if(!wnd->Name)
+    {
+        wmDeleteWindow(wnd);
+        return NULL;
+    }
+
+    int res = syscall4(SYS_create_window, x, y, width, height);
+    if(res < 0)
+    {
+        errno = -res;
+        wmDeleteWindow(wnd);
+        return NULL;
+    }
+    wnd->ID = res;
+
+    wnd->Contents = wmWindowToPixMap(wnd->ID);
+    if(!wnd->Contents)
+    {
+        errno = -ENOMEM;
+        wmDeleteWindow(wnd);
+        return NULL;
+    }
+
+    wnd->ClientRectangle.X = decorate ? 2 : 0;
+    wnd->ClientRectangle.Y = decorate ? 26 : 0;
+    wnd->ClientRectangle.Width = decorate ? width - 4 : width;
+    wnd->ClientRectangle.Height = decorate ? height - 28 : height;
+
+    wnd->ClientArea = pmSubPixMap(wnd->Contents, wnd->ClientRectangle.X, wnd->ClientRectangle.Y, wnd->ClientRectangle.Width, wnd->ClientRectangle.Height);
+    if(!wnd->ClientArea)
+    {
+        errno = -ENOMEM;
+        wmDeleteWindow(wnd);
+        return NULL;
+    }
+
+    pmFillRectangle(wnd->Contents, 0, 0, width, height, backColor);
+
+    if(decorate)
+    {
+        pmHLine(wnd->Contents, 0, 0, width - 1, pmColorWhite);
+        pmVLine(wnd->Contents, 0, 0, height - 1, pmColorWhite);
+        pmHLine(wnd->Contents, 0, height - 1, width - 1, pmColorDarkGray);
+        pmVLine(wnd->Contents, width - 1, 0, height - 1, pmColorDarkGray);
+        pmFillRectangle(wnd->Contents, 2, 2, width - 4, 24, titleBackground);
+        if(titleFont) fntDrawString(titleFont, wnd->Contents, 8, 19, title, titleForeground);
+    }
+
     return wnd;
 }
 
-int wmShowWindow(int window)
+int wmShowWindow(struct wmWindow *window)
 {
-    return syscall1(SYS_show_window, window);
+    return syscall1(SYS_show_window, window->ID);
 }
 
 int wmHideWindow(int window)
@@ -79,14 +151,19 @@ int wmDrawFilledRectangle(int window, struct wmRectangle *rect, int color)
     return syscall3(SYS_draw_filled_rectangle, window, (long)rect, color);
 }
 
-int wmUpdateWindow(int window)
+int wmUpdateWindow(struct wmWindow *window)
 {
-    return syscall1(SYS_update_window, window);
+    return syscall1(SYS_update_window, window->ID);
 }
 
-int wmRedrawWindow(int window)
+int wmUpdateWindowByID(int id)
 {
-    return syscall1(SYS_redraw_window, window);
+    return syscall1(SYS_update_window, id);
+}
+
+int wmRedrawWindow(struct wmWindow *window)
+{
+    return syscall1(SYS_redraw_window, window->ID);
 }
 
 int wmDrawLine(int window, int x1, int y1, int x2, int y2, int color)
@@ -112,20 +189,20 @@ int wmMapWindow(int window, void **result)
     return syscall2(SYS_map_window, window, (long)result);
 }
 
-int wmInvalidateRectangle(int window, struct wmRectangle *rect)
+int wmInvalidateRectangle(struct wmWindow *window, struct wmRectangle *rect)
 {
     if(!rect)
     {
         int w, h;
-        int r = wmGetWindowSize(window, &w, &h);
+        int r = wmGetWindowSize(window->ID, &w, &h);
         if(r < 0) return r;
         struct wmRectangle rect = { 0, 0, w, h };
-        return syscall2(SYS_draw_rectangle, window, (long)&rect);
+        return syscall2(SYS_invalidate_rect, window->ID, (long)&rect);
     }
-    return syscall2(SYS_draw_rectangle, window, (long)rect);
+    return syscall2(SYS_invalidate_rect, window->ID, (long)rect);
 }
 
-int wmInvalidate(int window, int x, int y, int w, int h)
+int wmInvalidate(struct wmWindow *window, int x, int y, int w, int h)
 {
     struct wmRectangle rect = { x, y, w, h };
     return wmInvalidateRectangle(window, &rect);
@@ -154,4 +231,24 @@ struct pmPixMap *wmWindowToPixMap(int window)
     if(wmMapWindow(window, &pixels) < 0)
         return NULL;
     return pmCreate2(w, h, pitch, fmt, pixels, 0);
+}
+
+void wmDeleteWindow(struct wmWindow *window)
+{
+    if(!window) return;
+    if(window->Name) free(window->Name);
+    if(window->ClientArea) pmDelete(window->ClientArea);
+    if(window->Contents)
+    {
+        int pagesize = getpagesize();
+        munmap(window->Contents->Pixels, pagesize * ((window->Contents->Pitch * window->Contents->Height) + pagesize - 1));
+        pmDelete(window->Contents);
+    }
+    wmDestroyWindow(window->ID);
+    free(window);
+}
+
+void wmCleanup()
+{
+    fntDelete(titleFont);
 }

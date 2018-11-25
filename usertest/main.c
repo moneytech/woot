@@ -42,45 +42,16 @@ int main(int argc, char *argv[])
 {
     int w = 400, h = 300;
 
-    int wnd = wmCreateWindow(50, 450, w, h);
-    struct wmRectangle rect = {0, 0, w, 24};
-    wmDrawFilledRectangle(wnd, &rect , 0x40608000);
-    rect.Height = h;
-    wmDrawRectangle(wnd, &rect, 0xFFFFFF00);
+    wmInitialize();
+    struct wmWindow *wnd = wmCreateWindow(50, 450, w, h, "Test usermode window", 1);
     wmShowWindow(wnd);
 
     printf("WOOT test user mode console\n");
-    printf("main at: %p\n", main);
-    printf("exit at: %p\n", exit);
-    printf("wmCreateWindow at: %p\n", wmCreateWindow);
-    printf("zlib version: %s\n", zlibVersion());
-    printf("libpng version: %s\n", png_get_libpng_ver(NULL));
-    FT_Library freetype;
-    FT_Init_FreeType(&freetype);
-    FT_Int ftmajor, ftminor, ftpatch;
-    FT_Library_Version(freetype, &ftmajor, &ftminor, &ftpatch);
-    printf("freetype version: %d.%d.%d\n", ftmajor, ftminor, ftpatch);
-
-    FT_Face face;
-    FT_Error err;
-    err = FT_New_Face(freetype, "WOOT_OS:/test.ttf", 0, &face);
-    if(err) printf("FT_New_Face failed: %d\n", err);
-    else
-    {
-        printf("font: %s\n", face->family_name);
-        err = FT_Set_Char_Size(
-                    face,      /* handle to face object           */
-                    0,         /* char_width in 1/64th of points  */
-                    64 * 64,   /* char_height in 1/64th of points */
-                    0,         /* horizontal device resolution    */
-                    96);       /* vertical device resolution      */
-    }
 
     struct pmPixMap *dirIcon = pmLoadPNG("WOOT_OS:/directory.png");
     struct pmPixMap *fileIcon = pmLoadPNG("WOOT_OS:/file.png");
 
-    struct pmPixMap *pm = wmWindowToPixMap(wnd);
-    struct pmPixMap *spm = pmSubPixMap(pm, 1, 24, pm->Width - 2, pm->Height - 25);
+    struct pmPixMap *spm = wnd->ClientArea;
 
     char buf[128];
     char *_argv[64];
@@ -112,7 +83,7 @@ int main(int argc, char *argv[])
             {
                 wmBlit(0, pm, 0, 0, 0, 0, pm->Width, pm->Height);
                 pmDelete(pm);
-                wmUpdateWindow(0);
+                wmUpdateWindowByID(0);
             }
         }
         else if(!strcmp(_argv[0], "mstat"))
@@ -125,8 +96,8 @@ int main(int argc, char *argv[])
                 struct tm *tm = localtime(&t);
                 if(!i) printf("%.2d:%.2d:%.2d\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
 
-                pmClear(spm, pmColorFromRGB(0, 0, 255));
-                wmInvalidateRectangle(wnd, NULL);
+                pmClear(spm, pmColorGray);
+                wmInvalidateRectangle(wnd, &wnd->ClientRectangle);
 
                 int cx = spm->Width / 2;
                 int cy = spm->Height / 2;
@@ -136,32 +107,32 @@ int main(int argc, char *argv[])
                     double angle = i * (2 * M_PI / 12);
                     double s = sin(angle);
                     double c = -cos(angle);
-                    pmLine(spm, cx + s * sz * 0.8, cy + c * sz * 0.8, cx + s * sz * 0.9, cy + c * sz * 0.9, pmColorWhite);
+                    pmLine(spm, cx + s * sz * 0.8, cy + c * sz * 0.8, cx + s * sz * 0.9, cy + c * sz * 0.9, pmColorBlack);
                 }
 
                 // second hand
                 double angle = tm->tm_sec * (2 * M_PI / 60);
                 double s = sin(angle);
                 double c = -cos(angle);
-                pmLine(spm, cx + s * sz * -0.2, cy + c * sz * -0.2, cx + s * sz * 0.75, cy + c * sz * 0.75, pmColorWhite);
+                pmLine(spm, cx + s * sz * -0.2, cy + c * sz * -0.2, cx + s * sz * 0.75, cy + c * sz * 0.75, pmColorBlack);
 
                 // minute hand
                 angle = tm->tm_min * (2 * M_PI / 60);
                 s = sin(angle);
                 c = -cos(angle);
-                pmLine(spm, cx + s * sz * -0.15, cy + c * sz * -0.15, cx + -c * sz * 0.05, cy + s * sz * 0.05, pmColorWhite);
-                pmLine(spm, cx + -c * sz * 0.05, cy + s * sz * 0.05, cx + s * sz * 0.6, cy + c * sz * 0.6, pmColorWhite);
-                pmLine(spm, cx + s * sz * -0.15, cy + c * sz * -0.15, cx + c * sz * 0.05, cy + -s * sz * 0.05, pmColorWhite);
-                pmLine(spm, cx + c * sz * 0.05, cy + -s * sz * 0.05, cx + s * sz * 0.6, cy + c * sz * 0.6, pmColorWhite);
+                pmLine(spm, cx + s * sz * -0.15, cy + c * sz * -0.15, cx + -c * sz * 0.05, cy + s * sz * 0.05, pmColorBlack);
+                pmLine(spm, cx + -c * sz * 0.05, cy + s * sz * 0.05, cx + s * sz * 0.6, cy + c * sz * 0.6, pmColorBlack);
+                pmLine(spm, cx + s * sz * -0.15, cy + c * sz * -0.15, cx + c * sz * 0.05, cy + -s * sz * 0.05, pmColorBlack);
+                pmLine(spm, cx + c * sz * 0.05, cy + -s * sz * 0.05, cx + s * sz * 0.6, cy + c * sz * 0.6, pmColorBlack);
 
                 // hour hand
                 angle = tm->tm_hour * (2 * M_PI / 12);
                 s = sin(angle);
                 c = -cos(angle);
-                pmLine(spm, cx + s * sz * -0.1, cy + c * sz * -0.1, cx + -c * sz * 0.05, cy + s * sz * 0.05, pmColorWhite);
-                pmLine(spm, cx + -c * sz * 0.05, cy + s * sz * 0.05, cx + s * sz * 0.5, cy + c * sz * 0.5, pmColorWhite);
-                pmLine(spm, cx + s * sz * -0.1, cy + c * sz * -0.1, cx + c * sz * 0.05, cy + -s * sz * 0.05, pmColorWhite);
-                pmLine(spm, cx + c * sz * 0.05, cy + -s * sz * 0.05, cx + s * sz * 0.5, cy + c * sz * 0.5, pmColorWhite);
+                pmLine(spm, cx + s * sz * -0.1, cy + c * sz * -0.1, cx + -c * sz * 0.05, cy + s * sz * 0.05, pmColorBlack);
+                pmLine(spm, cx + -c * sz * 0.05, cy + s * sz * 0.05, cx + s * sz * 0.5, cy + c * sz * 0.5, pmColorBlack);
+                pmLine(spm, cx + s * sz * -0.1, cy + c * sz * -0.1, cx + c * sz * 0.05, cy + -s * sz * 0.05, pmColorBlack);
+                pmLine(spm, cx + c * sz * 0.05, cy + -s * sz * 0.05, cx + s * sz * 0.5, cy + c * sz * 0.5, pmColorBlack);
 
                 wmUpdateWindow(wnd);
                 struct timespec ts = { 0, 100 * 1000000 };
@@ -172,7 +143,8 @@ int main(int argc, char *argv[])
         {
             pmAlphaBlit(spm, dirIcon, 0, 0, 0, 0, dirIcon->Width, dirIcon->Height);
             pmAlphaBlit(spm, fileIcon, 0, 0, 48, 0, fileIcon->Width, fileIcon->Height);
-            wmRedrawWindow(wnd);
+            wmInvalidateRectangle(wnd, &wnd->ClientRectangle);
+            wmUpdateWindow(wnd);
         }
         else if(!strcmp(_argv[0], "date"))
         {
@@ -183,7 +155,8 @@ int main(int argc, char *argv[])
         else printf("unknown command '%s'\n", _argv[0]);
     }
 
-    wmDestroyWindow(wnd);
+    wmDeleteWindow(wnd);
+    wmCleanup();
 
     return 42;
 }

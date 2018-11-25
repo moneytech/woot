@@ -470,7 +470,6 @@ void WindowManager::RedrawAll()
     {
         if(!wnd->Visible) continue;
         backBuffer.Blit(wnd->Contents, 0, 0, wnd->Position.X, wnd->Position.Y, wnd->Contents->Width, wnd->Contents->Height);
-        backBuffer.Rectangle(wnd->Position.X, wnd->Position.Y, wnd->Contents->Width, wnd->Contents->Height, PixMap::Color::Cyan);
     }
     fb->Pixels->Blit(&backBuffer, 0, 0, 0, 0, backBuffer.Width, backBuffer.Height);
     lock.Release();

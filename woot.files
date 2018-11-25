@@ -11,6 +11,8 @@ libc/asm/sin.asm
 libc/asm/sqrt.asm
 libc/include/setjmp.h
 libc/include/signal.h
+libc/include/sys/mman.h
+libc/mman.c
 libc/signal.c
 libfreetype/configure
 libfreetype/include/freetype2/freetype/config/ftconfig.h
@@ -84,6 +86,8 @@ libpng/lib/libpng16.so
 libpng/lib/libpng16.so.16
 libpng/lib/libpng16.so.16.35.0
 libwoot/asm/lmemset.asm
+libwoot/font.c
+libwoot/include/woot/font.h
 libwoot/include/woot/pixmap.h
 libwoot/pixmap.c
 test.ttf

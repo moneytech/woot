@@ -24,9 +24,24 @@ union pmColor
     unsigned int Value;
 };
 
+
 extern union pmColor pmColorBlack;
 extern union pmColor pmColorBlue;
+extern union pmColor pmColorGreen;
+extern union pmColor pmColorCyan;
+extern union pmColor pmColorRed;
+extern union pmColor pmColorMagenta;
+extern union pmColor pmColorBrown;
+extern union pmColor pmColorGray;
+extern union pmColor pmColorDarkGray;
+extern union pmColor pmColorBrightBlue;
+extern union pmColor pmColorBrightGreen;
+extern union pmColor pmColorBrightCyan;
+extern union pmColor pmColorBrightRed;
+extern union pmColor pmColorBrightMagenta;
+extern union pmColor pmColorYellow;
 extern union pmColor pmColorWhite;
+extern union pmColor pmColorTransparent;
 
 struct pmPixMap
 {

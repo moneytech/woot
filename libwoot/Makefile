@@ -1,6 +1,6 @@
 LIB = libwoot
 OBJS = asm/lmemset.o
-OBJS += pixmap.o wm.o
+OBJS += font.o pixmap.o wm.o
 
 LIB_STATIC = $(LIB).a
 LIB_SHARED = $(LIB).so
@@ -8,7 +8,7 @@ LIB_SHARED = $(LIB).so
 CC = woot-gcc
 CFLAGS = -ggdb -fno-stack-protector
 ASMFLAGS = -f elf -gdwarf2
-LDFLAGS = -Wl,-lpng16
+LDFLAGS = -Wl,-lpng16,-lfreetype
 SHLDFLAGS = -shared -Wl,-T../shared.ldscript,-soname,$(LIB_SHARED),-Ttext=0x00300000
 
 %.o: %.asm
