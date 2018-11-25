@@ -5,6 +5,9 @@
 #include <string.h>
 #include <sysdefs.h>
 
+PixMap::PixelFormat PixMap::PixelFormat::A8R8G8B8(32, 24, 16, 8, 0, 8, 8, 8, 8);
+PixMap::PixelFormat PixMap::PixelFormat::A0R8B8G8(32, 0, 16, 8, 0, 0, 8, 8, 8);
+
 PixMap::Color PixMap::Color::Black(0x00, 0x00, 0x00);
 PixMap::Color PixMap::Color::Blue(0x00, 0x00, 0xAA);
 PixMap::Color PixMap::Color::Green(0x00, 0xAA, 0x00);
@@ -21,6 +24,7 @@ PixMap::Color PixMap::Color::BrightRed(0xFF, 0x55, 0x55);
 PixMap::Color PixMap::Color::BrightMagenta(0xFF, 0x55, 0xFF);
 PixMap::Color PixMap::Color::Yellow(0xFF, 0xFF, 0x55);
 PixMap::Color PixMap::Color::White(0xFF, 0xFF, 0xFF);
+PixMap::Color PixMap::Color::Transparent(0x00, 0x00, 0x00, 0x00);
 
 #pragma pack(push, 1)
 struct BMPImageHeader
@@ -45,6 +49,33 @@ struct BMPFileHeader
     uint16_t Reserved[2];
     uint32_t OffBits;
     BMPImageHeader Image;
+};
+
+struct IconDir
+{
+    uint16_t Reserved;
+    uint16_t Type;
+    uint16_t ImageCount;
+};
+
+struct IconDirEntry
+{
+    uint8_t Width;
+    uint8_t Height;
+    uint8_t PaletteColors;
+    uint8_t Reserved;
+    union
+    {
+        uint16_t ColorPlanes;
+        uint16_t HotspotX;
+    };
+    union
+    {
+        uint16_t BPP;
+        uint16_t HotspotY;
+    };
+    uint32_t DataSize;
+    uint32_t DataOffset;
 };
 #pragma pack(pop)
 
@@ -99,6 +130,75 @@ PixMap *PixMap::Load(const char *filename)
     if(hdr.Image.Height > 0)
         res->VFlip();
     return res;
+}
+
+PixMap *PixMap::LoadCUR(const char *filename, int idx, int *hotX, int *hotY)
+{
+    if(!filename || idx < 0) return nullptr;
+    File *f = File::Open(filename, O_RDONLY);
+    if(!f) return nullptr;
+    IconDir id;
+    if(f->Read(&id, sizeof(id)) != sizeof(id))
+    {
+        delete f;
+        return nullptr;
+    }
+    if(id.Reserved != 0 || id.Type != 2 || id.ImageCount < 1 || idx >= id.ImageCount)
+    {
+        delete f;
+        return nullptr;
+    }
+
+    IconDirEntry ide;
+    for(int i = 0; i <= idx; ++i)
+    {
+        if(f->Read(&ide, sizeof(ide)) != sizeof(ide))
+        {
+            delete f;
+            return nullptr;
+        }
+    }
+
+    int w = ide.Width ? ide.Width : 256;
+    int h = ide.Height ? ide.Height : 256;
+    if(ide.PaletteColors != 0)
+    {   // palettized immages not supported
+        delete f;
+        return nullptr;
+    }
+    if(hotX) *hotX = ide.HotspotX;
+    if(hotY) *hotY = ide.HotspotY;
+
+    if(f->Seek(ide.DataOffset, SEEK_SET) != ide.DataOffset)
+    {
+        delete f;
+        return nullptr;
+    }
+    BMPImageHeader bi;
+    if(f->Read(&bi, sizeof(bi)) != sizeof(bi))
+    {
+        delete f;
+        return nullptr;
+    }
+
+    void *pixels = calloc(1, ide.DataSize);
+    if(!pixels)
+    {
+        delete f;
+        return nullptr;
+    }
+
+    if(f->Read(pixels, ide.DataSize - sizeof(bi)) != (ide.DataSize - sizeof(bi)))
+    {
+        free(pixels);
+        delete f;
+        return nullptr;
+    }
+    delete f;
+    PixMap *pm = new PixMap(w, h, 4 * w, PixelFormat::A8R8G8B8, pixels, true);
+    if(bi.Height > 0)
+        pm->VFlip();
+    return pm;
 }
 
 PixMap::PixMap(int width, int height, PixelFormat format) :
@@ -433,7 +533,7 @@ PixMap::Color::Color(const PixMap::Color &src) :
 }
 
 PixMap::Color::Color(uint8_t r, uint8_t g, uint8_t b) :
-    R(r), G(g), B(b)
+    A(0xFF), R(r), G(g), B(b)
 {
 }
 
@@ -477,7 +577,7 @@ PixMap::Color PixMap::Color::Blend(PixMap::Color c)
 {
     unsigned int A = c.A + 1;
     unsigned int iA = 256 - c.A;
-    return Color(this->A, (A * c.R + iA * R) >> 8, (A * c.G + iA * G) >> 8, (A * c.B + iA * B) >> 8);
+    return Color(c.A, (A * c.R + iA * R) >> 8, (A * c.G + iA * G) >> 8, (A * c.B + iA * B) >> 8);
 }
 
 PixMap::PixelFormat::PixelFormat()

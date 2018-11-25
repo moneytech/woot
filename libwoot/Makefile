@@ -9,7 +9,7 @@ CC = woot-gcc
 CFLAGS = -ggdb -fno-stack-protector
 ASMFLAGS = -f elf -gdwarf2
 LDFLAGS = -Wl,-lpng16
-SHLDFLAGS = -Wl,-shared,-T../shared.ldscript,-soname,$(LIB_SHARED),-Ttext=0x00300000
+SHLDFLAGS = -shared -Wl,-T../shared.ldscript,-soname,$(LIB_SHARED),-Ttext=0x00300000
 
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<

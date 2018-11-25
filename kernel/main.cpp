@@ -479,7 +479,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                     h = strtol(args[4], nullptr, 0);
                 if(!w) w = 320;
                 if(!h) w = 240;
-                int id = WindowManager::CreateWindow(x, y, w, h);
+                int id = WindowManager::CreateWindow(x, y, w, h, nullptr);
                 printf("new window id: %d\n", id);
                 WindowManager::ShowWindow(id);
             }

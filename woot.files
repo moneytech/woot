@@ -1,5 +1,6 @@
 directory.png
 file.png
+include/messagequeue.h
 libc/asm/cos.asm
 libc/asm/exp.asm
 libc/asm/fmod.asm

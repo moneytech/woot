@@ -133,6 +133,8 @@ void DebugStream::DisableLineBuffer()
 
 int64_t DebugStream::Read(void *buffer, int64_t n)
 {
+    if(!window) return 0;
+
     static bool shift = false, alt = false, ctrl = false, caps = false, num = false;
     static int mx = 0;
     static int my = 0;
@@ -143,21 +145,17 @@ int64_t DebugStream::Read(void *buffer, int64_t n)
 
     for(;;)
     {
-        InputDevice::Event event = InputDevice::GetEvent(0);
+        InputDevice::Event event = window->Events.Get(0, nullptr);
         if(event.DeviceType != InputDevice::Type::Keyboard)
         {
             if(event.DeviceType != InputDevice::Type::Mouse)
                 continue; // ignore non keyboard and non mouse events
-            if(event.Mouse.ButtonsPressed & 1)
-                wid = wid == 2 ? 1 : 2;
-            if(event.Mouse.ButtonsPressed & 2)
-                WindowManager::BringWindowToFront(wid);
             mx += event.Mouse.Movement[0];
             my += event.Mouse.Movement[1];
             //WriteFmt("mx: %d my: %d\n", mx, my);
             InputDevice::Event ev2 = InputDevice::PeekEvent();
             if(ev2.DeviceType != InputDevice::Type::Mouse)
-                WindowManager::SetWindowPosition(wid, mx, my);
+                WindowManager::SetMousePosition(WindowManager::Point(mx, my));
             continue;
         }
         if(event.Keyboard.Key == VirtualKey::LShift ||

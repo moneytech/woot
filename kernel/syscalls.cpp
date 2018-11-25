@@ -319,7 +319,7 @@ long SysCalls::sys_gettid(long *args) // 224
 
 long SysCalls::sys_create_window(long *args) // 386
 {
-    return WindowManager::CreateWindow(args[1], args[2], args[3], args[4]);
+    return WindowManager::CreateWindow(args[1], args[2], args[3], args[4], nullptr);
 }
 
 long SysCalls::sys_show_window(long *args) // 387

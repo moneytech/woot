@@ -11,6 +11,9 @@ class PixMap
 public:
     struct PixelFormat
     {
+        static PixelFormat A8R8G8B8;
+        static PixelFormat A0R8B8G8;
+
         int BPP;
         int AlphaShift, RedShift, GreenShift, BlueShift;
         int AlphaBits, RedBits, GreenBits, BlueBits;
@@ -40,9 +43,10 @@ public:
         static Color BrightMagenta;
         static Color Yellow;
         static Color White;
+        static Color Transparent;
 
-        uint32_t Value;
         struct { uint8_t A, R, G, B; };
+        uint32_t Value;
 
         Color();
         Color(const Color &src);
@@ -65,6 +69,7 @@ public:
     };
 
     static PixMap *Load(const char *filename);
+    static PixMap *LoadCUR(const char *filename, int idx, int *hotX, int *hotY);
 
     PixMap(int width, int height, PixelFormat format);
     PixMap(int width, int height, size_t pitch, PixelFormat format, void *pixels, bool freePixels);

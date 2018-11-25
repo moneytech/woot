@@ -1,35 +1,117 @@
 #include <errno.h>
 #include <framebuffer.h>
+#include <inputdevice.h>
 #include <kwm.h>
+#include <semaphore.h>
 #include <stdlib.h>
+#include <sysdefs.h>
+#include <thread.h>
 
 PixMap::PixelFormat WindowManager::DefaultPixelFormat;
 WindowManager *WindowManager::WM;
 Sequencer<int> WindowManager::Window::ids(0);
 
+int WindowManager::inputThread(uintptr_t arg)
+{
+    WindowManager *WM = (WindowManager *)arg;
+    for(;;)
+    {
+        InputDevice::Event event = InputDevice::GetEvent(0);
+        if(event.DeviceType == InputDevice::Type::Mouse)
+        {
+            if(WM->lock.Acquire(5000, false))
+            {
+                int dx = event.Mouse.Movement[0];
+                int dy = event.Mouse.Movement[1];
+
+                // mouse acceleration
+                int d = dx * dx + dy * dy;
+                if(d > 16)
+                {
+                    int a = d * 5;
+                    int b = d * 3;
+                    dx = (dx * a) / b;
+                    dy = (dy * a) / b;
+                }
+
+                int mx = WM->mousePos.X + dx;
+                int my = WM->mousePos.Y + dy;
+                WM->mousePos.X = clamp(0, WM->desktopRect.Width - 1, mx);
+                WM->mousePos.Y = clamp(0, WM->desktopRect.Height - 1, my);
+                WM->SetMousePosition(WM->mousePos);
+
+                if(event.Mouse.ButtonsPressed &= 1)
+                {
+                    Window *mWnd = nullptr;
+                    for(Window *wnd : WM->windows)
+                    {
+                        Rectangle rect = wnd->ToRectangle();
+                        if(rect.Contains(WM->mousePos) && wnd->ID != WM->mouseWndId)
+                            mWnd = wnd;
+                    }
+                    if(mWnd && mWnd->ID != WM->activeWindowId)
+                    {
+                        WM->activeWindowId = mWnd->ID;
+                        BringWindowToFront(mWnd->ID);
+                    }
+                }
+
+                if(event.Mouse.ButtonsReleased & 1)
+                    WM->drag = false;
+
+                if(d && event.Mouse.ButtonsHeld & 1)
+                {
+                    if(!WM->drag)
+                    {
+                        Point wPos;
+                        GetWindowPosition(WM->activeWindowId, &wPos);
+                        WM->dragPoint = WM->mousePos - wPos;
+                    }
+                    WM->drag = true;
+                    if(InputDevice::PeekEvent().DeviceType != InputDevice::Type::Mouse)
+                    {
+                        Point pos = WM->mousePos - WM->dragPoint;
+                        SetWindowPosition(WM->activeWindowId, pos.X, pos.Y);
+                    }
+                }
+
+
+                WM->lock.Release();
+            }
+        }
+        else if(event.DeviceType == InputDevice::Type::Keyboard)
+            PutEvent(WM->activeWindowId, event);
+    }
+}
+
 WindowManager::WindowManager(FrameBuffer *fb) :
     fb(fb), backBuffer(fb->Pixels, fb->Pixels->Format)
 {
-    Window *desktop = new Window(this, 0, 0, fb->Pixels->Width, fb->Pixels->Height);
+    Window *desktop = new Window(this, 0, 0, fb->Pixels->Width, fb->Pixels->Height, nullptr);
+    desktopRect = desktop->ToRectangle();
     windows.Prepend(desktop);
     desktop->Contents->Clear(PixMap::Color::DarkGray);
-    Window *test1 = new Window(this, 100, 200, 700, 400);
-    windows.Append(test1);
-    Window *test2 = new Window(this, 500, 50, 480, 300);
-    PixMap *logo = PixMap::Load("WOOT_OS:/logo.bmp");
-    PixMap *ologo = logo;
-    logo = new PixMap(logo, DefaultPixelFormat);
-    delete ologo;
-    test2->Contents->FillRectangle(0, 0, test2->Contents->Width, test2->Contents->Height, PixMap::Color::BrightBlue);
-    test2->Contents->FillRectangle(105, 105, logo->Width, logo->Height, PixMap::Color::Black);
-    test2->Contents->Rectangle(100 - 1, 100 - 1, logo->Width + 2, logo->Height + 2, PixMap::Color::White);
-    test2->Contents->Blit(logo, 0, 0, 100, 100, logo->Width, logo->Height);
-    delete logo;
-    windows.Append(test2);
+    Window *debugWnd = new Window(this, 100, 200, 700, 400, nullptr);
+    activeWindowId = debugWnd->ID;
+    windows.Append(debugWnd);
+
+    PixMap *cursorImage = PixMap::LoadCUR("WOOT_OS:/normal.cur", 0, &mouseHotspot.X, &mouseHotspot.Y);
+    Window *mouseWnd = cursorImage ? new Window(this, 0, 0, cursorImage->Width, cursorImage->Height, &PixMap::PixelFormat::A8R8G8B8) : nullptr;
+    mouseWndId = mouseWnd->ID;
+    mouseWnd->UseAlpha = true;
+    mouseWnd->Contents->Clear(PixMap::Color::Transparent);
+    mouseWnd->Contents->AlphaBlit(cursorImage, 0, 0, 0, 0, cursorImage->Width, cursorImage->Height);
+    delete cursorImage;
+    windows.Append(mouseWnd);
 
     desktop->Visible = true;
-    test1->Visible = true;
-    test2->Visible = true;
+    debugWnd->Visible = true;
+    mouseWnd->Visible = true;
+
+    inputThreadFinished = new Semaphore(0);
+    thread = new Thread("input thread", nullptr, (void *)inputThread, (uintptr_t)this, DEFAULT_STACK_SIZE, 0, nullptr, inputThreadFinished);
+    thread->Enable();
+    thread->Resume(false);
 }
 
 void WindowManager::Initialize(FrameBuffer *fb)
@@ -47,12 +129,13 @@ WindowManager::Window *WindowManager::GetByID(int id)
     return wnd;
 }
 
-int WindowManager::CreateWindow(int x, int y, int w, int h)
+int WindowManager::CreateWindow(int x, int y, int w, int h, PixMap::PixelFormat *fmt)
 {
     if(!WM || !WM->lock.Acquire(0, false))
         return -EBUSY;
-    Window *wnd = new Window(WM, x, y, w, h);
-    WM->windows.Append(wnd);
+    Window *wnd = new Window(WM, x, y, w, h, fmt);
+    Window *mouseWnd = GetByID(WM->mouseWndId);
+    WM->windows.InsertBefore(wnd, mouseWnd, nullptr);
     int id = wnd->ID;
     WM->lock.Release();
     return id;
@@ -141,7 +224,11 @@ bool WindowManager::BringWindowToFront(int id)
     wnd->Visible = true;
     Window *topWindow = nullptr;
     for(Window *wnd : WM->windows)
+    {
+        if(wnd->ID == WM->mouseWndId)
+            break;
         topWindow = wnd;
+    }
     if(!topWindow || !topWindow->ID)
     {
         WM->lock.Release();
@@ -150,6 +237,22 @@ bool WindowManager::BringWindowToFront(int id)
     WM->windows.Swap(wnd, topWindow, nullptr);
     wnd->Invalidate();
     wnd->Update();
+    WM->lock.Release();
+    return true;
+}
+
+bool WindowManager::GetWindowPosition(int id, WindowManager::Point *pt)
+{
+    if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    Rectangle rect = wnd->ToRectangle();
+    if(pt) *pt = rect.Origin;
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return false;
+    }
     WM->lock.Release();
     return true;
 }
@@ -317,6 +420,26 @@ bool WindowManager::InvalidateRectangle(int id, WindowManager::Rectangle &rect)
     return true;
 }
 
+void WindowManager::SetMousePosition(WindowManager::Point pos)
+{
+    if(!WM || !WM->lock.Acquire(0, false))
+        return;
+    WM->mousePos = pos;
+    pos = pos - WM->mouseHotspot;
+    SetWindowPosition(WM->mouseWndId, pos.X, pos.Y);
+    WM->lock.Release();
+}
+
+bool WindowManager::PutEvent(int id, InputDevice::Event event)
+{
+    if(!WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    bool res = wnd->Events.Put(event, 0, true);
+    WM->lock.Release();
+    return res;
+}
+
 void WindowManager::Cleanup()
 {
     if(WM) delete WM;
@@ -353,12 +476,13 @@ void WindowManager::RedrawAll()
     lock.Release();
 }
 
-WindowManager::Window::Window(WindowManager *wm, int x, int y, int w, int h) :
+WindowManager::Window::Window(WindowManager *wm, int x, int y, int w, int h, PixMap::PixelFormat *fmt) :
     ID(ids.GetNext()),
     Manager(wm),
     Position(x, y),
-    Contents(new PixMap(w, h, DefaultPixelFormat)),
-    Dirty(0, 0, w, h)
+    Contents(new PixMap(w, h, fmt ? *fmt : DefaultPixelFormat)),
+    Dirty(0, 0, w, h),
+    Events(64)
 {
 }
 
@@ -407,7 +531,10 @@ void WindowManager::Window::Update()
         localRect.Origin.X -= wnd->Position.X;
         localRect.Origin.Y -= wnd->Position.Y;
 
-        Manager->backBuffer.Blit(wnd->Contents, localRect.Origin.X, localRect.Origin.Y, isect.Origin.X, isect.Origin.Y, isect.Width, isect.Height);
+        if(wnd->UseAlpha)
+            Manager->backBuffer.AlphaBlit(wnd->Contents, localRect.Origin.X, localRect.Origin.Y, isect.Origin.X, isect.Origin.Y, isect.Width, isect.Height);
+        else
+            Manager->backBuffer.Blit(wnd->Contents, localRect.Origin.X, localRect.Origin.Y, isect.Origin.X, isect.Origin.Y, isect.Width, isect.Height);
     }
 
     Dirty = Rectangle(0, 0, 0, 0);
@@ -478,6 +605,11 @@ void WindowManager::Rectangle::Add(WindowManager::Rectangle rect)
     Height = maxy - miny;
 }
 
+WindowManager::Point::Point() :
+    X(0), Y(0)
+{
+}
+
 WindowManager::Point::Point(int x, int y) :
     X(x), Y(y)
 {
@@ -488,4 +620,9 @@ bool WindowManager::Point::IsInside(WindowManager::Rectangle rect)
     int x2 = rect.Origin.X + rect.Width;
     int y2 = rect.Origin.Y + rect.Height;
     return X >= rect.Origin.X && Y >= rect.Origin.Y && X <= x2 && Y <= y2;
+}
+
+WindowManager::Point WindowManager::Point::operator -(WindowManager::Point p)
+{
+    return Point(X - p.X, Y - p.Y);
 }

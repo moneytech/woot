@@ -6,7 +6,7 @@ ISOFILE = woot.iso
 LIBDIR = $(ROOTDIR)/lib
 MOUNTPOINT = mnt
 DISTFILES = usertest/usertest logo.bmp libc/libc.so libwoot/libwoot.so zlib/lib/libz.so libpng/lib/libpng.so libpng/lib/libpng16.so
-DISTFILES += wallpaper.png alpha.png libfreetype/lib/libfreetype.so test.ttf directory.png file.png
+DISTFILES += wallpaper.png alpha.png libfreetype/lib/libfreetype.so test.ttf directory.png file.png normal.cur
 CONFIGURE = woot.specs woot-gcc
 ADD_EXEC = woot-gcc
 

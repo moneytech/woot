@@ -1,13 +1,17 @@
 #ifndef KWM_H
 #define KWM_H
 
+#include <inputdevice.h>
 #include <list.h>
+#include <messagequeue.h>
 #include <mutex.h>
 #include <pixmap.h>
 #include <sequencer.h>
 #include <types.h>
 
 class FrameBuffer;
+class Semaphore;
+class Thread;
 
 class WindowManager
 {
@@ -64,8 +68,10 @@ public:
     struct Point
     {
         int X, Y;
+        Point();
         Point(int x, int y);
         bool IsInside(Rectangle rect);
+        Point operator -(Point p);
     };
 
     struct Rectangle
@@ -86,7 +92,7 @@ public:
         friend class WindowManager;
         static Sequencer<int> ids;
 
-        Window(WindowManager *WM, int x, int y, int w, int h);
+        Window(WindowManager *WM, int x, int y, int w, int h, PixMap::PixelFormat *fmt);
         ~Window();
     public:
         int ID;
@@ -95,6 +101,9 @@ public:
         PixMap *Contents;
         Rectangle Dirty;
         bool Visible;
+        bool UseAlpha;
+        MessageQueue<InputDevice::Event> Events;
+
         void Invalidate();
         Rectangle ToRectangle();
         void Update();
@@ -105,18 +114,29 @@ private:
     PixMap backBuffer;
     List<Window *> windows;
     Mutex lock;
+    Point mousePos;
+    Point mouseHotspot;
+    int mouseWndId;
+    int activeWindowId;
+    Semaphore *inputThreadFinished;
+    Thread *thread;
+    Rectangle desktopRect;
+    bool drag;
+    Point dragPoint;
 
+    static int inputThread(uintptr_t arg);
     WindowManager(FrameBuffer *fb);
 public:
-    static WindowManager *WM;
+    static WindowManager *WM;    
 
     static void Initialize(FrameBuffer *fb);
     static Window *GetByID(int id);
-    static int CreateWindow(int x, int y, int w, int h);
+    static int CreateWindow(int x, int y, int w, int h, PixMap::PixelFormat *fmt);
     static bool DestroyWindow(int id);
     static bool ShowWindow(int id);
     static bool HideWindow(int id);
     static bool BringWindowToFront(int id);
+    static bool GetWindowPosition(int id, Point *pt);
     static bool SetWindowPosition(int id, int x, int y);
     static bool DrawRectangle(int id, Rectangle rect, PixMap::Color color);
     static bool DrawFilledRectangle(int id, Rectangle rect, PixMap::Color color);
@@ -126,6 +146,8 @@ public:
     static bool Blit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
     static bool AlphaBlit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
     static bool InvalidateRectangle(int id, Rectangle &rect);
+    static void SetMousePosition(Point pos);
+    static bool PutEvent(int id, InputDevice::Event event);
     static void Cleanup();
 
 private:
