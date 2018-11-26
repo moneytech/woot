@@ -521,11 +521,11 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             if(File *f = File::Open(kernelProcess->CurrentDirectory, args[0], O_RDONLY))
             {
                 delete f;
-                Semaphore finished(0);
-                Process *proc = Process::Create(cmd, &finished);
+                //Semaphore finished(0);
+                Process *proc = Process::Create(cmd, nullptr);//&finished);
                 proc->Start();
-                finished.Wait(0, false, false);
-                delete proc;
+                //finished.Wait(0, false, false);
+                //delete proc;
             }
             else
             {

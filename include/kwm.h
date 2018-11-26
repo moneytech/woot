@@ -131,7 +131,7 @@ private:
     static int inputThread(uintptr_t arg);
     WindowManager(FrameBuffer *fb);
 public:
-    static WindowManager *WM;    
+    static WindowManager *WM;
 
     static void Initialize(FrameBuffer *fb);
     static Window *GetByID(int id);

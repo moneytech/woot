@@ -230,26 +230,16 @@ bool WindowManager::BringWindowToFront(int id)
 {
     if(id <= 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID(id);
+    Window *wnd = WM->getByID(id);    
     if(!wnd)
     {
         WM->lock.Release();
         return false;
     }
+    Window *mouseWnd = GetByID(WM->mouseWndId);
+    WM->windows.Remove(wnd, nullptr, false);
     wnd->Visible = true;
-    Window *topWindow = nullptr;
-    for(Window *wnd : WM->windows)
-    {
-        if(wnd->ID == WM->mouseWndId)
-            break;
-        topWindow = wnd;
-    }
-    if(!topWindow || !topWindow->ID)
-    {
-        WM->lock.Release();
-        return false;
-    }
-    WM->windows.Swap(wnd, topWindow, nullptr);
+    WM->windows.InsertBefore(wnd, mouseWnd, nullptr);
     wnd->Invalidate();
     wnd->Update();
     WM->lock.Release();
