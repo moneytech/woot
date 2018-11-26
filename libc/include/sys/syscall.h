@@ -399,5 +399,6 @@
 #define SYS_invalidate_rect         398
 #define SYS_get_window_size         399
 #define SYS_get_pixel_format        400
+#define SYS_set_drag_rect           401
 
 #endif // SYS_SYSCALL_H

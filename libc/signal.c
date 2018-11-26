@@ -1,6 +1,6 @@
 #include <signal.h>
 
-void signal(int sig, void (*func)(int))
+__sighandler_t signal(int sig, __sighandler_t handler)
 {
-    return;
+    return 0;
 }

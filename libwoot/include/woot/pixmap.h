@@ -81,6 +81,7 @@ void pmFillRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union 
 void pmClear(struct pmPixMap *pixMap, union pmColor color);
 void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
 void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
+void pmDrawFrame(struct pmPixMap *pixMap, int x, int y, int w, int h, int sunken);
 void pmDelete(struct pmPixMap *pixMap);
 
 #ifdef __cplusplus

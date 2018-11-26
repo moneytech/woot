@@ -71,7 +71,9 @@ public:
         Point();
         Point(int x, int y);
         bool IsInside(Rectangle rect);
+        Point operator +(Point p);
         Point operator -(Point p);
+        Point operator +=(Point p);
     };
 
     struct Rectangle
@@ -103,6 +105,7 @@ public:
         bool Visible;
         bool UseAlpha;
         MessageQueue<InputDevice::Event> Events;
+        Rectangle DragRectangle;
 
         void Invalidate();
         Rectangle ToRectangle();
@@ -117,7 +120,8 @@ private:
     Point mousePos;
     Point mouseHotspot;
     int mouseWndId;
-    int activeWindowId;
+    int activeWindowId = 0;
+    int dragWindowId = -1;
     Semaphore *inputThreadFinished;
     Thread *thread;
     Rectangle desktopRect;
@@ -148,6 +152,7 @@ public:
     static bool InvalidateRectangle(int id, Rectangle &rect);
     static void SetMousePosition(Point pos);
     static bool PutEvent(int id, InputDevice::Event event);
+    static bool SetDragRectangle(int id, Rectangle rect);
     static void Cleanup();
 
 private:

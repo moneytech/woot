@@ -47,6 +47,7 @@ class SysCalls
     static long sys_invalidate_rect(long *args); // 398
     static long sys_get_window_size(long *args); // 399
     static long sys_get_pixel_format(long *args); // 400
+    static long sys_set_drag_rect(long *args); // 401
 public:
     static void Initialize();
     static void Cleanup();

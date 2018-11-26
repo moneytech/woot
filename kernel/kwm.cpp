@@ -42,22 +42,37 @@ int WindowManager::inputThread(uintptr_t arg)
 
                 if(event.Mouse.ButtonsPressed &= 1)
                 {
+                    Window *dragWnd = nullptr;
                     Window *mWnd = nullptr;
                     for(Window *wnd : WM->windows)
                     {
                         Rectangle rect = wnd->ToRectangle();
+                        Rectangle dragRect = wnd->DragRectangle;
+                        dragRect.Origin += rect.Origin;
+                        dragRect = rect.Intersection(dragRect);
+
                         if(rect.Contains(WM->mousePos) && wnd->ID != WM->mouseWndId)
+                        {
                             mWnd = wnd;
+                            dragWnd = nullptr;
+                            if(dragRect.Contains(WM->mousePos) && wnd->ID != WM->mouseWndId)
+                                dragWnd = wnd;
+                        }
                     }
                     if(mWnd && mWnd->ID != WM->activeWindowId)
                     {
                         WM->activeWindowId = mWnd->ID;
                         BringWindowToFront(mWnd->ID);
                     }
+                    if(dragWnd && dragWnd->ID != WM->dragWindowId)
+                        WM->dragWindowId = mWnd->ID;
                 }
 
                 if(event.Mouse.ButtonsReleased & 1)
+                {
                     WM->drag = false;
+                    WM->dragWindowId = -1;
+                }
 
                 if(d && event.Mouse.ButtonsHeld & 1)
                 {
@@ -71,7 +86,7 @@ int WindowManager::inputThread(uintptr_t arg)
                     if(InputDevice::PeekEvent().DeviceType != InputDevice::Type::Mouse)
                     {
                         Point pos = WM->mousePos - WM->dragPoint;
-                        SetWindowPosition(WM->activeWindowId, pos.X, pos.Y);
+                        SetWindowPosition(WM->dragWindowId, pos.X, pos.Y);
                     }
                 }
 
@@ -440,6 +455,21 @@ bool WindowManager::PutEvent(int id, InputDevice::Event event)
     return res;
 }
 
+bool WindowManager::SetDragRectangle(int id, WindowManager::Rectangle rect)
+{
+    if(id < 0 || !WM || !WM->lock.Acquire(0, false))
+        return false;
+    Window *wnd = WM->getByID(id);
+    if(!wnd)
+    {
+        WM->lock.Release();
+        return -EINVAL;
+    }
+    wnd->DragRectangle = rect;
+    WM->lock.Release();
+    return true;
+}
+
 void WindowManager::Cleanup()
 {
     if(WM) delete WM;
@@ -481,7 +511,8 @@ WindowManager::Window::Window(WindowManager *wm, int x, int y, int w, int h, Pix
     Position(x, y),
     Contents(new PixMap(w, h, fmt ? *fmt : DefaultPixelFormat)),
     Dirty(0, 0, w, h),
-    Events(64)
+    Events(64),
+    DragRectangle(0, 0, w, h)
 {
 }
 
@@ -621,7 +652,19 @@ bool WindowManager::Point::IsInside(WindowManager::Rectangle rect)
     return X >= rect.Origin.X && Y >= rect.Origin.Y && X <= x2 && Y <= y2;
 }
 
+WindowManager::Point WindowManager::Point::operator +(WindowManager::Point p)
+{
+    return Point(X + p.X, Y + p.Y);
+}
+
 WindowManager::Point WindowManager::Point::operator -(WindowManager::Point p)
 {
     return Point(X - p.X, Y - p.Y);
+}
+
+WindowManager::Point WindowManager::Point::operator +=(WindowManager::Point p)
+{
+    X += p.X;
+    Y += p.Y;
+    return *this;
 }

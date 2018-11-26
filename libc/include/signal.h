@@ -15,7 +15,9 @@ extern "C" {
 #define SIG_DFL 1
 #define SIG_IGN 2
 
-void signal(int sig, void (*func)(int));
+typedef void (*__sighandler_t)(int);
+
+__sighandler_t signal(int sig, __sighandler_t handler);
 
 #ifdef __cplusplus
 }

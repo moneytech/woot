@@ -479,6 +479,17 @@ void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, i
     }
 }
 
+void pmDrawFrame(struct pmPixMap *pixMap, int x, int y, int w, int h, int sunken)
+{
+    union pmColor tl = sunken ? pmColorDarkGray : pmColorWhite;
+    union pmColor br = sunken ? pmColorWhite : pmColorDarkGray;
+
+    pmHLine(pixMap, x, y + h - 1, x + w - 1, br);
+    pmVLine(pixMap, x + w - 1, y, y + h - 1, br);
+    pmHLine(pixMap, x, y, x + w - 1, tl);
+    pmVLine(pixMap, x, y, y + h - 1, tl);
+}
+
 void pmDelete(struct pmPixMap *pixMap)
 {
     if(!pixMap) return;

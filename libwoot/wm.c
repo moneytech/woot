@@ -115,12 +115,9 @@ struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char 
 
     if(decorate)
     {
-        pmHLine(wnd->Contents, 0, 0, width - 1, pmColorWhite);
-        pmVLine(wnd->Contents, 0, 0, height - 1, pmColorWhite);
-        pmHLine(wnd->Contents, 0, height - 1, width - 1, pmColorDarkGray);
-        pmVLine(wnd->Contents, width - 1, 0, height - 1, pmColorDarkGray);
-        pmFillRectangle(wnd->Contents, 2, 2, width - 4, 24, titleBackground);
-        if(titleFont) fntDrawString(titleFont, wnd->Contents, 8, 19, title, titleForeground);
+        struct wmRectangle dragRect = { 2, 2, width - 4, 24 };
+        wmSetDragRectangle(wnd, &dragRect);
+        wmDecorateWindow(wnd);
     }
 
     return wnd;
@@ -233,6 +230,14 @@ struct pmPixMap *wmWindowToPixMap(int window)
     return pmCreate2(w, h, pitch, fmt, pixels, 0);
 }
 
+int wmDecorateWindow(struct wmWindow *window)
+{
+    pmDrawFrame(window->Contents, 0, 0, window->Contents->Width, window->Contents->Height, 0);
+    pmFillRectangle(window->Contents, 2, 2, window->Contents->Width - 4, 24, titleBackground);
+    if(titleFont) fntDrawString(titleFont, window->Contents, 8, 19, window->Name, titleForeground);
+    pmDrawFrame(window->Contents, 2, 2, window->Contents->Width - 4, 24, 1);
+}
+
 void wmDeleteWindow(struct wmWindow *window)
 {
     if(!window) return;
@@ -246,6 +251,11 @@ void wmDeleteWindow(struct wmWindow *window)
     }
     wmDestroyWindow(window->ID);
     free(window);
+}
+
+int wmSetDragRectangle(struct wmWindow *window, struct wmRectangle *rect)
+{
+    return syscall2(SYS_set_drag_rect, window->ID, (long)rect);
 }
 
 void wmCleanup()

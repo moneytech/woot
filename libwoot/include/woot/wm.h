@@ -51,7 +51,9 @@ int wmInvalidate(struct wmWindow *window, int x, int y, int w, int h);
 int wmGetWindowSize(int window, int *w, int *h);
 int wmGetPixelFormat(int window, struct pmPixelFormat *format, int *pitch);
 struct pmPixMap *wmWindowToPixMap(int window);
+int wmDecorateWindow(struct wmWindow *window);
 void wmDeleteWindow(struct wmWindow *window);
+int wmSetDragRectangle(struct wmWindow *window, struct wmRectangle *rect);
 void wmCleanup();
 
 #ifdef __cplusplus
