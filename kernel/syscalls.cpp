@@ -3,6 +3,7 @@
 #include <dentry.h>
 #include <errno.h>
 #include <file.h>
+#include <filesystem.h>
 #include <inode.h>
 #include <kwm.h>
 #include <paging.h>
@@ -242,14 +243,8 @@ long SysCalls::sys_stat(long *args) // 106
     File *f = File::Open(filename, 0);
     if(!f) return -ENOENT;
     memset(st, 0, sizeof(stat));
-    if(!DEntry::Lock())
+    if(!FileSystem::GlobalLock())
     {
-        delete f;
-        return -EBUSY;
-    }
-    if(!INode::Lock())
-    {
-        DEntry::UnLock();
         delete f;
         return -EBUSY;
     }
@@ -266,8 +261,7 @@ long SysCalls::sys_stat(long *args) // 106
     st->st_atime = inode->GetAccessTime();
     st->st_mtime = inode->GetModifyTime();
     st->st_ctime = inode->GetCreateTime();
-    INode::UnLock();
-    DEntry::UnLock();
+    FileSystem::GlobalUnLock();
     delete f;
     return 0;
 }

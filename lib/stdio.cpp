@@ -4,7 +4,7 @@
 #include <stream.h>
 
 DebugStream debugStream(0xE9);
-static Mutex stdoutMutex;
+static Mutex stdoutMutex("stdout");
 FILE *stdin = nullptr;
 FILE *stdout = nullptr;
 FILE *stderr = nullptr;

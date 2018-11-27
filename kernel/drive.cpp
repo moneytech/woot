@@ -12,7 +12,7 @@ Mutex *Drive::lock;
 void Drive::Initialize()
 {
     drives = new List<Drive *>();
-    lock = new Mutex();
+    lock = new Mutex("drive");
 }
 
 bool Drive::LockList()

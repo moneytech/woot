@@ -6,9 +6,10 @@
 // TODO: make waiters queue arbitrarily long without any heap allocations
 #define MAX_WAITERS 32
 
-Semaphore::Semaphore(int count) :
+Semaphore::Semaphore(int count, const char *name) :
     Count(count),
-    Waiters(new Queue<Thread *>(MAX_WAITERS))
+    Waiters(new Queue<Thread *>(MAX_WAITERS)),
+    Name(name)
 {
 }
 
@@ -82,6 +83,11 @@ void Semaphore::Cancel(Thread *t)
     bool is = cpuDisableInterrupts();
     Waiters->ReplaceAll(t, nullptr);
     cpuRestoreInterrupts(is);
+}
+
+int Semaphore::GetCount() const
+{
+    return Count;
 }
 
 Semaphore::~Semaphore()

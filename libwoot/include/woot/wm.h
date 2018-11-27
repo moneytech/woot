@@ -54,6 +54,7 @@ struct pmPixMap *wmWindowToPixMap(int window);
 int wmDecorateWindow(struct wmWindow *window);
 void wmDeleteWindow(struct wmWindow *window);
 int wmSetDragRectangle(struct wmWindow *window, struct wmRectangle *rect);
+struct fntFont *wmGetDefaultFont();
 void wmCleanup();
 
 #ifdef __cplusplus

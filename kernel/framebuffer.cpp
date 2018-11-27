@@ -6,7 +6,7 @@
 
 Sequencer<int> FrameBuffer::ids(0);
 List<FrameBuffer *> FrameBuffer::fbs;
-Mutex FrameBuffer::listLock;
+Mutex FrameBuffer::listLock("fbList");
 
 int FrameBuffer::Add(FrameBuffer *fb)
 {

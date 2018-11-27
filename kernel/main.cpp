@@ -69,11 +69,23 @@ int testThread(uintptr_t arg)
     Thread *ct = Thread::GetCurrent();
     for(int i; !quit; ++i)
     {
-        //WindowManager::SetWindowPosition(1, i % 800, 100);
-        ct->Sleep(1000, false);
+        //WindowManager::SetWindowPosition(1, i % 100, i % 100);
+        //File *f = File::Open("wallpaper.png", O_RDONLY);
+        //printf("abca\n");
+        //delete f;
+        ct->Sleep(3003, false);
     }
     return 0x11 * arg;
 }
+
+bool nmiHandlerProc(Ints::State *state, void *context)
+{
+    printf("NMI!!!\n");
+    Process::Dump();
+    printf("NMI handler returning\n");
+    return true;
+}
+Ints::Handler nmiHandler = { nullptr, nmiHandlerProc, nullptr };
 
 static uint64_t getRAMSize(multiboot_info_t *mboot_info);
 
@@ -140,6 +152,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     FileSystem::Initialize();
     SysCalls::Initialize();
 
+    Ints::RegisterHandler(2, &nmiHandler);
+
     VolumeType::Add(new MBRVolumeType());
     VolumeType::AutoDetect();
     FileSystemType::Add(new EXT2FileSystemType());
@@ -191,8 +205,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         desktop->Update();
     }
 
-    Thread *t1 = new Thread("test 1", nullptr, (void *)testThread, 1, 0, 0, nullptr, nullptr);
-    Thread *t2 = new Thread("test 2", nullptr, (void *)testThread, 2, 0, 0, nullptr, nullptr);
+    Thread *t1 = new Thread("test 1", Process::GetCurrent(), (void *)testThread, 1, 0, 0, nullptr, nullptr);
+    Thread *t2 = new Thread("test 2", Process::GetCurrent(), (void *)testThread, 2, 0, 0, nullptr, nullptr);
 
     t1->Enable();
     t2->Enable();
@@ -512,6 +526,16 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             {
                 int id = strtol(args[1], nullptr, 0);
                 WindowManager::HideWindow(id);
+            }
+        }
+        else if(!strcmp(args[0], "resume"))
+        {
+            if(!args[1])
+                printf("missing thread id\n");
+            else
+            {
+                Thread *t = (Thread *)strtoul(args[1], nullptr, 0);
+                t->Resume(false);
             }
         }
         else if(!strcmp(args[0], "utest"))

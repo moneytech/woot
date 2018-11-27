@@ -7,11 +7,12 @@
 #define MAX_WAITERS 32
 
 // global kernel lock mutex
-Mutex Mutex::GlobalLock;
+Mutex Mutex::GlobalLock("global");
 
-Mutex::Mutex() :
+Mutex::Mutex(const char *name) :
     Count(0), Owner(nullptr),
-    Waiters(new Queue<Thread *>(MAX_WAITERS))
+    Waiters(new Queue<Thread *>(MAX_WAITERS)),
+    Name(name)
 {
 }
 
@@ -21,6 +22,8 @@ bool Mutex::Acquire(uint timeout, bool tryAcquire)
     Thread *ct = Thread::GetCurrent();
     if(!Count || Owner == ct)
     {
+        if(Count)
+            printf("[mutex] nope!\n");
         ++Count;
         Owner = ct;
         cpuRestoreInterrupts(is);
@@ -96,6 +99,11 @@ void Mutex::Cancel(Thread *t)
     bool is = cpuDisableInterrupts();
     Waiters->ReplaceAll(t, nullptr);
     cpuRestoreInterrupts(is);
+}
+
+int Mutex::GetCount() const
+{
+    return Count;
 }
 
 Mutex::~Mutex()

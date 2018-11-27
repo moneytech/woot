@@ -7,7 +7,7 @@
 
 Sequencer<int> Volume::id(0);
 List<Volume *> Volume::volumes;
-Mutex Volume::lock;
+Mutex Volume::lock("volume");
 
 Volume::Volume(class Drive *drive, VolumeType *type) :
     Drive(drive),
@@ -29,9 +29,8 @@ bool Volume::Lock()
     return lock.Acquire(0);
 }
 
-Volume *Volume::GetByID(int id)
+Volume *Volume::GetByID_nolock(int id)
 {
-    if(!Lock()) return nullptr;
     Volume *res = nullptr;
     for(Volume *vol : volumes)
     {
@@ -41,27 +40,35 @@ Volume *Volume::GetByID(int id)
             break;
         }
     }
+    return res;
+}
+
+Volume *Volume::GetByID(int id)
+{
+    if(!Lock()) return nullptr;
+    Volume *res = GetByID_nolock(id);
     UnLock();
     return res;
+}
+
+Volume *Volume::GetByIndex_nolock(uint idx)
+{
+    return volumes[idx];
 }
 
 Volume *Volume::GetByIndex(uint idx)
 {
     if(!Lock())
         return nullptr;
-    Volume *res = volumes[idx];
+    Volume *res = GetByIndex_nolock(idx);
     UnLock();
     return res;
 }
 
-Volume *Volume::GetByLabel(const char *label)
+Volume *Volume::GetByLabel_nolock(const char *label)
 {
-    if(!Lock()) return nullptr;
     if(!FileSystem::GlobalLock())
-    {
-        UnLock();
         return nullptr;
-    }
     Volume *res = nullptr;
     char labelBuf[MAX_FS_LABEL_LENGTH + 1];
     for(Volume *v : volumes)
@@ -74,18 +81,21 @@ Volume *Volume::GetByLabel(const char *label)
         break;
     }
     FileSystem::GlobalUnLock();
+    return res;
+}
+
+Volume *Volume::GetByLabel(const char *label)
+{
+    if(!Lock()) return nullptr;
+    Volume *res = GetByLabel_nolock(label);
     UnLock();
     return res;
 }
 
-Volume *Volume::GetByUUID(UUID uuid)
+Volume *Volume::GetByUUID_nolock(UUID uuid)
 {
-    if(!Lock()) return nullptr;
     if(!FileSystem::GlobalLock())
-    {
-        UnLock();
         return nullptr;
-    }
     Volume *res = nullptr;
     for(Volume *v : volumes)
     {
@@ -97,6 +107,13 @@ Volume *Volume::GetByUUID(UUID uuid)
         break;
     }
     FileSystem::GlobalUnLock();
+    return res;
+}
+
+Volume *Volume::GetByUUID(UUID uuid)
+{
+    if(!Lock()) return nullptr;
+    Volume *res = GetByUUID_nolock(uuid);
     UnLock();
     return res;
 }

@@ -21,6 +21,12 @@ class IDEDrive : public Drive
         Ints::Handler InterruptHandler;
         IDEDrive *Drives[2];
 
+        bool waitFornBSYorERR_nolock(int timeout, byte *status);
+        bool waitForDRQorERR_nolock(int timeout, byte *status);
+        bool waitFornBSY_nolock(int timeout, byte *status);
+        bool waitForDRDY_nolock(int timeout, byte *status);
+        bool identify_nolock(ATAIdentifyResponse *id, bool slave, bool atapi);
+
         Controller(word base, word control, word bm, byte irq);
         void EnableIRQ();
         void DisableIRQ();

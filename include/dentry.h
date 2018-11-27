@@ -5,12 +5,10 @@
 #include <types.h>
 
 class INode;
-class Mutex;
 class StringBuilder;
 
 class DEntry
 {
-    static Mutex lock;
     static void getPath(DEntry *dentry, StringBuilder &sb);
     void getFSLabelAndID(char *buf, size_t bufSize, int *id);
 public:
@@ -19,9 +17,6 @@ public:
     char *Name;
     ::INode *INode;
     int ReferenceCount;
-
-    static bool Lock();
-    static void UnLock();
 
     DEntry(const char *name, DEntry *parent);
     size_t GetFullPath(char *buffer, size_t bufferSize);

@@ -29,7 +29,7 @@ class Thread : public ObjectQueue::Item
 public:
     enum class State
     {
-        Unknown,
+        Unknown = 0,
         Active,
         Ready,
         Suspending,
@@ -37,6 +37,8 @@ public:
         Sleeping,
         Finalized
     };
+
+    static const char *StateNames[];
 
     // thread info
     pid_t ID;
@@ -81,6 +83,7 @@ public:
     Semaphore *WaitingSemaphore;
 
     static void Initialize();
+    static Thread *GetIdleThread();
     static void Finalize(Thread *thread, int returnValue);
 
     Thread(const char *name, class Process *process, void *entryPoint, uintptr_t argument, size_t kernelStackSize, size_t userStackSize, int *returnCodePtr, Semaphore *finished);

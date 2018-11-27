@@ -13,6 +13,7 @@ class FileSystemType
     static List<FileSystemType *> fsTypes;
     static Mutex listLock;
 protected:
+    static FileSystemType *getByName_nolock(const char *name);
 public:
     char *Name;
 

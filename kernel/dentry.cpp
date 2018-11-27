@@ -7,8 +7,6 @@
 #include <stringbuilder.h>
 #include <sysdefs.h>
 
-Mutex DEntry::lock;
-
 void DEntry::getPath(DEntry *dentry, StringBuilder &sb)
 {
     if(!dentry) return;
@@ -37,28 +35,11 @@ void DEntry::getPath(DEntry *dentry, StringBuilder &sb)
 
 void DEntry::getFSLabelAndID(char *buf, size_t bufSize, int *id)
 {
-    if(!INode::Lock())
-        return;
     if(INode->FS)
     {
-        if(FileSystem::GlobalLock())
-        {
-            INode->FS->GetLabel(buf, bufSize);
-            if(id) *id = INode->FS->GetID();
-            FileSystem::GlobalUnLock();
-        }
+        INode->FS->GetLabel(buf, bufSize);
+        if(id) *id = INode->FS->GetID();
     }
-    INode::UnLock();
-}
-
-bool DEntry::Lock()
-{
-    return lock.Acquire(0, false);
-}
-
-void DEntry::UnLock()
-{
-    lock.Release();
 }
 
 DEntry::DEntry(const char *name, DEntry *parent) :
@@ -72,19 +53,14 @@ DEntry::DEntry(const char *name, DEntry *parent) :
 
 size_t DEntry::GetFullPath(char *buffer, size_t bufferSize)
 {
-    if(!Lock())
-        return false;
     StringBuilder sb(buffer, bufferSize);
     getPath(this, sb);
-    UnLock();
     return strlen(buffer);
 }
 
 DEntry::~DEntry()
 {
-    DEntry::Lock();
     if(Name) free(Name);
-    FileSystem::PutINode(INode);
-    if(Parent) FileSystem::PutDEntry(Parent);
-    DEntry::UnLock();
+    FileSystem::PutINode_nolock(INode);
+    if(Parent) FileSystem::PutDEntry_nolock(Parent);
 }

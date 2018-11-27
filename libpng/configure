@@ -2,10 +2,9 @@
 
 mkdir -p build &&
 cd build &&
-rm -rf ./* &&
-CC=clang \
-CFLAGS='-m32 -fpic -nostdinc -isystem../../libc/include -I../../zlib/include' \
-LDFLAGS='-nostdlib -L../../libc -Wl,-rpath-link=../../libc -L../../zlib/lib -lc -lz' \
+rm -rf {,.[!.],..?}* &&
+CC=woot-gcc \
+CFLAGS='-fno-stack-protector -ggdb' \
 ../libpng-1.6.35/configure --prefix=$PWD/.. --host=i686-linux-gnu
 cd ..
 

@@ -7,31 +7,39 @@
 #include <volume.h>
 #include <volumetype.h>
 
-List<VolumeType *> *VolumeType::volumeTypes = nullptr;
-Mutex *VolumeType::listLock = nullptr;
+List<VolumeType *> VolumeType::volumeTypes;
+Mutex VolumeType::listLock("volumeTypeList");
+
+VolumeType *VolumeType::getByName_nolock(const char *name)
+{
+    for(VolumeType *type : volumeTypes)
+    {
+        if(!strcmp(name, type->Name))
+            return type;
+    }
+    return nullptr;
+}
 
 void VolumeType::Initialize()
 {
-    volumeTypes = new List<VolumeType *>();
-    listLock = new Mutex();
 }
 
 bool VolumeType::LockList()
 {
-    return listLock->Acquire(0, false);
+    return listLock.Acquire(0, false);
 }
 
 bool VolumeType::Add(VolumeType *type)
 {
     if(!LockList()) return false;
-    VolumeType *t = GetByName(type->Name);
+    VolumeType *t = getByName_nolock(type->Name);
     if(t)
     {
         printf("[volumetype] Type '%s' already exists\n", type->Name);
         UnLockList();
         return false;
     }
-    volumeTypes->Prepend(type);
+    volumeTypes.Prepend(type);
     UnLockList();
     return true;
 }
@@ -39,22 +47,15 @@ bool VolumeType::Add(VolumeType *type)
 VolumeType *VolumeType::GetByName(const char *name)
 {
     if(!LockList()) return nullptr;
-    for(VolumeType *type : *volumeTypes)
-    {
-        if(!strcmp(name, type->Name))
-        {
-            UnLockList();
-            return type;
-        }
-    }
+    VolumeType *vt = getByName_nolock(name);
     UnLockList();
-    return nullptr;
+    return vt;
 }
 
 VolumeType *VolumeType::GetByIndex(uint idx)
 {
     if(!LockList()) return nullptr;
-    auto res = volumeTypes->Get(idx);
+    VolumeType *res = volumeTypes[idx];
     UnLockList();
     return res;
 }
@@ -62,20 +63,19 @@ VolumeType *VolumeType::GetByIndex(uint idx)
 void VolumeType::Remove(VolumeType *type)
 {
     if(!LockList()) return;
-    volumeTypes->Remove(type, nullptr, false);
+    volumeTypes.Remove(type, nullptr, false);
     UnLockList();
 }
 
 int VolumeType::AutoDetect()
 {
-    if(!Drive::LockList()) return -1;
     int res = 0;
     for(uint i = 0;; ++i)
     {
         Drive *drive = Drive::GetByIndex(i);
         if(!drive) break;
         if(!LockList()) continue;
-        for(VolumeType *v : *volumeTypes)
+        for(VolumeType *v : volumeTypes)
         {
             int detected = v->Detect(drive);
             if(detected < 0) continue;
@@ -83,22 +83,20 @@ int VolumeType::AutoDetect()
         }
         UnLockList();
     }
-    Drive::UnLockList();
     return res;
 }
 
 void VolumeType::UnLockList()
 {
-    listLock->Release();
+    listLock.Release();
 }
 
 void VolumeType::Cleanup()
 {
-    listLock->Acquire(0, false);
-    for(auto v : *volumeTypes)
+    LockList();
+    for(auto v : volumeTypes)
         delete v;
-    delete volumeTypes;
-    delete listLock;
+    UnLockList();
 }
 
 VolumeType::VolumeType(const char *name) :

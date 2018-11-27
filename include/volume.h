@@ -27,9 +27,13 @@ public:
 
     static void Initialize();
     static bool Lock();
+    static Volume *GetByID_nolock(int id);
     static Volume *GetByID(int id);
+    static Volume *GetByIndex_nolock(uint idx);
     static Volume *GetByIndex(uint idx);
+    static Volume *GetByLabel_nolock(const char *label);
     static Volume *GetByLabel(const char *label);
+    static Volume *GetByUUID_nolock(UUID uuid);
     static Volume *GetByUUID(UUID uuid);
     static int Add(Volume *vol);
     static bool Remove(Volume *vol);

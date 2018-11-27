@@ -42,12 +42,13 @@ public:
     ::DEntry *DEntry;
     int Flags;
     int64_t Position;
-    Mutex *Lock;
     mode_t Mode;
 
+    static File *Open_nolock(::DEntry *parent, const char *name, int flags);
     static File *Open(::DEntry *parent, const char *name, int flags);
     static File *Open(const char *name, int flags);
 
+    int64_t GetSize_nolock();
     int64_t GetSize();
     bool SetAccessTime(time_t time);
     bool SetModifyTime(time_t time);

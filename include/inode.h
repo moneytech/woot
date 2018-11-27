@@ -8,20 +8,15 @@
 class DEntry;
 class DirectoryEntry;
 class FileSystem;
-class Mutex;
 
 class INode
 {
-    static Mutex lock;
 public:
     ino_t Number;
     FileSystem *FS;
     int ReferenceCount;
     bool Dirty;
     //List<DEntry *> DEntries;
-
-    static bool Lock();
-    static void UnLock();
 
     INode(ino_t number, FileSystem *fs);
     virtual size64_t GetSize();

@@ -258,6 +258,11 @@ int wmSetDragRectangle(struct wmWindow *window, struct wmRectangle *rect)
     return syscall2(SYS_set_drag_rect, window->ID, (long)rect);
 }
 
+struct fntFont *wmGetDefaultFont()
+{
+    return titleFont;
+}
+
 void wmCleanup()
 {
     fntDelete(titleFont);

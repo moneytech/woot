@@ -8,7 +8,17 @@
 #include <volume.h>
 
 List<FileSystemType *> FileSystemType::fsTypes;
-Mutex FileSystemType::listLock;
+Mutex FileSystemType::listLock("fsList");
+
+FileSystemType *FileSystemType::getByName_nolock(const char *name)
+{
+    for(FileSystemType *type : fsTypes)
+    {
+        if(!strcmp(name, type->Name))
+            return type;
+    }
+    return nullptr;
+}
 
 void FileSystemType::Initialize()
 {
@@ -22,7 +32,7 @@ bool FileSystemType::Lock()
 bool FileSystemType::Add(FileSystemType *type)
 {
     if(!Lock()) return false;
-    FileSystemType *t = GetByName(type->Name);
+    FileSystemType *t = getByName_nolock(type->Name);
     if(t)
     {
         printf("[filesystemtype] Type '%s' already exists\n", type->Name);
@@ -37,16 +47,9 @@ bool FileSystemType::Add(FileSystemType *type)
 FileSystemType *FileSystemType::GetByName(const char *name)
 {
     if(!Lock()) return nullptr;
-    for(FileSystemType *type : fsTypes)
-    {
-        if(!strcmp(name, type->Name))
-        {
-            UnLock();
-            return type;
-        }
-    }
+    FileSystemType *res = getByName_nolock(name);
     UnLock();
-    return nullptr;
+    return res;
 }
 
 FileSystemType *FileSystemType::GetByIndex(uint idx)
@@ -66,11 +69,10 @@ void FileSystemType::Remove(FileSystemType *type)
 
 int FileSystemType::AutoDetect()
 {
-    if(!Volume::Lock()) return -EBUSY;
     int res = 0;
     for(uint i = 0;; ++i)
     {
-        Volume *vol = Volume::GetByIndex(i);
+        Volume *vol = Volume::GetByIndex_nolock(i);
         if(!vol) break;
         Lock();
         for(FileSystemType *fst : fsTypes)
@@ -84,7 +86,6 @@ int FileSystemType::AutoDetect()
         }
         UnLock();
     }
-    Volume::UnLock();
     return res;
 }
 

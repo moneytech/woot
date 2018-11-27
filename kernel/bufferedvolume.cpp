@@ -95,15 +95,12 @@ bool BufferedVolume::loadBuffer(int buffer, int64_t sector)
 int64_t BufferedVolume::access(byte *buffer, int64_t n, int64_t position, bool write)
 {
     if(!Drive || !Drive->SectorSize) return -EINVAL;
-    if(!Lock()) return -EBUSY;
-
     size64_t volSize = Drive->SectorCount * Drive->SectorSize;
     size64_t blockSize = sectorsPerBuffer * Drive->SectorSize;
     if((position + n) > volSize)
         n = volSize - position;
     if(n <= 0)
     { // nothing to transfer
-        UnLock();
         return 0;
     }
 
@@ -120,13 +117,11 @@ int64_t BufferedVolume::access(byte *buffer, int64_t n, int64_t position, bool w
             if(bufIdx < 0)
             {
                 printf("[bufferedvolume] allocateBuffer failed for drive %d\n", Drive->ID);
-                UnLock();
                 return -ENOMEM;
             }
             if(!loadBuffer(bufIdx, sector))
             {
                 printf("[bufferesvolume] loadBuffer failed for drive %d\n", Drive->ID);
-                UnLock();
                 return -EIO;
             }
         }
@@ -145,7 +140,6 @@ int64_t BufferedVolume::access(byte *buffer, int64_t n, int64_t position, bool w
         bytesLeft -= bytesToXfer;
     }
 
-    UnLock();
     return n;
 }
 

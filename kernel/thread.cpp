@@ -35,6 +35,17 @@ ObjectQueue Thread::suspendedThreads;
 ObjectQueue Thread::sleepingThreads;
 Thread *Thread::lastVectorStateThread = nullptr;
 Ints::Handler Thread::nmInterruptHandler = { nullptr, Thread::nmInterrupt, nullptr };
+const char *Thread::StateNames[] =
+{
+    "Unknown",
+    "Active",
+    "Ready",
+    "Suspending",
+    "Suspended",
+    "Sleeping",
+    "Finalized"
+};
+
 
 bool Thread::nmInterrupt(Ints::State *state, void *context)
 {
@@ -90,6 +101,11 @@ void Thread::Initialize()
     Ints::RegisterHandler(7, &nmInterruptHandler);
 
     cpuRestoreInterrupts(ints);
+}
+
+Thread *Thread::GetIdleThread()
+{
+    return idleThread;
 }
 
 void Thread::Finalize(Thread *thread, int returnValue)
@@ -148,6 +164,7 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
         Thread *ct = GetCurrent();
         if(ct) Process = ct->Process;
     }
+    else process->AddThread(this);
 
     cpuFXSave(FXSaveData);  // FIXME: should be initialized to known good state
 
@@ -246,7 +263,7 @@ void Thread::Switch(Ints::State *state, Thread *thread)
     if(currentThread)
     {
         currentThread->StackPointer = state->ESP;
-        currentThread->State = State::Ready;
+        //currentThread->State = State::Ready;
     }
 
     state->ESP = thread->StackPointer;

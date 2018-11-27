@@ -11,7 +11,7 @@ Sequencer<int> FileSystem::ids(0);
 List<FileSystem *> FileSystem::fileSystems;
 List<INode *> FileSystem::inodeCache;
 List<DEntry *> FileSystem::dentryCache;
-Mutex FileSystem::lock;
+Mutex FileSystem::lock("filesystem");
 
 FileSystem::FileSystem(class Volume *vol, FileSystemType *type) :
     ID(ids.GetNext()),
@@ -31,6 +31,7 @@ FileSystem::~FileSystem()
     for(INode *i : inodeCache)
         delete i;
     delete openedFiles;
+    GlobalUnLock();
 }
 
 void FileSystem::Initialize()
@@ -73,14 +74,9 @@ void FileSystem::SynchronizeAll()
     GlobalLock();
     for(INode *inode : inodeCache)
     {
-        INode::Lock();
         if(!inode->Dirty)
-        {
-            INode::UnLock();
             continue;
-        }
         inode->FS->WriteINode(inode);
-        INode::UnLock();
     }
     for(FileSystem *fs : fileSystems)
         fs->WriteSuperBlock();
@@ -96,12 +92,10 @@ void FileSystem::Cleanup()
             fs->Volume->FS = nullptr;
         delete fs;
     }
-    DEntry::Lock();
     for(DEntry *dentry : dentryCache)
         printf("[filesystem] WARNING: DEntry still in cache! (ref count: %d)\n", dentry->ReferenceCount);
     for(INode *inode : inodeCache)
         printf("[filesystem] WARNING: INode still in cache! (ref count: %d)\n", inode->ReferenceCount);
-    DEntry::UnLock();
     GlobalUnLock();
 }
 
@@ -135,34 +129,35 @@ int FileSystem::GetID()
     return ID;
 }
 
-INode *FileSystem::GetINode(ino_t number)
+INode *FileSystem::GetINode_nolock(ino_t number)
 {
-    if(!GlobalLock())
-        return nullptr;
     for(INode *inode : inodeCache)
     {
         if(inode->Number == number)
         {
             ++inode->ReferenceCount;
-            GlobalUnLock();
             return inode;
         }
     }
     INode *inode = ReadINode(number);
     if(!inode)
-    {
-        GlobalUnLock();
         return nullptr;
-    }
     inodeCache.Prepend(inode);
     ++inode->ReferenceCount;
+    return inode;
+}
+
+INode *FileSystem::GetINode(ino_t number)
+{
+    if(!GlobalLock())
+        return nullptr;
+    INode *inode = GetINode_nolock(number);
     GlobalUnLock();
     return inode;
 }
 
-void FileSystem::PutINode(INode *inode)
+void FileSystem::PutINode_nolock(INode *inode)
 {
-    GlobalLock();
     if(!--inode->ReferenceCount)
     {
         inodeCache.Remove(inode, nullptr, false);
@@ -171,6 +166,12 @@ void FileSystem::PutINode(INode *inode)
         inode->Release();
         delete inode;
     }
+}
+
+void FileSystem::PutINode(INode *inode)
+{
+    GlobalLock();
+    PutINode_nolock(inode);
     GlobalUnLock();
 }
 
@@ -179,68 +180,70 @@ void FileSystem::SetRoot(DEntry *dentry)
     GlobalLock();
     if(!dentryCache.Contains(dentry, nullptr))
         dentryCache.Prepend(dentry);
-    DEntry::Lock();
     ++dentry->ReferenceCount;
     Root = dentry;
-    DEntry::UnLock();
     GlobalUnLock();
 }
 
-DEntry *FileSystem::GetDEntry(DEntry *parent, const char *name)
+DEntry *FileSystem::GetDEntry_nolock(DEntry *parent, const char *name)
 {
-    if(!GlobalLock() || !parent || !parent->INode || !parent->INode->FS || !name || !DEntry::Lock())
+    if(!parent || !parent->INode || !parent->INode->FS || !name)
         return nullptr;
     for(DEntry *dentry : dentryCache)
     {
         if(parent == dentry->Parent && !strcmp(name, dentry->Name))
         {
             ++dentry->ReferenceCount;
-            DEntry::UnLock();
-            GlobalUnLock();
             return dentry;
         }
     }
     ino_t ino = parent->INode->Lookup(name);
     if(ino <= 0)
-    {
-        DEntry::UnLock();
-        GlobalUnLock();
         return nullptr;
-    }
     DEntry *dentry = new DEntry(name, parent);
-    dentry->INode = parent->INode->FS->GetINode(ino);
+    dentry->INode = parent->INode->FS->GetINode_nolock(ino);
     dentryCache.Prepend(dentry);
     ++dentry->ReferenceCount;
-    DEntry::UnLock();
+    return dentry;
+}
+
+DEntry *FileSystem::GetDEntry(DEntry *parent, const char *name)
+{
+    if(!GlobalLock())
+        return nullptr;
+    DEntry *dentry = GetDEntry_nolock(parent, name);
     GlobalUnLock();
     return dentry;
 }
 
-DEntry *FileSystem::GetDEntry(DEntry *dentry)
+DEntry *FileSystem::GetDEntry_nolock(DEntry *dentry)
 {
-    if(!FileSystem::GlobalLock())
-        return nullptr;
-    if(!DEntry::Lock())
-    {
-        FileSystem::GlobalUnLock();
-        return nullptr;
-    }
     DEntry *res = dentryCache.Find(dentry, nullptr);
     if(res) ++res->ReferenceCount;
-    DEntry::UnLock();
-    FileSystem::GlobalUnLock();
     return res;
 }
 
-void FileSystem::PutDEntry(DEntry *dentry)
+DEntry *FileSystem::GetDEntry(DEntry *dentry)
 {
-    GlobalLock();
-    DEntry::Lock();
+    if(!GlobalLock())
+        return nullptr;
+    DEntry *res = GetDEntry_nolock(dentry);
+    GlobalUnLock();
+    return res;
+}
+
+void FileSystem::PutDEntry_nolock(DEntry *dentry)
+{
     if(!--dentry->ReferenceCount)
     {
         dentryCache.Remove(dentry, nullptr, false);
         delete dentry;
     }
-    DEntry::UnLock();
+}
+
+void FileSystem::PutDEntry(DEntry *dentry)
+{
+    GlobalLock();
+    PutDEntry_nolock(dentry);
     GlobalUnLock();
 }

@@ -4,7 +4,7 @@
 #include <string.h>
 
 List<InputDevice *> InputDevice::devices;
-Mutex InputDevice::listLock;
+Mutex InputDevice::listLock("inputList");
 Semaphore InputDevice::eventSemaphore(0);
 Queue<InputDevice::Event> InputDevice::eventQueue(256);
 

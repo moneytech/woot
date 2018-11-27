@@ -107,8 +107,10 @@ public:
         MessageQueue<InputDevice::Event> Events;
         Rectangle DragRectangle;
 
+        void Invalidate_nolock();
         void Invalidate();
         Rectangle ToRectangle();
+        void Update_nolock();
         void Update();
     };
 private:
@@ -139,8 +141,11 @@ public:
     static bool DestroyWindow(int id);
     static bool ShowWindow(int id);
     static bool HideWindow(int id);
+    static bool BringWindowToFront_nolock(int id);
     static bool BringWindowToFront(int id);
+    static bool GetWindowPosition_nolock(int id, Point *pt);
     static bool GetWindowPosition(int id, Point *pt);
+    static bool SetWindowPosition_nolock(int id, int x, int y);
     static bool SetWindowPosition(int id, int x, int y);
     static bool DrawRectangle(int id, Rectangle rect, PixMap::Color color);
     static bool DrawFilledRectangle(int id, Rectangle rect, PixMap::Color color);
@@ -150,13 +155,14 @@ public:
     static bool Blit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
     static bool AlphaBlit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
     static bool InvalidateRectangle(int id, Rectangle &rect);
+    static void SetMousePosition_nolock(Point pos);
     static void SetMousePosition(Point pos);
     static bool PutEvent(int id, InputDevice::Event event);
     static bool SetDragRectangle(int id, Rectangle rect);
     static void Cleanup();
 
 private:
-    Window *getByID(int id);
+    Window *getByID_nolock(int id);
     void RedrawAll();
 };
 

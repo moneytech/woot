@@ -13,11 +13,13 @@ class Mutex
     Queue<Thread *> *Waiters;
 public:
     static Mutex GlobalLock;
+    const char *Name;
 
-    Mutex();
+    Mutex(const char *name = nullptr);
     bool Acquire(uint timeout, bool tryAcquire = false);
     void Release();
     void Cancel(Thread *t);
+    int GetCount() const;
     ~Mutex();
 };
 

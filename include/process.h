@@ -21,7 +21,6 @@ class Process
     static List<Process *> processList;
     static Mutex listLock;
     static uintptr_t kernelAddressSpace;
-    List<Thread *> threads;
     Mutex lock;
 
     static uintptr_t buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf, uintptr_t retAddr, uintptr_t basePointer);
@@ -44,14 +43,18 @@ public:
     uintptr_t CurrentBrk;
     uintptr_t MappedBrk;
 
+    List<Thread *> Threads;
+    bool SelfDestruct;
+
     static void Initialize();
     static Process *Create(const char *filename, Semaphore *finished);
     static Process *GetCurrent();
     static DEntry *GetCurrentDir();
     static uintptr_t NewAddressSpace();
     static void Cleanup();
+    static void Dump();
 
-    Process(const char *name, Thread *mainThread, uintptr_t addressSpace);
+    Process(const char *name, Thread *mainThread, uintptr_t addressSpace, bool SelfDestruct);
     bool Start();
     bool AddThread(Thread *thread);
     bool RemoveThread(Thread *thread);

@@ -2,18 +2,6 @@
 #include <inode.h>
 #include <mutex.h>
 
-Mutex INode::lock;
-
-bool INode::Lock()
-{
-    return lock.Acquire(0, false);
-}
-
-void INode::UnLock()
-{
-    lock.Release();
-}
-
 INode::INode(ino_t number, FileSystem *fs) :
     Number(number), FS(fs),
     ReferenceCount(0),

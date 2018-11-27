@@ -10,8 +10,9 @@ class Volume;
 
 class VolumeType
 {
-    static List<VolumeType *> *volumeTypes;
-    static Mutex *listLock;
+    static List<VolumeType *> volumeTypes;
+    static Mutex listLock;
+    static VolumeType *getByName_nolock(const char *name);
 public:
     char *Name;
 

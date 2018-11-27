@@ -5,6 +5,7 @@
 #include <mutex.h>
 #include <process.h>
 #include <paging.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +15,7 @@
 
 Sequencer<pid_t> Process::id(1);
 List<Process *> Process::processList;
-Mutex Process::listLock;
+Mutex Process::listLock("procList");
 uintptr_t Process::kernelAddressSpace;
 
 typedef struct AuxVector
@@ -101,7 +102,6 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
         stackPtr = stackPush(stackPtr, &argPtrs[argCount - i - 1], sizeof(uintptr_t));
     stackPtr = stackPush(stackPtr, &argCount, sizeof argCount);
     stackPtr = stackPush(stackPtr, &basePointer, sizeof basePointer);
-    stackPtr = stackPush(stackPtr, &retAddr, sizeof retAddr);
     return stackPtr;
 }
 
@@ -140,7 +140,8 @@ void Process::Initialize()
 {
     kernelAddressSpace = Paging::GetAddressSpace();
     Thread *ct = Thread::GetCurrent();
-    new Process("Main kernel process", ct, kernelAddressSpace);
+    Process *kernelProc = new Process("Main kernel process", ct, kernelAddressSpace, false);
+    kernelProc->Threads.Append(Thread::GetIdleThread());
 }
 
 Process *Process::Create(const char *filename, Semaphore *finished)
@@ -149,7 +150,7 @@ Process *Process::Create(const char *filename, Semaphore *finished)
     Thread *thread = new Thread("main", nullptr, (void *)processEntryPoint, (uintptr_t)filename,
                                 DEFAULT_STACK_SIZE, DEFAULT_STACK_SIZE,
                                 nullptr, finished);
-    Process *proc = new Process(filename, thread, 0);
+    Process *proc = new Process(filename, thread, 0, finished);
     return proc;
 }
 
@@ -194,11 +195,38 @@ void Process::Cleanup()
     NOT_IMPLEMENTED
 }
 
-Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace) :
+void Process::Dump()
+{
+    printf("Process dump:\n");
+    Process *cp = Process::GetCurrent();
+    printf("Current process: %s (%d)\n", cp ? cp->Name : "no current process", cp ? cp->ID : -1);
+    for(Process *p : processList)
+    {
+        printf("Process: %s (%d)\n", p->Name, p->ID);
+        for(Thread *t : p->Threads)
+            printf(" %s(%d; %p)\n"
+                   "   st %s\n"
+                   "   mtx %p(%s; %d)\n"
+                   "   sem %p(%s; %d)\n",
+                   t->Name,
+                   t->ID,
+                   t,
+                   Thread::StateNames[(int)t->State],
+                    t->WaitingMutex,
+                    t->WaitingMutex ? t->WaitingMutex->Name : "none",
+                    t->WaitingMutex ? t->WaitingMutex->GetCount() : -1,
+                    t->WaitingSemaphore,
+                    t->WaitingSemaphore ? t->WaitingSemaphore->Name : "none",
+                    t->WaitingSemaphore ? t->WaitingSemaphore->GetCount() : -1);
+    }
+}
+
+Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, bool selfDestruct) :
     UserStackPtr(KERNEL_BASE),
     ID(id.GetNext()),
     Name(strdup(name)),
-    AddressSpace(addressSpace ? addressSpace : NewAddressSpace())
+    AddressSpace(addressSpace ? addressSpace : NewAddressSpace()),
+    SelfDestruct(selfDestruct)
 {
     DEntry *cdir = GetCurrentDir();
     if(cdir) CurrentDirectory = FileSystem::GetDEntry(cdir);
@@ -212,7 +240,7 @@ bool Process::Start()
 {
     if(!lock.Acquire(0, false))
         return false;
-    Thread *t = threads[0];
+    Thread *t = Threads[0];
     if(!t) return false;
     t->Enable();
     bool res = t->Resume(false);
@@ -223,7 +251,7 @@ bool Process::Start()
 bool Process::AddThread(Thread *thread)
 {
     if(!lock.Acquire(0, false)) return false;
-    threads.Append(thread);
+    Threads.Append(thread);
     thread->Process = this;
     lock.Release();
     return true;
@@ -232,7 +260,7 @@ bool Process::AddThread(Thread *thread)
 bool Process::RemoveThread(Thread *thread)
 {
     if(!lock.Acquire(0, false)) return false;
-    bool res = threads.Remove(thread, nullptr, false) != 0;
+    bool res = Threads.Remove(thread, nullptr, false) != 0;
     thread->Process = nullptr;
     lock.Release();
     return res;
@@ -357,12 +385,13 @@ Process::~Process()
 {
     lock.Acquire(0, false);
     listLock.Acquire(0, false);
-    for(Thread *t : threads)
+    for(Thread *t : Threads)
     {
         if(t->State != Thread::State::Finalized)
             Thread::Finalize(t, -1);
         delete t;
     }
+    Threads.Clear();
     for(ELF *elf : Images)
         if(elf) delete elf;
     if(CurrentDirectory) FileSystem::PutDEntry(CurrentDirectory);

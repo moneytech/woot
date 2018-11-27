@@ -1,3 +1,5 @@
+clock/Makefile
+clock/main.c
 directory.png
 file.png
 include/messagequeue.h
@@ -94,6 +96,8 @@ test.ttf
 wallpaper.png
 woot-gcc.template
 woot.specs.template
+wpaper/Makefile
+wpaper/main.c
 zlib/configure
 zlib/lib/libz.so.1.2.11
 zlib/lib/libz.so.1

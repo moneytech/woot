@@ -31,3 +31,5 @@ libfreetype/include/freetype2
 libfreetype/include/freetype2/freetype
 libfreetype/include/freetype2/freetype/config
 libfreetype/lib
+clock
+wpaper

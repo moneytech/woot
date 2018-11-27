@@ -73,14 +73,34 @@ int fntDrawCharacter(struct fntFont *font, struct pmPixMap *pixMap, int x, int y
     return font->face->glyph->advance.x >> 6;
 }
 
+int fntMeasureCharacter(struct fntFont *font, int chr)
+{
+    FT_Error error = FT_Load_Char(font->face, chr, FT_LOAD_ADVANCE_ONLY);
+    if(error) return -EINVAL;
+    return font->face->glyph->advance.x >> 6;
+}
+
 int fntDrawString(struct fntFont *font, struct pmPixMap *pixMap, int x, int y, const char *str, union pmColor color)
 {
     while(*str)
     {
         int dx = fntDrawCharacter(font, pixMap, x, y, *str++, color);
-        if(dx < 0) dx;
+        if(dx < 0) return dx;
         x += dx;
     }
+    return x;
+}
+
+int fntMeasureString(struct fntFont *font, const char *str)
+{
+    int x = 0;
+    while(*str)
+    {
+        int dx = fntMeasureCharacter(font, *str++);
+        if(dx < 0) return dx;
+        x += dx;
+    }
+    return x;
 }
 
 void fntDelete(struct fntFont *font)
