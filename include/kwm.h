@@ -136,10 +136,15 @@ public:
     static WindowManager *WM;
 
     static void Initialize(FrameBuffer *fb);
+    static Window *GetByID_nolock(int id);
     static Window *GetByID(int id);
+    static int CreateWindow_nolock(int x, int y, int w, int h, PixMap::PixelFormat *fmt);
     static int CreateWindow(int x, int y, int w, int h, PixMap::PixelFormat *fmt);
+    static bool DestroyWindow_nolock(int id);
     static bool DestroyWindow(int id);
+    static bool ShowWindow_nolock(int id);
     static bool ShowWindow(int id);
+    static bool HideWindow_nolock(int id);
     static bool HideWindow(int id);
     static bool BringWindowToFront_nolock(int id);
     static bool BringWindowToFront(int id);
@@ -147,22 +152,31 @@ public:
     static bool GetWindowPosition(int id, Point *pt);
     static bool SetWindowPosition_nolock(int id, int x, int y);
     static bool SetWindowPosition(int id, int x, int y);
+    static bool DrawRectangle_nolock(int id, Rectangle rect, PixMap::Color color);
     static bool DrawRectangle(int id, Rectangle rect, PixMap::Color color);
+    static bool DrawFilledRectangle_nolock(int id, Rectangle rect, PixMap::Color color);
     static bool DrawFilledRectangle(int id, Rectangle rect, PixMap::Color color);
+    static bool UpdateWindow_nolock(int id);
     static bool UpdateWindow(int id);
+    static bool RedrawWindow_nolock(int id);
     static bool RedrawWindow(int id);
+    static bool DrawLine_nolock(int id, int x1, int y1, int x2, int y2, PixMap::Color color);
     static bool DrawLine(int id, int x1, int y1, int x2, int y2, PixMap::Color color);
+    static bool Blit_nolock(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
     static bool Blit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
+    static bool AlphaBlit_nolock(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
     static bool AlphaBlit(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h);
+    static bool InvalidateRectangle_nolock(int id, Rectangle &rect);
     static bool InvalidateRectangle(int id, Rectangle &rect);
     static void SetMousePosition_nolock(Point pos);
     static void SetMousePosition(Point pos);
+    static bool PutEvent_nolock(int id, InputDevice::Event event);
     static bool PutEvent(int id, InputDevice::Event event);
+    static bool SetDragRectangle_nolock(int id, Rectangle rect);
     static bool SetDragRectangle(int id, Rectangle rect);
     static void Cleanup();
 
 private:
-    Window *getByID_nolock(int id);
     void RedrawAll();
 };
 

@@ -137,42 +137,58 @@ void WindowManager::Initialize(FrameBuffer *fb)
     WM = new WindowManager(fb);
 }
 
+WindowManager::Window *WindowManager::GetByID_nolock(int id)
+{
+    Window *res = nullptr;
+    for(Window *wnd : WM->windows)
+    {
+        if(wnd->ID == id)
+        {
+            res = wnd;
+            break;
+        }
+    }
+    return res;
+}
+
 WindowManager::Window *WindowManager::GetByID(int id)
 {
     if(!WM || !WM->lock.Acquire(0, false))
         return nullptr;
-    Window *wnd = WM->getByID_nolock(id);
+    Window *wnd = GetByID_nolock(id);
     WM->lock.Release();
     return wnd;
+}
+
+int WindowManager::CreateWindow_nolock(int x, int y, int w, int h, PixMap::PixelFormat *fmt)
+{
+    if(!WM) return -EINVAL;
+    Window *wnd = new Window(WM, x, y, w, h, fmt);
+    Window *mouseWnd = GetByID_nolock(WM->mouseWndId);
+    WM->windows.InsertBefore(wnd, mouseWnd, nullptr);
+    int id = wnd->ID;
+    WM->activeWindowId = id;
+    return id;
 }
 
 int WindowManager::CreateWindow(int x, int y, int w, int h, PixMap::PixelFormat *fmt)
 {
     if(!WM || !WM->lock.Acquire(0, false))
         return -EBUSY;
-    Window *wnd = new Window(WM, x, y, w, h, fmt);
-    Window *mouseWnd = WM->getByID_nolock(WM->mouseWndId);
-    WM->windows.InsertBefore(wnd, mouseWnd, nullptr);
-    int id = wnd->ID;
-    WM->activeWindowId = id;
+    int id = CreateWindow_nolock(x, y, w, h, fmt);
     WM->lock.Release();
     return id;
 }
 
-bool WindowManager::DestroyWindow(int id)
+bool WindowManager::DestroyWindow_nolock(int id)
 {
     if(id <= 0 || !WM)
-        return -EINVAL;
-    if(!WM->lock.Acquire(0, false))
-        return -EBUSY;
-    Window *wnd = GetByID(id);
+        return false;
+    Window *wnd = GetByID_nolock(id);
     if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
+        return false;
     WM->windows.Remove(wnd, nullptr, false);
-    Window *desktop = GetByID(0);
+    Window *desktop = GetByID_nolock(0);
     if(desktop)
     {
         Rectangle wndRect = wnd->ToRectangle();
@@ -180,7 +196,28 @@ bool WindowManager::DestroyWindow(int id)
         desktop->Update();
     }
     delete wnd;
+    return true;
+}
+
+bool WindowManager::DestroyWindow(int id)
+{
+    if(id <= 0 || !WM)
+        return false;
+    if(!WM->lock.Acquire(0, false))
+        return false;
+    int res = DestroyWindow_nolock(id);
     WM->lock.Release();
+    return res;
+}
+
+bool WindowManager::ShowWindow_nolock(int id)
+{
+    if(id <= 0) return false;
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Visible = true;
+    wnd->Invalidate_nolock();
+    wnd->Update_nolock();
     return true;
 }
 
@@ -190,16 +227,25 @@ bool WindowManager::ShowWindow(int id)
         return false;
     if(!WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return false;
-    }
-    wnd->Visible = true;
-    wnd->Invalidate_nolock();
-    wnd->Update_nolock();
+    bool res = ShowWindow_nolock(id);
     WM->lock.Release();
+    return res;
+}
+
+bool WindowManager::HideWindow_nolock(int id)
+{
+    if(id <= 0) return false;
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Visible = false;
+
+    Window *desktop = GetByID_nolock(0);
+    if(desktop)
+    {
+        Rectangle updateRect = wnd->ToRectangle();
+        desktop->Dirty.Add(updateRect);
+        desktop->Update();
+    }
     return true;
 }
 
@@ -209,34 +255,19 @@ bool WindowManager::HideWindow(int id)
         return false;
     if(!WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = GetByID(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return false;
-    }
-    wnd->Visible = false;
-
-    Window *desktop = GetByID(0);
-    if(desktop)
-    {
-        Rectangle updateRect = wnd->ToRectangle();
-        desktop->Dirty.Add(updateRect);
-        desktop->Update();
-    }
-
+    bool res = HideWindow_nolock(id);
     WM->lock.Release();
-    return true;
+    return res;
 }
 
 bool WindowManager::BringWindowToFront_nolock(int id)
 {
     if(id <= 0 || !WM)
         return false;
-    Window *wnd = WM->getByID_nolock(id);
+    Window *wnd = GetByID_nolock(id);
     if(!wnd)
         return false;
-    Window *mouseWnd = WM->getByID_nolock(WM->mouseWndId);
+    Window *mouseWnd = GetByID_nolock(WM->mouseWndId);
     WM->windows.Remove(wnd, nullptr, false);
     wnd->Visible = true;
     WM->windows.InsertBefore(wnd, mouseWnd, nullptr);
@@ -256,13 +287,10 @@ bool WindowManager::BringWindowToFront(int id)
 
 bool WindowManager::GetWindowPosition_nolock(int id, WindowManager::Point *pt)
 {
-    if(id <= 0 || !WM)
-        return false;
-    Window *wnd = WM->getByID_nolock(id);
+    Window *wnd = GetByID_nolock(id);
     Rectangle rect = wnd->ToRectangle();
     if(pt) *pt = rect.Origin;
-    if(!wnd)
-        return false;
+    if(!wnd) return false;
     return true;
 }
 
@@ -277,15 +305,11 @@ bool WindowManager::GetWindowPosition(int id, WindowManager::Point *pt)
 
 bool WindowManager::SetWindowPosition_nolock(int id, int x, int y)
 {
-    if(id <= 0 || !WM)
-        return false;
-    Window *desktop = WM->getByID_nolock(0);
-    if(!desktop)
-        return false;
-
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-        return false;
+    if(id <= 0) return false;
+    Window *desktop = GetByID_nolock(0);
+    if(!desktop) return false;
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
     if(wnd->Visible)
     {
         Rectangle currRect = wnd->ToRectangle();
@@ -310,19 +334,30 @@ bool WindowManager::SetWindowPosition(int id, int x, int y)
     return true;
 }
 
+bool WindowManager::DrawRectangle_nolock(int id, WindowManager::Rectangle rect, PixMap::Color color)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Contents->Rectangle(rect.Origin.X, rect.Origin.Y, rect.Width, rect.Height, color);
+    wnd->Dirty.Add(rect);
+    return true;
+}
+
 bool WindowManager::DrawRectangle(int id, Rectangle rect, PixMap::Color color)
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
-    wnd->Contents->Rectangle(rect.Origin.X, rect.Origin.Y, rect.Width, rect.Height, color);
-    wnd->Dirty.Add(rect);
+    bool res = DrawRectangle_nolock(id, rect, color);
     WM->lock.Release();
+    return res;
+}
+
+bool WindowManager::DrawFilledRectangle_nolock(int id, WindowManager::Rectangle rect, PixMap::Color color)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Contents->FillRectangle(rect.Origin.X, rect.Origin.Y, rect.Width, rect.Height, color);
+    wnd->Dirty.Add(rect);
     return true;
 }
 
@@ -330,15 +365,16 @@ bool WindowManager::DrawFilledRectangle(int id, Rectangle rect, PixMap::Color co
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
-    wnd->Contents->FillRectangle(rect.Origin.X, rect.Origin.Y, rect.Width, rect.Height, color);
-    wnd->Dirty.Add(rect);
+    bool res = DrawFilledRectangle_nolock(id, rect, color);
     WM->lock.Release();
+    return res;
+}
+
+bool WindowManager::UpdateWindow_nolock(int id)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Update_nolock();
     return true;
 }
 
@@ -346,14 +382,17 @@ bool WindowManager::UpdateWindow(int id)
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
-    wnd->Update_nolock();
+    bool res = UpdateWindow_nolock(id);
     WM->lock.Release();
+    return res;
+}
+
+bool WindowManager::RedrawWindow_nolock(int id)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Invalidate();
+    wnd->Update();
     return true;
 }
 
@@ -361,15 +400,21 @@ bool WindowManager::RedrawWindow(int id)
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
-    wnd->Invalidate();
-    wnd->Update();
+    bool res = RedrawWindow_nolock(id);
     WM->lock.Release();
+    return res;
+}
+
+bool WindowManager::DrawLine_nolock(int id, int x1, int y1, int x2, int y2, PixMap::Color color)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Contents->Line(x1, y1, x2, y2, color);
+    if(x2 < x1) swap(int, x1, x2);
+    if(y2 < y1) swap(int, y1, y2);
+    int w = x2 - x1 + 1;
+    int h = y2 - y1 + 1;
+    wnd->Dirty.Add(Rectangle(x1, y1, w, h));
     return true;
 }
 
@@ -377,19 +422,17 @@ bool WindowManager::DrawLine(int id, int x1, int y1, int x2, int y2, PixMap::Col
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
-    wnd->Contents->Line(x1, y1, x2, y2, color);
-    if(x2 < x1) swap(int, x1, x2);
-    if(y2 < y1) swap(int, y1, y2);
-    int w = x2 - x1 + 1;
-    int h = y2 - y1 + 1;
-    wnd->Dirty.Add(Rectangle(x1, y1, w, h));
+    bool res = DrawLine_nolock(id, x1, y2, x2, y2, color);
     WM->lock.Release();
+    return res;
+}
+
+bool WindowManager::Blit_nolock(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Contents->Blit(src, sx, sy, x, y, w, h);
+    wnd->Dirty.Add(Rectangle(x, y, w, h));
     return true;
 }
 
@@ -397,15 +440,17 @@ bool WindowManager::Blit(int id, PixMap *src, int sx, int sy, int x, int y, int 
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
-    wnd->Contents->Blit(src, sx, sy, x, y, w, h);
-    wnd->Dirty.Add(Rectangle(x, y, w, h));
+    bool res = Blit_nolock(id, src, sx, sy, x, y, w, h);
     WM->lock.Release();
+    return res;
+}
+
+bool WindowManager::AlphaBlit_nolock(int id, PixMap *src, int sx, int sy, int x, int y, int w, int h)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Contents->AlphaBlit(src, sx, sy, x, y, w, h);
+    wnd->Dirty.Add(Rectangle(x, y, w, h));
     return true;
 }
 
@@ -413,15 +458,16 @@ bool WindowManager::AlphaBlit(int id, PixMap *src, int sx, int sy, int x, int y,
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
-    wnd->Contents->AlphaBlit(src, sx, sy, x, y, w, h);
-    wnd->Dirty.Add(Rectangle(x, y, w, h));
+    bool res = AlphaBlit_nolock(id, src, sx, sy, x, y, w, h);
     WM->lock.Release();
+    return res;
+}
+
+bool WindowManager::InvalidateRectangle_nolock(int id, WindowManager::Rectangle &rect)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->Dirty.Add(rect);
     return true;
 }
 
@@ -429,13 +475,7 @@ bool WindowManager::InvalidateRectangle(int id, WindowManager::Rectangle &rect)
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
-    wnd->Dirty.Add(rect);
+    bool res = InvalidateRectangle_nolock(id, rect);
     WM->lock.Release();
     return true;
 }
@@ -455,48 +495,42 @@ void WindowManager::SetMousePosition(WindowManager::Point pos)
     WM->lock.Release();
 }
 
+bool WindowManager::PutEvent_nolock(int id, InputDevice::Event event)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    return wnd->Events.Put(event, 0, true);
+}
+
 bool WindowManager::PutEvent(int id, InputDevice::Event event)
 {
     if(!WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    bool res = wnd->Events.Put(event, 0, true);
+    bool res = PutEvent_nolock(id, event);
     WM->lock.Release();
     return res;
+}
+
+bool WindowManager::SetDragRectangle_nolock(int id, WindowManager::Rectangle rect)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return false;
+    wnd->DragRectangle = rect;
+    return true;
 }
 
 bool WindowManager::SetDragRectangle(int id, WindowManager::Rectangle rect)
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    Window *wnd = WM->getByID_nolock(id);
-    if(!wnd)
-    {
-        WM->lock.Release();
-        return -EINVAL;
-    }
-    wnd->DragRectangle = rect;
+    bool res = SetDragRectangle_nolock(id, rect);
     WM->lock.Release();
-    return true;
+    return res;
 }
 
 void WindowManager::Cleanup()
 {
     if(WM) delete WM;
-}
-
-WindowManager::Window *WindowManager::getByID_nolock(int id)
-{
-    Window *res = nullptr;
-    for(Window *wnd : windows)
-    {
-        if(wnd->ID == id)
-        {
-            res = wnd;
-            break;
-        }
-    }
-    return res;
 }
 
 void WindowManager::RedrawAll()
