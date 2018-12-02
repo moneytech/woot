@@ -215,6 +215,7 @@ class CDFS : public FileSystem
     {
         friend class CDFS;
         DirectoryEntry DirEntry;
+        mode_t SUSPMode;
 
         FSINode(ino_t number, FileSystem *fs);
         virtual size64_t GetSize();

@@ -260,10 +260,19 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 {
                     Time::DateTime mtime;
                     Time::UnixToDateTime(de->ModifyTime, &mtime);
-                    printf("%-32s %s %8lu %.4d-%.2d-%.2d %.2d:%.2d\n",
+                    printf("%-32s %s %8lu %.4d-%.2d-%.2d %.2d:%.2d %c%c%c%c%c%c%c%c%c\n",
                            de->Name, S_ISDIR(de->Mode) ? "<DIR> " : "      ", de->Size,
                            mtime.Year, mtime.Month, mtime.Day,
-                           mtime.Hour, mtime.Minute);
+                           mtime.Hour, mtime.Minute,
+                           de->Mode & 0400 ? 'r' : '-',
+                           de->Mode & 0200 ? 'w' : '-',
+                           de->Mode & 0100 ? 'x' : '-',
+                           de->Mode & 0040 ? 'r' : '-',
+                           de->Mode & 0020 ? 'w' : '-',
+                           de->Mode & 0010 ? 'x' : '-',
+                           de->Mode & 0004 ? 'r' : '-',
+                           de->Mode & 0002 ? 'w' : '-',
+                           de->Mode & 0001 ? 'x' : '-');
                     delete de;
                 }
                 delete dir;

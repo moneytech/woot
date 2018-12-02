@@ -6,6 +6,9 @@
 #include <time.h>
 #include <volume.h>
 
+#define SUSPID_NM 0x4D4E
+#define SUSPID_PX 0x5850
+
 CDFSFileSystemType::CDFSFileSystemType() :
     FileSystemType("cdfs")
 {
@@ -131,7 +134,7 @@ size64_t CDFS::FSINode::GetSize()
 
 mode_t CDFS::FSINode::GetMode()
 {
-    return 0755 | (DirEntry.Flags & CDFS_FLAG_DIRECTORY ? S_IFDIR : 0);
+    return SUSPMode ? SUSPMode : (0755 | (DirEntry.Flags & CDFS_FLAG_DIRECTORY ? S_IFDIR : 0));
 }
 
 time_t CDFS::FSINode::GetCreateTime()
@@ -191,7 +194,9 @@ int64_t CDFS::FSINode::Read(void *buffer, int64_t position, int64_t n)
     }
 
     DirectoryEntry de;
-    char nameBuf[256];
+    char nameBuf[224];
+    char suspName[224];
+    mode_t suspMode = 0;
     size_t size = GetSize();
     ::DirectoryEntry *res = nullptr;
     CDFS *fs = (CDFS *)FS;
@@ -203,33 +208,56 @@ int64_t CDFS::FSINode::Read(void *buffer, int64_t position, int64_t n)
         if(!de.DirectoryRecordLength)
             break;
         memset(nameBuf, 0, sizeof(nameBuf));
-        if(Read(nameBuf, position + sizeof(de), de.FileIdentifierLength) != de.FileIdentifierLength)
+        int btr = de.DirectoryRecordLength - sizeof(de);
+        if(Read(nameBuf, position + sizeof(de), btr) != btr)
             break;
-        int64_t cp = de.DirectoryRecordLength - (sizeof(de) + de.FileIdentifierLength);
-        int padding = max(0, cp);
-        if(padding)
+        size_t padding = 1 - (de.FileIdentifierLength & 1);
+        ssize_t suspSize = btr - (de.FileIdentifierLength + padding);
+        bool hasRRName = false;
+        if(suspSize > 0)
         {
-            if(Read(nullptr, position + sizeof(de) + de.FileIdentifierLength, padding) != padding)
-                break;
+            int suspOffs = 0;
+            byte *suspData = (byte *)(nameBuf + de.FileIdentifierLength + padding);
+            while(suspOffs < suspSize)
+            {
+                uint16_t type = *(uint16_t *)suspData;
+                if(type == SUSPID_NM)
+                {
+                    hasRRName = true;
+                    int suspNameLen = suspData[2] - 5;
+                    memcpy(suspName, suspData + 5, suspNameLen);
+                    suspName[suspNameLen] = 0;
+                }
+                else if(type == SUSPID_PX)
+                    suspMode = *(mode_t *)(suspData + 4);
+                int incr = max(suspData[2], 4);
+                suspData += incr;
+                suspOffs += incr;
+            }
         }
 
-        // build normal filename
-        if(!nameBuf[0])
-            strcpy(nameBuf, ".");
-        else if(nameBuf[0] == 1)
-            strcpy(nameBuf, "..");
-        else
+        if(!hasRRName)
         {
-            char *semi = strrchr(nameBuf, ';');
-            if(semi) *semi = 0;
-            char *dot = strrchr(nameBuf, '.');
-            if(dot && !dot[1])
-                *dot = 0;
+            // build normal filename
+            if(!nameBuf[0])
+                strcpy(nameBuf, ".");
+            else if(nameBuf[0] == 1)
+                strcpy(nameBuf, "..");
+            else
+            {
+                char *semi = strrchr(nameBuf, ';');
+                if(semi) *semi = 0;
+                char *dot = strrchr(nameBuf, '.');
+                if(dot && !dot[1])
+                    *dot = 0;
+            }
         }
+        else strncpy(nameBuf, suspName, sizeof(nameBuf));
 
         // fabricobble an inode
         FSINode inode(DirEntry.LocationOfExtent.CPU * fs->sectSize + position, FS);
         memcpy(&inode.DirEntry, &de, sizeof(de));
+        if(suspMode) inode.SUSPMode = suspMode;
         res = new ::DirectoryEntry(
                     inode.GetMode(),
                     inode.GetAccessTime(),
