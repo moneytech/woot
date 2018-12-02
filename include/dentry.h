@@ -18,7 +18,7 @@ public:
     ::INode *INode;
     int ReferenceCount;
 
-    DEntry(const char *name, DEntry *parent);
+    DEntry(const char *name, DEntry *parent, class INode *inode);
     size_t GetFullPath(char *buffer, size_t bufferSize);
     ~DEntry();
 };

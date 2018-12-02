@@ -1,29 +1,29 @@
-#ifndef MBRVOLUME_H
-#define MBRVOLUME_H
+#ifndef PARTITIONVOLUME_H
+#define PARTITIONVOLUME_H
 
 #include <bufferedvolume.h>
 #include <types.h>
 #include <volumetype.h>
 
-class MBRVolumeType : public VolumeType
+class PartitionVolumeType : public VolumeType
 {
 public:
-    MBRVolumeType();
+    PartitionVolumeType();
     virtual int Detect(Drive *drive);
     virtual bool Compare(Volume *a, Volume *b);
 };
 
-class MBRVolume : public BufferedVolume
+class PartitionVolume : public BufferedVolume
 {
-    friend class MBRVolumeType;
+    friend class PartitionVolumeType;
 
     size64_t firstSector;
     size64_t sectorCount;
 public:
-    MBRVolume(class Drive *drive, VolumeType *type, size64_t firstSector, size64_t sectorCount);
+    PartitionVolume(class Drive *drive, VolumeType *type, size64_t firstSector, size64_t sectorCount);
     virtual int64_t ReadSectors(void *buffer, uint64_t start, int64_t count);
     virtual int64_t WriteSectors(const void *buffer, uint64_t start, int64_t count);
-    ~MBRVolume();
+    ~PartitionVolume();
 };
 
-#endif // MBRVOLUME_H
+#endif // PARTITIONVOLUME_H

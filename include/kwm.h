@@ -175,9 +175,6 @@ public:
     static bool SetDragRectangle_nolock(int id, Rectangle rect);
     static bool SetDragRectangle(int id, Rectangle rect);
     static void Cleanup();
-
-private:
-    void RedrawAll();
 };
 
 #endif // KWM_H

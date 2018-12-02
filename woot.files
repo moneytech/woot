@@ -2,7 +2,11 @@ clock/Makefile
 clock/main.c
 directory.png
 file.png
+include/cdfs.h
 include/messagequeue.h
+include/partitionvolume.h
+kernel/cdfs.cpp
+kernel/partitionvolume.cpp
 libc/asm/cos.asm
 libc/asm/exp.asm
 libc/asm/fmod.asm
@@ -197,7 +201,6 @@ include/idedrive.h
 include/inode.h
 include/inputdevice.h
 include/list.h
-include/mbrvolume.h
 include/memorystream.h
 include/miscasm.h
 include/mutex.h
@@ -230,7 +233,6 @@ kernel/filesystemtype.cpp
 kernel/idedrive.cpp
 kernel/inode.cpp
 kernel/inputdevice.cpp
-kernel/mbrvolume.cpp
 kernel/memorystream.cpp
 kernel/miscasm.asm
 kernel/mutex.cpp

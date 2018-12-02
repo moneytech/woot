@@ -1,3 +1,4 @@
+#include <drive.h>
 #include <errno.h>
 #include <filesystem.h>
 #include <mutex.h>
@@ -160,6 +161,20 @@ void Volume::Cleanup()
         delete v;
     }
     UnLock();
+}
+
+size_t Volume::GetSectorSize_nolock() const
+{
+    return Drive->SectorSize;
+}
+
+size_t Volume::GetSectorSize() const
+{
+    if(!Lock())
+        return 0;
+    size_t res = GetSectorSize_nolock();
+    UnLock();
+    return res;
 }
 
 int64_t Volume::Read(void *buffer, uint64_t position, int64_t n)

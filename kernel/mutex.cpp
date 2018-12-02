@@ -23,7 +23,10 @@ bool Mutex::Acquire(uint timeout, bool tryAcquire)
     if(!Count || Owner == ct)
     {
         if(Count)
-            printf("[mutex] nope!\n");
+        {
+            printf("[mutex] Multiple locks on mutex %s!\n", Name);
+            cpuSystemHalt(0xBADC0DE2);
+        }
         ++Count;
         Owner = ct;
         cpuRestoreInterrupts(is);

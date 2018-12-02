@@ -143,8 +143,7 @@ EXT2::EXT2(class Volume *vol, FileSystemType *type, EXT2::SuperBlock *sblock, bo
         return;
     }
 
-    DEntry *root = new DEntry("/", nullptr);
-    root->INode = rootINode;
+    DEntry *root = new DEntry("/", nullptr, rootINode);
     SetRoot(root);
     superBlock->s_mtime = time(nullptr);
     ++superBlock->s_mnt_count;
@@ -1039,38 +1038,6 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     }
     PutINode(inode);
     return true;
-}
-
-ino_t EXT2::FSINode::Lookup(const char *name)
-{
-    if(!(Data.i_mode & EXT2_S_IFDIR))
-    { // we can't look for files inside non-directory inode
-        return -EBUSY;
-    }
-    uint64_t pos = 0;
-    size64_t size = GetSize();
-    DirectoryEntry de;
-    char nameBuf[256];
-    while(pos < size)
-    {
-        if(Read(&de, pos, sizeof(DirectoryEntry)) != sizeof(DirectoryEntry))
-            return -EIO;
-
-        if(de.name_len && de.inode)
-        {
-            memset(nameBuf, 0, sizeof(nameBuf));
-            if(Read(nameBuf, pos + sizeof(DirectoryEntry), de.name_len) != de.name_len)
-                return -EIO;
-
-            if(!strcmp(name, nameBuf))
-            { // found
-                return de.inode;
-            }
-        }
-
-        pos += de.rec_len;
-    }
-    return 0;
 }
 
 int64_t EXT2::FSINode::Read(void *buffer, int64_t position, int64_t n)

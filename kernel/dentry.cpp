@@ -2,6 +2,7 @@
 #include <filesystem.h>
 #include <inode.h>
 #include <mutex.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stringbuilder.h>
@@ -42,13 +43,15 @@ void DEntry::getFSLabelAndID(char *buf, size_t bufSize, int *id)
     }
 }
 
-DEntry::DEntry(const char *name, DEntry *parent) :
+DEntry::DEntry(const char *name, DEntry *parent, class INode *inode) :
     Parent(parent),
     Children(nullptr), // not used for now
     Name(strdup(name)),
-    INode(nullptr),
+    INode(inode),
     ReferenceCount(0)
 {
+    if(!INode)
+        printf("[dentry] DEntry->INode == nullptr !\n");
 }
 
 size_t DEntry::GetFullPath(char *buffer, size_t bufferSize)

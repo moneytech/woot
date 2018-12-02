@@ -1,3 +1,4 @@
+#include <cdfs.h>
 #include <cpu.h>
 #include <debugstream.h>
 #include <dentry.h>
@@ -18,7 +19,7 @@
 #include <irqs.h>
 #include <kwm.h>
 #include <malloc.h>
-#include <mbrvolume.h>
+#include <partitionvolume.h>
 #include <multiboot.h>
 #include <mutex.h>
 #include <paging.h>
@@ -154,9 +155,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 
     Ints::RegisterHandler(2, &nmiHandler);
 
-    VolumeType::Add(new MBRVolumeType());
+    VolumeType::Add(new PartitionVolumeType());
     VolumeType::AutoDetect();
     FileSystemType::Add(new EXT2FileSystemType());
+    FileSystemType::Add(new CDFSFileSystemType());
     FileSystemType::AutoDetect();
 
     // set kernel process root directory

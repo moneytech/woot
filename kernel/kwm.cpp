@@ -533,19 +533,6 @@ void WindowManager::Cleanup()
     if(WM) delete WM;
 }
 
-void WindowManager::RedrawAll()
-{
-    if(!lock.Acquire(0, false))
-        return;
-    for(Window *wnd : windows)
-    {
-        if(!wnd->Visible) continue;
-        backBuffer.Blit(wnd->Contents, 0, 0, wnd->Position.X, wnd->Position.Y, wnd->Contents->Width, wnd->Contents->Height);
-    }
-    fb->Pixels->Blit(&backBuffer, 0, 0, 0, 0, backBuffer.Width, backBuffer.Height);
-    lock.Release();
-}
-
 WindowManager::Window::Window(WindowManager *wm, int x, int y, int w, int h, PixMap::PixelFormat *fmt) :
     ID(ids.GetNext()),
     Manager(wm),

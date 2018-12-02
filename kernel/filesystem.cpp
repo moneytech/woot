@@ -133,7 +133,7 @@ INode *FileSystem::GetINode_nolock(ino_t number)
 {
     for(INode *inode : inodeCache)
     {
-        if(inode->Number == number)
+        if(inode->FS == this && inode->Number == number)
         {
             ++inode->ReferenceCount;
             return inode;
@@ -200,8 +200,7 @@ DEntry *FileSystem::GetDEntry_nolock(DEntry *parent, const char *name)
     ino_t ino = parent->INode->Lookup(name);
     if(ino <= 0)
         return nullptr;
-    DEntry *dentry = new DEntry(name, parent);
-    dentry->INode = parent->INode->FS->GetINode_nolock(ino);
+    DEntry *dentry = new DEntry(name, parent, parent->INode->FS->GetINode_nolock(ino));
     dentryCache.Prepend(dentry);
     ++dentry->ReferenceCount;
     return dentry;

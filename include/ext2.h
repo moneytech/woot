@@ -251,7 +251,6 @@ private:
         virtual bool SetModifyTime(time_t t);
         virtual bool SetAccessTime(time_t t);
         virtual bool Create(const char *name, mode_t mode);
-        virtual ino_t Lookup(const char *name);
         virtual int64_t Read(void *buffer, int64_t position, int64_t n);
         virtual int64_t Write(const void *buffer, int64_t position, int64_t n);
         virtual ::DirectoryEntry *ReadDir(int64_t position, int64_t *newPosition);

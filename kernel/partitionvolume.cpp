@@ -1,6 +1,7 @@
 #include <drive.h>
 #include <errno.h>
-#include <mbrvolume.h>
+#include <limits.h>
+#include <partitionvolume.h>
 #include <stdio.h>
 
 #pragma pack(push, 1)
@@ -15,14 +16,14 @@ typedef struct MBRTableEntry
 } MBRTableEntry;
 #pragma pack(pop)
 
-MBRVolume::MBRVolume(class Drive *drive, VolumeType *type, size64_t firstSector, size64_t sectorCount) :
+PartitionVolume::PartitionVolume(class Drive *drive, VolumeType *type, size64_t firstSector, size64_t sectorCount) :
     BufferedVolume(drive, type, 16, 16),
     firstSector(firstSector),
     sectorCount(sectorCount)
 {
 }
 
-int64_t MBRVolume::ReadSectors(void *buffer, uint64_t start, int64_t count)
+int64_t PartitionVolume::ReadSectors(void *buffer, uint64_t start, int64_t count)
 {
     if(!Drive) return -EINVAL;
     if(start >= sectorCount) return 0;
@@ -32,7 +33,7 @@ int64_t MBRVolume::ReadSectors(void *buffer, uint64_t start, int64_t count)
     return Drive->ReadSectors(buffer, start + firstSector, count);
 }
 
-int64_t MBRVolume::WriteSectors(const void *buffer, uint64_t start, int64_t count)
+int64_t PartitionVolume::WriteSectors(const void *buffer, uint64_t start, int64_t count)
 {
     if(!Drive) return -EINVAL;
     if(start >= sectorCount) return 0;
@@ -42,25 +43,25 @@ int64_t MBRVolume::WriteSectors(const void *buffer, uint64_t start, int64_t coun
     return Drive->WriteSectors(buffer, start + firstSector, count);
 }
 
-MBRVolume::~MBRVolume()
+PartitionVolume::~PartitionVolume()
 {
 }
 
-MBRVolumeType::MBRVolumeType() :
-    VolumeType("mbr")
+PartitionVolumeType::PartitionVolumeType() :
+    VolumeType("partition")
 {
 }
 
-int MBRVolumeType::Detect(Drive *drive)
+int PartitionVolumeType::Detect(Drive *drive)
 {
-    //printf("[mbrvolume] Detect()\n");
+    //printf("[partitionvolume] Detect()\n");
     if(!drive) return -EINVAL;
     if(drive->SectorSize < 512) return 0;
     byte *firstSectorData = new byte[drive->SectorSize];
     if(drive->ReadSectors(firstSectorData, 0, 1) != 1)
     {
         delete[] firstSectorData;
-        printf("[mbrvolume] Couldn't read first sector on drive %d\n", drive->ID);
+        printf("[partitionvolume] Couldn't read first sector on drive %d\n", drive->ID);
         return -EIO;
     }
     int res = 0;
@@ -100,9 +101,12 @@ int MBRVolumeType::Detect(Drive *drive)
         mbrOk = false; // no partitions or more than one active partition
 
     if(!mbrOk)
-    {
+    {   // unkonwn partition scheme or not partitioned drive
         delete[] firstSectorData;
-        return 0;
+        PartitionVolume *vol = new PartitionVolume(drive, this, 0, SIZE_MAX);
+        int id = Volume::Add(vol);
+        printf("[partitionvolume] Found non partitioned volume (id: %d) on drive %d\n", id, drive->ID);
+        return 1;
     }
 
     for(int i = 0; i < 4; ++i)
@@ -110,9 +114,9 @@ int MBRVolumeType::Detect(Drive *drive)
         if(!mbrt[i].StartLBA)
             continue;
 
-        MBRVolume *vol = new MBRVolume(drive, this, mbrt[i].StartLBA, mbrt[i].LBACount);
+        PartitionVolume *vol = new PartitionVolume(drive, this, mbrt[i].StartLBA, mbrt[i].LBACount);
         int id = Volume::Add(vol);
-        printf("[mbrvolume] Found MBR partition of type %#.2x (id: %d) on drive %d\n", mbrt[i].ID, id, drive->ID);
+        printf("[partitionvolume] Found MBR partition of type %#.2x (id: %d) on drive %d\n", mbrt[i].ID, id, drive->ID);
         ++res;
     }
 
@@ -121,10 +125,10 @@ int MBRVolumeType::Detect(Drive *drive)
     return res;
 }
 
-bool MBRVolumeType::Compare(Volume *a, Volume *b)
+bool PartitionVolumeType::Compare(Volume *a, Volume *b)
 {
     if(a->Type != this || a->Type != b->Type || a->Drive != b->Drive)
         return false;
-    MBRVolume *A = (MBRVolume *)a, *B = (MBRVolume *)b;
+    PartitionVolume *A = (PartitionVolume *)a, *B = (PartitionVolume *)b;
     return A->firstSector == B->firstSector && A->sectorCount == B->sectorCount;
 }

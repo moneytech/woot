@@ -103,6 +103,7 @@ public:
 
     bool Contains(T value, Comparer comparer)
     {
+        if(!comparer) comparer = defaultComparer;
         for(Node *prev = nullptr, *node = First; node; prev = node, node = node->Next)
         {
             if(comparer(node->Value, value))
@@ -121,6 +122,7 @@ public:
 
     uint Count(T value, Comparer comparer)
     {
+        if(!comparer) comparer = defaultComparer;
         uint count = 0;
         for(Node *prev = nullptr, *node = First; node; prev = node, node = node->Next)
         {

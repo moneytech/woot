@@ -1,6 +1,8 @@
 #ifndef LIMITS_H
 #define LIMITS_H
 
+#define SIZE_MAX (4294967295ul)
+
 #define LONG_MIN (-2147483648l)
 #define LONG_MAX (2147483647l)
 

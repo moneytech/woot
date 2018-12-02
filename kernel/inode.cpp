@@ -1,6 +1,8 @@
+#include <directoryentry.h>
 #include <errno.h>
 #include <inode.h>
 #include <mutex.h>
+#include <string.h>
 
 INode::INode(ino_t number, FileSystem *fs) :
     Number(number), FS(fs),
@@ -70,8 +72,23 @@ bool INode::Create(const char *name, mode_t mode)
 }
 
 ino_t INode::Lookup(const char *name)
-{
-    return -1;
+{   // generic implementation
+    int64_t position = 0;
+    size64_t size = GetSize();
+    ino_t res = -1;
+    while(position < size)
+    {
+        DirectoryEntry *de = ReadDir(position, &position);
+        if(!de) break;
+        if(!strcmp(name, de->Name))
+        {
+            res = de->INode;
+            delete de;
+            break;
+        }
+        delete de;
+    }
+    return res;
 }
 
 int64_t INode::Read(void *buffer, int64_t position, int64_t n)
