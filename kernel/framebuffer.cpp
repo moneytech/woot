@@ -27,7 +27,11 @@ FrameBuffer *FrameBuffer::GetByID(int id, bool lock)
         if(fb->ID == id)
         {
             if(lock && fb->Lock())
+            {
+                listLock.Release();
                 return nullptr;
+            }
+            listLock.Release();
             return fb;
         }
     }
