@@ -126,7 +126,7 @@ WindowManager::WindowManager(FrameBuffer *fb) :
     mouseWnd->Visible = true;
 
     inputThreadFinished = new Semaphore(0);
-    thread = new Thread("input thread", Process::GetCurrent(), (void *)inputThread, (uintptr_t)this, DEFAULT_STACK_SIZE, 0, nullptr, inputThreadFinished);
+    thread = new Thread("input thread", Process::GetCurrent(), (void *)inputThread, (uintptr_t)this, DEFAULT_STACK_SIZE, 0, nullptr, inputThreadFinished, false);
     thread->Enable();
     thread->Resume(false);
 }
@@ -193,7 +193,7 @@ bool WindowManager::DestroyWindow_nolock(int id)
     {
         Rectangle wndRect = wnd->ToRectangle();
         desktop->Dirty.Add(wndRect);
-        desktop->Update();
+        desktop->Update_nolock();
     }
     delete wnd;
     return true;
