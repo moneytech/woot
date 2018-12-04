@@ -207,8 +207,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         desktop->Update();
     }
 
-    Thread *t1 = new Thread("test 1", Process::GetCurrent(), (void *)testThread, 1, 0, 0, nullptr, nullptr);
-    Thread *t2 = new Thread("test 2", Process::GetCurrent(), (void *)testThread, 2, 0, 0, nullptr, nullptr);
+    Thread *t1 = new Thread("test 1", Process::GetCurrent(), (void *)testThread, 1, 0, 0, nullptr, nullptr, false);
+    Thread *t2 = new Thread("test 2", Process::GetCurrent(), (void *)testThread, 2, 0, 0, nullptr, nullptr, false);
 
     t1->Enable();
     t2->Enable();

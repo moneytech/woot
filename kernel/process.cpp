@@ -149,7 +149,7 @@ Process *Process::Create(const char *filename, Semaphore *finished)
     if(!filename) return nullptr;
     Thread *thread = new Thread("main", nullptr, (void *)processEntryPoint, (uintptr_t)filename,
                                 DEFAULT_STACK_SIZE, DEFAULT_STACK_SIZE,
-                                nullptr, finished);
+                                nullptr, finished, !finished);
     Process *proc = new Process(filename, thread, 0, finished);
     return proc;
 }
@@ -385,13 +385,13 @@ Process::~Process()
 {
     lock.Acquire(0, false);
     listLock.Acquire(0, false);
-    for(Thread *t : Threads)
+    /*for(Thread *t : Threads)
     {
         if(t->State != Thread::State::Finalized)
             Thread::Finalize(t, -1);
         delete t;
     }
-    Threads.Clear();
+    Threads.Clear();*/
     for(ELF *elf : Images)
         if(elf) delete elf;
     if(CurrentDirectory) FileSystem::PutDEntry(CurrentDirectory);

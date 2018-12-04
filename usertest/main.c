@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
             _argv[_argc++] = token;
         if(!_argc) continue;
 
-        if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit"))
+        if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit") || !strcmp(_argv[0], "_q"))
             break;
         else if(!strcmp(_argv[0], "args"))
         {

@@ -77,6 +77,7 @@ public:
     int *ReturnCodePtr;
     Semaphore *Finished;
     bool DeleteFinished;
+    bool SelfDestruct;
 
     // locking
     Mutex *WaitingMutex;
@@ -86,7 +87,7 @@ public:
     static Thread *GetIdleThread();
     static void Finalize(Thread *thread, int returnValue);
 
-    Thread(const char *name, class Process *process, void *entryPoint, uintptr_t argument, size_t kernelStackSize, size_t userStackSize, int *returnCodePtr, Semaphore *finished);
+    Thread(const char *name, class Process *process, void *entryPoint, uintptr_t argument, size_t kernelStackSize, size_t userStackSize, int *returnCodePtr, Semaphore *finished, bool selfDestruct);
     static Thread *GetNext(bool doTick);
     static void Switch(Ints::State *state, Thread *thread);
     static Thread *GetCurrent();
