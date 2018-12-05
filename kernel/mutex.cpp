@@ -16,12 +16,19 @@ Mutex::Mutex(const char *name) :
 {
 }
 
+// TODO: Remove recursive locks completely
+
 bool Mutex::Acquire(uint timeout, bool tryAcquire)
 {
     bool is = cpuDisableInterrupts();
     Thread *ct = Thread::GetCurrent();
     if(!Count || Owner == ct)
     {
+        if(tryAcquire)
+        {
+            cpuRestoreInterrupts(is);
+            return false;
+        }
         if(Count)
         {
             printf("[mutex] Multiple locks on mutex %s!\n", Name);

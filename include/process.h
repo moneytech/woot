@@ -51,6 +51,9 @@ public:
     static Process *GetCurrent();
     static DEntry *GetCurrentDir();
     static uintptr_t NewAddressSpace();
+    static Process *GetByID_nolock(pid_t pid);
+    static Process *GetByID(pid_t pid);
+    static bool Finalize(pid_t pid);
     static void Cleanup();
     static void Dump();
 

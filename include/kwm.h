@@ -98,6 +98,7 @@ public:
         ~Window();
     public:
         int ID;
+        Thread *Owner;
         WindowManager *Manager;
         Point Position;
         PixMap *Contents;
@@ -136,6 +137,8 @@ public:
     static WindowManager *WM;
 
     static void Initialize(FrameBuffer *fb);
+    static void DestroyThreadWindows_nolock(Thread *thread);
+    static void DestroyThreadWindows(Thread *thread);
     static Window *GetByID_nolock(int id);
     static Window *GetByID(int id);
     static int CreateWindow_nolock(int x, int y, int w, int h, PixMap::PixelFormat *fmt);

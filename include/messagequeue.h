@@ -16,8 +16,8 @@ public:
     MessageQueue(size_t capacity) :
         capacity(capacity),
         data(new T[capacity]),
-        sl(capacity),
-        msg(0),
+        sl(capacity, "msgSlots"),
+        msg(0, "msgMsgs"),
         tail(0),
         head(0)
     {

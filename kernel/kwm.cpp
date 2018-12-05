@@ -137,6 +137,33 @@ void WindowManager::Initialize(FrameBuffer *fb)
     WM = new WindowManager(fb);
 }
 
+void WindowManager::DestroyThreadWindows_nolock(Thread *thread)
+{
+    for(;;)
+    {
+        bool anythingFound = false;
+        for(Window *wnd : WM->windows)
+        {
+            if(wnd->Owner == thread)
+            {
+                DestroyWindow_nolock(wnd->ID);
+                anythingFound = true;
+                break;
+            }
+        }
+        if(!anythingFound)
+            break;
+    }
+}
+
+void WindowManager::DestroyThreadWindows(Thread *thread)
+{
+    if(!WM || !WM->lock.Acquire(0, false))
+        return;
+    DestroyThreadWindows_nolock(thread);
+    WM->lock.Release();
+}
+
 WindowManager::Window *WindowManager::GetByID_nolock(int id)
 {
     Window *res = nullptr;
@@ -535,6 +562,7 @@ void WindowManager::Cleanup()
 
 WindowManager::Window::Window(WindowManager *wm, int x, int y, int w, int h, PixMap::PixelFormat *fmt) :
     ID(ids.GetNext()),
+    Owner(Thread::GetCurrent()),
     Manager(wm),
     Position(x, y),
     Contents(new PixMap(w, h, fmt ? *fmt : DefaultPixelFormat)),

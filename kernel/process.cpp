@@ -190,6 +190,50 @@ uintptr_t Process::NewAddressSpace()
     return newAS;
 }
 
+Process *Process::GetByID_nolock(pid_t pid)
+{
+    for(Process *proc : processList)
+    {
+        if(pid == proc->ID)
+            return proc;
+    }
+    return nullptr;
+}
+
+Process *Process::GetByID(pid_t pid)
+{
+    if(!listLock.Acquire(0, false))
+        return nullptr;
+    Process *res = GetByID_nolock(pid);
+    listLock.Release();
+    return res;
+}
+
+bool Process::Finalize(pid_t pid)
+{
+    if(!listLock.Acquire(0, false))
+        return false;
+    bool res = false;
+    Process *proc = GetByID_nolock(pid);
+    Thread *currentThread = Thread::GetCurrent();
+    bool finalizeCurrentThread = false;
+    if(proc)
+    {
+        res = true;
+        Thread *thread = nullptr;
+        while((thread = proc->Threads[0]))
+        {
+            if(thread != currentThread)
+                Thread::Finalize(thread, -127);
+            else finalizeCurrentThread = true;
+        }
+    }
+    listLock.Release();
+    if(finalizeCurrentThread && currentThread)
+        Thread::Finalize(currentThread, -127);
+    return res;
+}
+
 void Process::Cleanup()
 {
     NOT_IMPLEMENTED
@@ -384,7 +428,7 @@ File *Process::GetFileDescriptor(int fd)
 Process::~Process()
 {
     lock.Acquire(0, false);
-    listLock.Acquire(0, false);
+    bool lockAcquired = listLock.Acquire(0, true);
     /*for(Thread *t : Threads)
     {
         if(t->State != Thread::State::Finalized)
@@ -396,6 +440,6 @@ Process::~Process()
         if(elf) delete elf;
     if(CurrentDirectory) FileSystem::PutDEntry(CurrentDirectory);
     processList.Remove(this, nullptr, false);
-    listLock.Release();
+    if(lockAcquired) listLock.Release();
     if(Name) free(Name);
 }

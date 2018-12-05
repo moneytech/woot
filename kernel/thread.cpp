@@ -1,5 +1,6 @@
 #include <cpu.h>
 #include <gdt.h>
+#include <kwm.h>
 #include <malloc.h>
 #include <miscasm.h>
 #include <mutex.h>
@@ -126,7 +127,7 @@ void Thread::Finalize(Thread *thread, int returnValue)
     sleepingThreads.Remove(thread, nullptr);
     if(lastVectorStateThread == thread)
         lastVectorStateThread = nullptr;
-
+    WindowManager::DestroyThreadWindows(thread);
     bool self = currentThread == thread;
 
     if(thread->SelfDestruct)

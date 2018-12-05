@@ -252,6 +252,19 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         {
             _outb(0x64, 0xFE);
         }
+        else if(!strcmp(args[0], "ps"))
+            Process::Dump();
+        else if(!strcmp(args[0], "pkill"))
+        {
+            if(!args[1])
+                printf("missing process id\n");
+            else
+            {
+                pid_t pid = strtol(args[1], nullptr, 0);
+                if(pid == kernelProcess->ID || !Process::Finalize(pid))
+                    printf("[main] couldn't kill process %d\n", pid);
+            }
+        }
         else if(!strcmp(args[0], "ls") || !strcmp(args[0], "dir"))
         {
             if(File *dir = File::Open(args[1], O_DIRECTORY))
