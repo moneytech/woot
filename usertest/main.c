@@ -12,6 +12,7 @@
 #include FT_FREETYPE_H
 #include FT_ERRORS_H
 
+#include <woot/font.h>
 #include <woot/pixmap.h>
 #include <woot/wm.h>
 #include <zlib.h>
@@ -62,18 +63,25 @@ int main(int argc, char *argv[])
             malloc_stats();
         else if(!strcmp(_argv[0], "dir"))
         {
-            /*pmAlphaBlit(spm, dirIcon, 0, 0, 0, 0, dirIcon->Width, dirIcon->Height);
-            pmAlphaBlit(spm, fileIcon, 0, 0, 48, 0, fileIcon->Width, fileIcon->Height);
-            wmInvalidateRectangle(wnd, &wnd->ClientRectangle);
-            wmUpdateWindow(wnd);*/
             char *name = _argc >= 2 ? _argv[1] : ".";
             DIR *dir = opendir(name);
             if(!dir) printf("couldn't open directory %s\n", name);
             else
             {
                 struct dirent *de;
+                int i = 0;
                 while((de = readdir(dir)))
-                    printf("%s\n", de->d_name);
+                {
+                    int isDir = de->d_type == DT_DIR;
+                    struct pmPixMap *icon = isDir ? dirIcon : fileIcon;
+                    pmAlphaBlit(spm, icon, 0, 0, 12, i * 48, icon->Width, icon->Height);
+                    fntDrawString(wmGetDefaultFont(), spm, 72, i * 48 + 32, de->d_name, pmColorBlack);
+                    pmDrawFrame(spm, 0, i * 48, spm->Width, 48, 0);
+                    //printf("%-16s %s\n", de->d_name, isDir ? "<DIR>" : "     ");
+                    ++i;
+                }
+                wmInvalidateRectangle(wnd, &wnd->ClientRectangle);
+                wmUpdateWindow(wnd);
             }
         }
         else if(!strcmp(_argv[0], "date"))

@@ -23,9 +23,20 @@
 #include <../libc/include/time.h>
 
 #define NAME_MAX 255
+
+#define DT_UNKNOWN 0
+#define DT_REG 1
+#define DT_DIR 2
+#define DT_FIFO 3
+#define DT_SOCK 4
+#define DT_CHR 5
+#define DT_BLK 6
+#define DT_LNK 7
+
 struct dirent
 {
     int d_ino;
+    unsigned char d_type;
     char d_name[NAME_MAX + 1];
 };
 
@@ -242,10 +253,12 @@ long SysCalls::sys_readdir(long *args) // 89
     if(!f) return -EBADF;
     struct dirent *dent = (struct dirent *)args[2];
     dent->d_ino = -1;
+    dent->d_type = DT_UNKNOWN;
     dent->d_name[0] = 0;
     DirectoryEntry *de = f->ReadDir();
     if(!de) return 0;
     dent->d_ino = de->INode;
+    dent->d_type = S_ISDIR(de->Mode) ? DT_DIR : DT_REG;
     strncpy(dent->d_name, de->Name, sizeof(dent->d_name));
     delete de;
     return 0;

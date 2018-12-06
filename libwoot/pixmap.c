@@ -471,9 +471,11 @@ void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, i
     }
     else
     {   // backward
-        for(int Y = y2 - 1, sY = sy2 - 1; Y >= y && sY >= sy; --Y, --sY)
+        int sx2b = sx + w + (x2 - (x + w));
+        int sy2b = sy + h + (y2 - (y + h));
+        for(int Y = y2 - 1, sY = sy2b - 1; Y >= y && sY >= sy; --Y, --sY)
         {
-            for(int X = x2 - 1, sX = sx2 - 1; X >= x && sX >= sx; --X, --sX)
+            for(int X = x2 - 1, sX = sx2b - 1; X >= x && sX >= sx; --X, --sX)
                 pmSetPixel(dst, X, Y, pmGetPixel(src, sX, sY));
         }
     }
@@ -554,9 +556,11 @@ void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int
     }
     else
     {   // backward
-        for(int Y = y2 - 1, sY = sy2 - 1; Y >= y && sY >= sy; --Y, --sY)
+        int sx2b = sx + w + (x2 - (x + w));
+        int sy2b = sy + h + (y2 - (y + h));
+        for(int Y = y2 - 1, sY = sy2b - 1; Y >= y && sY >= sy; --Y, --sY)
         {
-            for(int X = x2 - 1, sX = sx2 - 1; X >= x && sX >= sx; --X, --sX)
+            for(int X = x2 - 1, sX = sx2b - 1; X >= x && sX >= sx; --X, --sX)
                 pmSetPixel(dst, X, Y, pmBlendPixel(pmGetPixel(dst, X, Y), pmGetPixel(src, sX, sY)));
         }
     }
