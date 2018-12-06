@@ -13,6 +13,7 @@
 #define O_TRUNC     01000
 #define O_APPEND    02000
 #define O_NONBLOCK  04000
+#define O_DIRECTORY 0200000
 
 int open(const char *pathname, int flags, ...);
 

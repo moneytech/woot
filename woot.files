@@ -15,6 +15,8 @@ libc/asm/log.asm
 libc/asm/setjmp.asm
 libc/asm/sin.asm
 libc/asm/sqrt.asm
+libc/dirent.c
+libc/include/dirent.h
 libc/include/setjmp.h
 libc/include/signal.h
 libc/include/sys/mman.h

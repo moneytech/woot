@@ -2,7 +2,7 @@ LIB = libc
 
 CRT0 = crt0.o
 
-OBJS = ctype.o errno.o fcntl.o init.o inttypes.o libgen.o malloc.o math.o mman.o
+OBJS = ctype.o dirent.o errno.o fcntl.o init.o inttypes.o libgen.o malloc.o math.o mman.o
 OBJS += signal.o softdiv.o stat.o stdio.o stdlib.o string.o strings.o time.o
 OBJS += unistd.o
 

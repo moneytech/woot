@@ -1,3 +1,4 @@
+#include <dirent.h>
 #include <malloc.h>
 #include <math.h>
 #include <stdio.h>
@@ -50,7 +51,7 @@ int main(int argc, char *argv[])
             _argv[_argc++] = token;
         if(!_argc) continue;
 
-        if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit") || !strcmp(_argv[0], "_q"))
+        if(!strcmp(_argv[0], "quit") || !strcmp(_argv[0], "exit"))
             break;
         else if(!strcmp(_argv[0], "args"))
         {
@@ -61,10 +62,19 @@ int main(int argc, char *argv[])
             malloc_stats();
         else if(!strcmp(_argv[0], "dir"))
         {
-            pmAlphaBlit(spm, dirIcon, 0, 0, 0, 0, dirIcon->Width, dirIcon->Height);
+            /*pmAlphaBlit(spm, dirIcon, 0, 0, 0, 0, dirIcon->Width, dirIcon->Height);
             pmAlphaBlit(spm, fileIcon, 0, 0, 48, 0, fileIcon->Width, fileIcon->Height);
             wmInvalidateRectangle(wnd, &wnd->ClientRectangle);
-            wmUpdateWindow(wnd);
+            wmUpdateWindow(wnd);*/
+            char *name = _argc >= 2 ? _argv[1] : ".";
+            DIR *dir = opendir(name);
+            if(!dir) printf("couldn't open directory %s\n", name);
+            else
+            {
+                struct dirent *de;
+                while((de = readdir(dir)))
+                    printf("%s\n", de->d_name);
+            }
         }
         else if(!strcmp(_argv[0], "date"))
         {

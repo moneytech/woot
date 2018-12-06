@@ -1,6 +1,7 @@
 #include <cpu.h>
 #include <debugstream.h>
 #include <dentry.h>
+#include <directoryentry.h>
 #include <errno.h>
 #include <file.h>
 #include <filesystem.h>
@@ -21,6 +22,13 @@
 #undef TIME_H
 #include <../libc/include/time.h>
 
+#define NAME_MAX 255
+struct dirent
+{
+    int d_ino;
+    char d_name[NAME_MAX + 1];
+};
+
 extern DebugStream debugStream;
 
 Ints::Handler SysCalls::handler = { nullptr, SysCalls::isr, nullptr };
@@ -33,7 +41,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_mkdir, nullptr, nullptr, nullptr, nullptr, nullptr, sys_brk, nullptr, nullptr, // 32 - 47
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 48 - 63
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 64 - 79
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_munmap, nullptr, nullptr, nullptr, nullptr, // 80 - 95
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_readdir, nullptr, sys_munmap, nullptr, nullptr, nullptr, nullptr, // 80 - 95
     nullptr, nullptr, nullptr, nullptr, sys_stat, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 96 - 111
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_fsync, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 112 - 127
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 128 - 143
@@ -222,6 +230,25 @@ long SysCalls::sys_brk(long *args) // 45
     cp->CurrentBrk = brk;
     cp->MemoryLock.Release();
     return brk;
+}
+
+long SysCalls::sys_readdir(long *args) // 89
+{
+    if(!args[2] || args[3] != 1)
+        return -EINVAL;
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    File *f = cp->GetFileDescriptor(args[1]);
+    if(!f) return -EBADF;
+    struct dirent *dent = (struct dirent *)args[2];
+    dent->d_ino = -1;
+    dent->d_name[0] = 0;
+    DirectoryEntry *de = f->ReadDir();
+    if(!de) return 0;
+    dent->d_ino = de->INode;
+    strncpy(dent->d_name, de->Name, sizeof(dent->d_name));
+    delete de;
+    return 0;
 }
 
 long SysCalls::sys_munmap(long *args) // 91

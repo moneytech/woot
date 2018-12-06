@@ -566,14 +566,23 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             cpuEnterUserMode((uintptr_t)(userStack + sizeof(userStack)), (uintptr_t)userTest);
         else
         {
-            if(File *f = File::Open(kernelProcess->CurrentDirectory, args[0], O_RDONLY))
+            bool wait = args[0][0] == '&';
+            if(File *f = File::Open(kernelProcess->CurrentDirectory, args[0] + (wait ? 1 : 0), O_RDONLY))
             {
                 delete f;
-                //Semaphore finished(0);
-                Process *proc = Process::Create(cmd, nullptr);//&finished);
-                proc->Start();
-                //finished.Wait(0, false, false);
-                //delete proc;
+                if(wait)
+                {
+                    Process *proc = Process::Create(cmd + 1, nullptr);
+                    proc->Start();
+                }
+                else
+                {
+                    Semaphore finished(0);
+                    Process *proc = Process::Create(cmd, &finished);
+                    proc->Start();
+                    finished.Wait(0, false, false);
+                    delete proc;
+                }
             }
             else
             {

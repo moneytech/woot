@@ -1,5 +1,11 @@
 libwoot/include
 
+libc
+libc/include
+libc/include/sys
+libc/internal
+libc/asm
+
 ./include
 kernel
 lib
@@ -27,9 +33,3 @@ libfreetype/include/freetype2/freetype/config
 libfreetype/lib
 clock
 wpaper
-
-libc
-libc/include
-libc/include/sys
-libc/internal
-libc/asm
