@@ -26,6 +26,36 @@ struct wmWindow
     struct wmRectangle ClientRectangle;
 };
 
+#define ET_INVALID  0
+#define ET_OTHER    1
+#define ET_KEYBOARD 2
+#define ET_MOUSE    3
+
+struct wmEvent
+{
+    int Type;
+    union
+    {
+        struct
+        {
+            int Data[7];
+        } Other;
+        struct
+        {
+            int Key;
+            int Flags;
+        } Keyboard;
+        struct
+        {
+            int X, Y;
+            int DeltaX, DeltaY;
+            int ButtonsPressed;
+            int ButtonsReleased;
+            int ButtonsHeld;
+        } Mouse;
+    };
+};
+
 extern struct wmRectangle wmRectangleEmpty;
 struct wmRectangle wmRectangleAdd(struct wmRectangle a, struct wmRectangle b);
 struct wmRectangle wmRectangleIntersection(struct wmRectangle a, struct wmRectangle b);
@@ -55,6 +85,9 @@ int wmDecorateWindow(struct wmWindow *window);
 void wmDeleteWindow(struct wmWindow *window);
 int wmSetDragRectangle(struct wmWindow *window, struct wmRectangle *rect);
 struct fntFont *wmGetDefaultFont();
+int wmGetEvent(int window, struct wmEvent *event);
+int wmPeekEvent(int window, struct wmEvent *event, int remove);
+int wmProcessEvent(struct wmWindow *window, struct wmEvent *event);
 void wmCleanup();
 
 #ifdef __cplusplus

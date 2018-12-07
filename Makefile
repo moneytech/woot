@@ -1,5 +1,5 @@
 ROOTDIR = $(shell pwd)
-SUBDIRS = lib kernel libc libwoot ps2mouse simplefb usertest clock wpaper
+SUBDIRS = lib kernel libc libwoot ps2mouse simplefb usertest calc clock wpaper
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
@@ -7,6 +7,7 @@ LIBDIR = $(ROOTDIR)/lib
 MOUNTPOINT = mnt
 DISTFILES = usertest/usertest logo.bmp libc/libc.so libwoot/libwoot.so zlib/lib/libz.so libpng/lib/libpng.so libpng/lib/libpng16.so
 DISTFILES += wallpaper.png alpha.png libfreetype/lib/libfreetype.so test.ttf directory.png file.png normal.cur clock/clock wpaper/wpaper
+DISTFILES += calc/calc
 CONFIGURE = woot.specs woot-gcc
 ADD_EXEC = woot-gcc
 

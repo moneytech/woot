@@ -1,3 +1,5 @@
+calc/Makefile
+calc/main.c
 clock/Makefile
 clock/main.c
 directory.png
@@ -97,6 +99,7 @@ libwoot/asm/lmemset.asm
 libwoot/font.c
 libwoot/include/woot/font.h
 libwoot/include/woot/pixmap.h
+libwoot/include/woot/vkeys.h
 libwoot/pixmap.c
 test.ttf
 wallpaper.png

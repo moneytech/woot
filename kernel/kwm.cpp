@@ -22,6 +22,7 @@ int WindowManager::inputThread(uintptr_t arg)
         {
             if(WM->lock.Acquire(5000, false))
             {
+                bool inhibitEvent = false;
                 int dx = event.Mouse.Movement[0];
                 int dy = event.Mouse.Movement[1];
 
@@ -34,6 +35,9 @@ int WindowManager::inputThread(uintptr_t arg)
                     dx = (dx * a) / b;
                     dy = (dy * a) / b;
                 }
+
+                event.Mouse.Movement[0] = dx;
+                event.Mouse.Movement[1] = dy;
 
                 int mx = WM->mousePos.X + dx;
                 int my = WM->mousePos.Y + dy;
@@ -60,6 +64,7 @@ int WindowManager::inputThread(uintptr_t arg)
                                 dragWnd = wnd;
                         }
                     }
+                    inhibitEvent = mWnd;
                     if(mWnd && mWnd->ID != WM->activeWindowId)
                     {
                         WM->activeWindowId = mWnd->ID;
@@ -83,6 +88,7 @@ int WindowManager::inputThread(uintptr_t arg)
                         GetWindowPosition_nolock(WM->activeWindowId, &wPos);
                         WM->dragPoint = WM->mousePos - wPos;
                     }
+                    inhibitEvent = WM->dragWindowId >= 0;
                     WM->drag = true;
                     if(InputDevice::PeekEvent().DeviceType != InputDevice::Type::Mouse)
                     {
@@ -91,6 +97,12 @@ int WindowManager::inputThread(uintptr_t arg)
                     }
                 }
 
+                if(!inhibitEvent)
+                {
+                    Rectangle rect = GetWindowRectangle_nolock(WM->activeWindowId);
+                    if(rect.Contains(WM->mousePos))
+                        PutEvent_nolock(WM->activeWindowId, event);
+                }
 
                 WM->lock.Release();
             }
@@ -522,6 +534,20 @@ void WindowManager::SetMousePosition(WindowManager::Point pos)
     WM->lock.Release();
 }
 
+WindowManager::Point WindowManager::GetMousePosition_nolock()
+{
+    return WM ? WM->mousePos : Point();
+}
+
+WindowManager::Point WindowManager::GetMousePosition()
+{
+    if(!WM || !WM->lock.Acquire(0, false))
+        return Point();
+    Point res = GetMousePosition_nolock();
+    WM->lock.Release();
+    return res;
+}
+
 bool WindowManager::PutEvent_nolock(int id, InputDevice::Event event)
 {
     Window *wnd = GetByID_nolock(id);
@@ -551,6 +577,57 @@ bool WindowManager::SetDragRectangle(int id, WindowManager::Rectangle rect)
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
     bool res = SetDragRectangle_nolock(id, rect);
+    WM->lock.Release();
+    return res;
+}
+
+InputDevice::Event WindowManager::GetEvent_nolock(int id)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return InputDevice::Event();
+    return wnd->Events.Get(0, nullptr);
+}
+
+InputDevice::Event WindowManager::GetEvent(int id)
+{
+    if(!WM || !WM->lock.Acquire(0, false))
+        return InputDevice::Event();
+    InputDevice::Event res = GetEvent_nolock(id);
+    WM->lock.Release();
+    return res;
+}
+
+InputDevice::Event WindowManager::PeekEvent_nolock(int id, bool remove)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return InputDevice::Event();
+    bool ok = false;
+    InputDevice::Event res = wnd->Events.Peek(&ok);
+    if(ok) wnd->Events.Get(0, nullptr);
+    return res;
+}
+
+InputDevice::Event WindowManager::PeekEvent(int id, bool remove)
+{
+    if(!WM || !WM->lock.Acquire(0, false))
+        return InputDevice::Event();
+    InputDevice::Event res = PeekEvent_nolock(id, remove);
+    WM->lock.Release();
+    return res;
+}
+
+WindowManager::Rectangle WindowManager::GetWindowRectangle_nolock(int id)
+{
+    Window *wnd = GetByID_nolock(id);
+    if(!wnd) return Rectangle();
+    return wnd->ToRectangle();
+}
+
+WindowManager::Rectangle WindowManager::GetWindowRectangle(int id)
+{
+    if(!WM || !WM->lock.Acquire(0, false))
+        return Rectangle();
+    Rectangle res = GetWindowRectangle_nolock(id);
     WM->lock.Release();
     return res;
 }

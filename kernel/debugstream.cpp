@@ -146,78 +146,69 @@ int64_t DebugStream::Read(void *buffer, int64_t n)
     for(;;)
     {
         InputDevice::Event event = window->Events.Get(0, nullptr);
-        if(event.DeviceType != InputDevice::Type::Keyboard)
+        if(event.DeviceType == InputDevice::Type::Keyboard)
         {
-            if(event.DeviceType != InputDevice::Type::Mouse)
-                continue; // ignore non keyboard and non mouse events
-            mx += event.Mouse.Movement[0];
-            my += event.Mouse.Movement[1];
-            //WriteFmt("mx: %d my: %d\n", mx, my);
-            InputDevice::Event ev2 = InputDevice::PeekEvent();
-            if(ev2.DeviceType != InputDevice::Type::Mouse)
-                WindowManager::SetMousePosition(WindowManager::Point(mx, my));
-            continue;
-        }
-        if(event.Keyboard.Key == VirtualKey::LShift ||
-                event.Keyboard.Key == VirtualKey::RShift)
-        {
-            shift = !event.Keyboard.Release;
-            continue;
-        }
-        if(event.Keyboard.Key == VirtualKey::LMenu ||
-                event.Keyboard.Key == VirtualKey::RMenu)
-        {
-            alt = !event.Keyboard.Release;
-            continue;
-        }
-        if(event.Keyboard.Key == VirtualKey::LControl ||
-                event.Keyboard.Key == VirtualKey::RControl)
-        {
-            ctrl = !event.Keyboard.Release;
-            continue;
-        }
-
-        if(event.Keyboard.Release)
-        {
-            if(event.Keyboard.Key == VirtualKey::Capital)
-                caps = !caps;
-            if(event.Keyboard.Key == VirtualKey::NumLock)
-                num = !num;
-            continue;
-        }
-        if(ctrl && alt && event.Keyboard.Key == VirtualKey::Delete)
-        {
-            _outb(0x64, 0xFE);
-            continue;
-        }
-        char chr = vkToChar(event.Keyboard.Key, shift, caps, num);
-        if(!chr) continue;
-        if(!lineBufferState)
-        {
-            *((byte *)buffer) = chr;
-            return 1;
-        }
-
-        if(chr == '\b')
-        {
-            if(lineBufferPos)
+            if(event.Keyboard.Key == VirtualKey::LShift ||
+                    event.Keyboard.Key == VirtualKey::RShift)
             {
-                Write("\b", 1);
-                lineBuffer[--lineBufferPos] = 0;
+                shift = !event.Keyboard.Release;
+                continue;
             }
-            continue;
+            if(event.Keyboard.Key == VirtualKey::LMenu ||
+                    event.Keyboard.Key == VirtualKey::RMenu)
+            {
+                alt = !event.Keyboard.Release;
+                continue;
+            }
+            if(event.Keyboard.Key == VirtualKey::LControl ||
+                    event.Keyboard.Key == VirtualKey::RControl)
+            {
+                ctrl = !event.Keyboard.Release;
+                continue;
+            }
+
+            if(event.Keyboard.Release)
+            {
+                if(event.Keyboard.Key == VirtualKey::Capital)
+                    caps = !caps;
+                if(event.Keyboard.Key == VirtualKey::NumLock)
+                    num = !num;
+                continue;
+            }
+            if(ctrl && alt && event.Keyboard.Key == VirtualKey::Delete)
+            {
+                _outb(0x64, 0xFE);
+                continue;
+            }
+            char chr = vkToChar(event.Keyboard.Key, shift, caps, num);
+            if(!chr) continue;
+            if(!lineBufferState)
+            {
+                *((byte *)buffer) = chr;
+                return 1;
+            }
+
+            if(chr == '\b')
+            {
+                if(lineBufferPos)
+                {
+                    Write("\b", 1);
+                    lineBuffer[--lineBufferPos] = 0;
+                }
+                continue;
+            }
+            if(lineBufferPos >= sizeof(lineBuffer))
+                continue;
+            Write(&chr, 1);
+            if(chr == '\n')
+            {
+                lineBuffer[lineBufferPos] = '\n';
+                break;
+            }
+            lineBuffer[lineBufferPos++] = chr;
+            if(lineBufferPos >= n)
+                break;
         }
-        if(lineBufferPos >= sizeof(lineBuffer))
-            continue;
-        Write(&chr, 1);
-        if(chr == '\n')
-        {
-            lineBuffer[lineBufferPos] = '\n';
-            break;
-        }
-        lineBuffer[lineBufferPos++] = chr;
-        if(lineBufferPos >= n)
-            break;
     }
     int res = lineBufferPos;
     memcpy(buffer, lineBuffer, lineBufferPos);

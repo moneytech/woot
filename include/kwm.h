@@ -63,6 +63,31 @@ public:
             unsigned char *PixelBytes;
         };
     };
+
+    struct wmEvent
+    {
+        int Type;
+        union
+        {
+            struct
+            {
+                int Data[7];
+            } Other;
+            struct
+            {
+                int Key;
+                int Flags;
+            } Keyboard;
+            struct
+            {
+                int X, Y;
+                int DeltaX, DeltaY;
+                int ButtonsPressed;
+                int ButtonsReleased;
+                int ButtonsHeld;
+            } Mouse;
+        };
+    };
     // end of user mode structs/unions
 
     struct Point
@@ -173,10 +198,18 @@ public:
     static bool InvalidateRectangle(int id, Rectangle &rect);
     static void SetMousePosition_nolock(Point pos);
     static void SetMousePosition(Point pos);
+    static Point GetMousePosition_nolock();
+    static Point GetMousePosition();
     static bool PutEvent_nolock(int id, InputDevice::Event event);
     static bool PutEvent(int id, InputDevice::Event event);
     static bool SetDragRectangle_nolock(int id, Rectangle rect);
     static bool SetDragRectangle(int id, Rectangle rect);
+    static InputDevice::Event GetEvent_nolock(int id);
+    static InputDevice::Event GetEvent(int id);
+    static InputDevice::Event PeekEvent_nolock(int id, bool remove);
+    static InputDevice::Event PeekEvent(int id, bool remove);
+    static Rectangle GetWindowRectangle_nolock(int id);
+    static Rectangle GetWindowRectangle(int id);
     static void Cleanup();
 };
 

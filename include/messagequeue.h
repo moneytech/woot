@@ -40,10 +40,10 @@ public:
     T Peek(bool *ok)
     {
         bool ints = cpuDisableInterrupts();
-        if(tail != head)
+        if(msg.GetCount())
         {
             if(ok) *ok = true;
-            T m = data[head];
+            T m = data[tail];
             cpuRestoreInterrupts(ints);
             return m;
         }

@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
     char buf[128];
     char *_argv[64];
-    for(;;)
+    for(; 1;)
     {
         getcwd(buf, sizeof(buf));
         printf("%s# ", buf);

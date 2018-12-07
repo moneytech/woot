@@ -40,6 +40,42 @@ struct dirent
     char d_name[NAME_MAX + 1];
 };
 
+#define ET_INVALID  0
+#define ET_OTHER    1
+#define ET_KEYBOARD 2
+#define ET_MOUSE    3
+
+static void eventTowmEvent(WindowManager::wmEvent *event, InputDevice::Event *ev, WindowManager::Rectangle *rect)
+{
+    WindowManager::Point mousePoint;
+    if(ev->DeviceType == InputDevice::Type::Mouse)
+        mousePoint = WindowManager::GetMousePosition();
+    switch(ev->DeviceType)
+    {
+    case InputDevice::Type::Unknown:
+        event->Type = ET_INVALID;
+        break;
+    default:
+        event->Type = ET_OTHER;
+        break;
+    case InputDevice::Type::Keyboard:
+        event->Type = ET_KEYBOARD;
+        event->Keyboard.Key = (int)ev->Keyboard.Key;
+        event->Keyboard.Flags |= ev->Keyboard.Release ? 1 : 0;
+        break;
+    case InputDevice::Type::Mouse:
+        event->Type = ET_MOUSE;
+        event->Mouse.X = mousePoint.X - rect->Origin.X;
+        event->Mouse.Y = mousePoint.Y - rect->Origin.Y;
+        event->Mouse.DeltaX = ev->Mouse.Movement[0];
+        event->Mouse.DeltaY = ev->Mouse.Movement[1];
+        event->Mouse.ButtonsPressed = ev->Mouse.ButtonsPressed;
+        event->Mouse.ButtonsReleased = ev->Mouse.ButtonsReleased;
+        event->Mouse.ButtonsHeld = ev->Mouse.ButtonsHeld;
+        break;
+    }
+}
+
 extern DebugStream debugStream;
 
 Ints::Handler SysCalls::handler = { nullptr, SysCalls::isr, nullptr };
@@ -72,7 +108,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 352 - 367
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 368 - 383
     nullptr, nullptr, sys_create_window, sys_show_window, sys_hide_window, sys_destroy_window, sys_draw_rectangle, sys_draw_filled_rectangle, sys_update_window, sys_redraw_window, sys_draw_line, sys_blit, sys_alpha_blit, sys_map_window, sys_invalidate_rect, sys_get_window_size, // 384 - 399
-    sys_get_pixel_format, sys_set_drag_rect, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 400 - 415
+    sys_get_pixel_format, sys_set_drag_rect, sys_get_event, sys_peek_event, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 400 - 415
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 416 - 431
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 432 - 447
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 448 - 463
@@ -521,6 +557,30 @@ long SysCalls::sys_set_drag_rect(long *args) // 401
     WindowManager::wmRectangle *wmRect = (WindowManager::wmRectangle *)args[2];
     WindowManager::Rectangle rect(wmRect->X, wmRect->Y, wmRect->Width, wmRect->Height);
     return WindowManager::SetDragRectangle(args[1], rect) ? 0 : -EINVAL;
+}
+
+long SysCalls::sys_get_event(long *args) // 402
+{
+    WindowManager::wmEvent *event = (WindowManager::wmEvent *)args[2];
+    if(!event) return -EINVAL;
+    memset(event, 0, sizeof(WindowManager::wmEvent));
+    WindowManager::Rectangle rect = WindowManager::GetWindowRectangle(args[1]);
+    InputDevice::Event ev = WindowManager::GetEvent_nolock(args[1]); // may cause problems
+    eventTowmEvent(event, &ev, &rect);
+    return 0;
+}
+
+long SysCalls::sys_peek_event(long *args) // 403
+{
+    WindowManager::wmEvent *event = (WindowManager::wmEvent *)args[2];
+    if(!event) return -EINVAL;
+    memset(event, 0, sizeof(WindowManager::wmEvent));
+    WindowManager::Rectangle rect = WindowManager::GetWindowRectangle(args[1]);
+    InputDevice::Event ev = WindowManager::PeekEvent(args[1], args[3]);
+    if(ev.DeviceType == InputDevice::Type::Unknown)
+        return 0;
+    eventTowmEvent(event, &ev, &rect);
+    return 1;
 }
 
 void SysCalls::Initialize()

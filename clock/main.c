@@ -3,6 +3,7 @@
 #include <time.h>
 #include <woot/font.h>
 #include <woot/pixmap.h>
+#include <woot/vkeys.h>
 #include <woot/wm.h>
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -22,6 +23,19 @@ int main(int argc, char *argv[])
     {
         for(int i = 0;; ++i)
         {
+            int quit = 0;
+            struct wmEvent event;
+            while(wmPeekEvent(wnd->ID, &event, 1) > 0)
+            {
+                wmProcessEvent(wnd, &event);
+                if(event.Type == ET_KEYBOARD && event.Keyboard.Key == VK_ESCAPE)
+                {
+                    quit = 1;
+                    break;
+                }
+            }
+            if(quit) break;
+
             time_t t = time(NULL);
             struct tm *tm = localtime(&t);
             sprintf(buf, "%.2d:%.2d:%.2d", tm->tm_hour, tm->tm_min, tm->tm_sec);

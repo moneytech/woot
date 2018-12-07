@@ -263,6 +263,27 @@ struct fntFont *wmGetDefaultFont()
     return titleFont;
 }
 
+int wmGetEvent(int window, struct wmEvent *event)
+{
+    int res = syscall2(SYS_get_event, window, (long)event);
+}
+
+int wmPeekEvent(int window, struct wmEvent *event, int remove)
+{
+    int res = syscall3(SYS_peek_event, window, (long)event, remove);
+    if(res < 0) return res;
+}
+
+int wmProcessEvent(struct wmWindow *window, struct wmEvent *event)
+{
+    if(!window || !event) return -EINVAL;
+    if(event->Type == ET_MOUSE)
+    {   // fixup coordinates for decorated windows
+        event->Mouse.X -= window->ClientRectangle.X;
+        event->Mouse.Y -= window->ClientRectangle.Y;
+    }
+}
+
 void wmCleanup()
 {
     fntDelete(titleFont);
