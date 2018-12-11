@@ -67,6 +67,7 @@ int wmRectangleContainsPoint(struct wmRectangle *rect, int x, int y);
 // TODO: Cleanup this mess
 
 int wmInitialize();
+void wmGetDesktopWindow(struct wmWindow *window);
 struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char *title, int decorate);
 int wmShowWindow(struct wmWindow *window);
 int wmHideWindow(int window);
@@ -74,7 +75,6 @@ int wmDestroyWindow(int window);
 int wmDrawRectangle(int window, struct wmRectangle *rect, int color);
 int wmDrawFilledRectangle(int window, struct wmRectangle *rect, int color);
 int wmUpdateWindow(struct wmWindow *window);
-int wmUpdateWindowByID(int id);
 int wmRedrawWindow(struct wmWindow *window);
 int wmDrawLine(int window, int x1, int y1, int x2, int y2, int color);
 int wmBlit(int window, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);

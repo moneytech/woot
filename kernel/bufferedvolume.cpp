@@ -138,6 +138,7 @@ int64_t BufferedVolume::access(byte *buffer, int64_t n, int64_t position, bool w
             buffer += bytesToXfer;
         }
         bytesLeft -= bytesToXfer;
+        position += bytesToXfer;
     }
 
     return n;

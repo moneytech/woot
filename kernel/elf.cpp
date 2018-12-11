@@ -261,7 +261,7 @@ ELF *ELF::Load(DEntry *dentry, const char *filename, bool user, bool onlyHeaders
                     char *soname = _strtab + dyn->d_un.d_val;
                     if(proc->GetELF(soname))
                         continue;
-                    //printf("[elf] loading DT_NEEDED %s for %s\n", soname, elf->Name);
+                    // printf("[elf] loading DT_NEEDED %s for %s\n", soname, elf->Name);
                     ELF *soELF = Load(dentry, soname, user, false);
                 }
             }

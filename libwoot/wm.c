@@ -74,9 +74,14 @@ int wmInitialize()
     return 0;
 }
 
+void wmGetDesktopWindow(struct wmWindow *window)
+{
+    memset(window, 0, sizeof(struct wmWindow));
+}
+
 struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char *title, int decorate)
 {
-    struct wmWindow *wnd = (struct wmWindow *)calloc(1, sizeof(struct wmWindow));    
+    struct wmWindow *wnd = (struct wmWindow *)calloc(1, sizeof(struct wmWindow));
     if(!wnd)
     {
         errno = ENOMEM;
@@ -174,11 +179,6 @@ int wmUpdateWindow(struct wmWindow *window)
     wmInvalidateRectangle(window, &rect);
     pmClearDirty(pm);
     return syscall1(SYS_update_window, window->ID);
-}
-
-int wmUpdateWindowByID(int id)
-{
-    return syscall1(SYS_update_window, id);
 }
 
 int wmRedrawWindow(struct wmWindow *window)

@@ -62,8 +62,13 @@ distclean: clean
 
 # builds iso image
 iso: all
-	cp kernel/$(KERNELFILE) $(ISODIR)/$(KERNELFILE)
-	grub-mkrescue -o $(ISOFILE) $(ISODIR) 2>&1
+	cp kernel/$(KERNELFILE) $(ISODIR)/
+	cp modulelist $(ISODIR)/
+	mkdir -p $(ISODIR)/system
+	cp simplefb/simplefb.ko $(ISODIR)/system
+	cp ps2mouse/ps2mouse.ko $(ISODIR)/system
+	cp $(DISTFILES) $(ISODIR)
+	grub-mkrescue -o $(ISOFILE) $(ISODIR) -- --volid WOOT_OS 2>&1
 
 # recreates empty hdd image from archive (in case it gets borked)
 clean-img:

@@ -1,5 +1,7 @@
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <woot/pixmap.h>
 #include <woot/wm.h>
 
@@ -14,7 +16,7 @@ int main(int argc, char *argv[])
     struct pmPixMap *pm = pmLoadPNG(argv[1]);
     if(!pm)
     {
-        printf("couldn't open %s\n", argv[2]);
+        printf("couldn't open %s\n", argv[1]);
         return -ENOENT;
     }
     int w, h;
@@ -22,8 +24,10 @@ int main(int argc, char *argv[])
     struct wmRectangle rect = { 0, 0, w, h };
     wmDrawFilledRectangle(0, &rect, pmColorDarkGray.Value);
     rect = pmGetRectangle(pm);
-    wmBlit(0, pm, 0, 0, (w - rect.Width) / 2, (h - rect.Height) / 2, rect.Width, rect.Height);
+    struct wmWindow desktop;
+    wmGetDesktopWindow(&desktop);
+    wmAlphaBlit(desktop.ID, pm, 0, 0, (w - rect.Width) / 2, (h - rect.Height) / 2, rect.Width, rect.Height);
     pmDelete(pm);
-    wmUpdateWindowByID(0);
+    wmRedrawWindow(&desktop);
     return 0;
 }

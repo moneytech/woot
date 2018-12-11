@@ -53,7 +53,9 @@ public:
 
     struct pmPixMap
     {
-        int Width, Height;
+        struct pmPixMap *Parent;
+        struct wmRectangle Contents;
+        struct wmRectangle Dirty;
         int Pitch;
         struct pmPixelFormat Format;
         int ReleasePixels;

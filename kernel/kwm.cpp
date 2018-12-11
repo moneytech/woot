@@ -461,7 +461,7 @@ bool WindowManager::DrawLine(int id, int x1, int y1, int x2, int y2, PixMap::Col
 {
     if(id < 0 || !WM || !WM->lock.Acquire(0, false))
         return false;
-    bool res = DrawLine_nolock(id, x1, y2, x2, y2, color);
+    bool res = DrawLine_nolock(id, x1, y1, x2, y2, color);
     WM->lock.Release();
     return res;
 }

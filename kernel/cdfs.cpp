@@ -181,9 +181,7 @@ int64_t CDFS::FSINode::Read(void *buffer, int64_t position, int64_t n)
         n = size - position;
     if(!n) return 0;
     CDFS *fs = (CDFS *)FS;
-    int64_t br = fs->Volume->Read(buffer, DirEntry.LocationOfExtent.CPU * fs->sectSize + position, n);
-    if(br < 0) return br;
-    return br;
+    return fs->Volume->Read(buffer, DirEntry.LocationOfExtent.CPU * fs->sectSize + position, n);
 }
 
 ::DirectoryEntry *CDFS::FSINode::ReadDir(int64_t position, int64_t *newPosition)
@@ -203,6 +201,12 @@ int64_t CDFS::FSINode::Read(void *buffer, int64_t position, int64_t n)
 
     while(position < size)
     {
+        int8 del = 0;
+        if(Read(&del, position, 1) != 1)
+            break;
+        if(!del) position = align(position, fs->sectSize);
+        if(position >= size) break;
+
         if(Read(&de, position, sizeof(de)) != sizeof(de))
             break;
         if(!de.DirectoryRecordLength)
