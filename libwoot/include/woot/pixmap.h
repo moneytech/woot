@@ -43,18 +43,7 @@ extern union pmColor pmColorYellow;
 extern union pmColor pmColorWhite;
 extern union pmColor pmColorTransparent;
 
-struct pmPixMap
-{
-    int Width, Height;
-    int Pitch;
-    struct pmPixelFormat Format;
-    int ReleasePixels;
-    union
-    {
-        void *Pixels;
-        unsigned char *PixelBytes;
-    };
-};
+struct pmPixMap;
 
 int pmFormatEqual(struct pmPixelFormat a, struct pmPixelFormat b);
 unsigned int pmFormatPixelsToBytes(struct pmPixelFormat format, unsigned int pixels);
@@ -69,6 +58,9 @@ struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelForma
 struct pmPixMap *pmFromPixMap(struct pmPixMap *src, struct pmPixelFormat format);
 struct pmPixMap *pmSubPixMap(struct pmPixMap *src, int x, int y, int w, int h);
 struct pmPixMap *pmLoadPNG(const char *filename);
+struct wmRectangle pmGetRectangle(struct pmPixMap *pixMap);
+int pmGetPitch(struct pmPixMap *pixMap);
+void *pmGetPixels(struct pmPixMap *pixMap);
 void pmSetPixel(struct pmPixMap *pixMap, int x, int y, union pmColor color);
 union pmColor pmGetPixel(struct pmPixMap *pixMap, int x, int y);
 union pmColor pmBlendPixel(union pmColor a, union pmColor b);
@@ -82,6 +74,9 @@ void pmClear(struct pmPixMap *pixMap, union pmColor color);
 void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
 void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
 void pmDrawFrame(struct pmPixMap *pixMap, int x, int y, int w, int h, int sunken);
+void pmInvalidate(struct pmPixMap *pixMap, int x, int y, int w, int h);
+void pmInvalidateRect(struct pmPixMap *pixMap, struct wmRectangle rect);
+void pmClearDirty(struct pmPixMap *pixMap);
 void pmDelete(struct pmPixMap *pixMap);
 
 #ifdef __cplusplus

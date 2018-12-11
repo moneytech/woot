@@ -99,8 +99,10 @@ libwoot/asm/lmemset.asm
 libwoot/font.c
 libwoot/include/woot/font.h
 libwoot/include/woot/pixmap.h
+libwoot/include/woot/ui.h
 libwoot/include/woot/vkeys.h
 libwoot/pixmap.c
+libwoot/ui.c
 test.ttf
 wallpaper.png
 woot-gcc.template

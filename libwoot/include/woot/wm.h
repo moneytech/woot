@@ -5,6 +5,8 @@
 extern "C" {
 #endif // __cplusplus
 
+struct uiControl;
+
 struct wmRectangle
 {
     int X, Y, Width, Height;
@@ -24,6 +26,7 @@ struct wmWindow
     struct pmPixMap *Contents;
     struct pmPixMap *ClientArea;
     struct wmRectangle ClientRectangle;
+    struct uiControl *RootControl;
 };
 
 #define ET_INVALID  0
@@ -59,6 +62,7 @@ struct wmEvent
 extern struct wmRectangle wmRectangleEmpty;
 struct wmRectangle wmRectangleAdd(struct wmRectangle a, struct wmRectangle b);
 struct wmRectangle wmRectangleIntersection(struct wmRectangle a, struct wmRectangle b);
+int wmRectangleContainsPoint(struct wmRectangle *rect, int x, int y);
 
 // TODO: Cleanup this mess
 

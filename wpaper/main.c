@@ -21,7 +21,8 @@ int main(int argc, char *argv[])
     wmGetWindowSize(0, &w, &h);
     struct wmRectangle rect = { 0, 0, w, h };
     wmDrawFilledRectangle(0, &rect, pmColorDarkGray.Value);
-    wmBlit(0, pm, 0, 0, (w - pm->Width) / 2, (h - pm->Height) / 2, pm->Width, pm->Height);
+    rect = pmGetRectangle(pm);
+    wmBlit(0, pm, 0, 0, (w - rect.Width) / 2, (h - rect.Height) / 2, rect.Width, rect.Height);
     pmDelete(pm);
     wmUpdateWindowByID(0);
     return 0;

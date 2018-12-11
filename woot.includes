@@ -6,11 +6,10 @@ libc/include/sys
 libc/internal
 libc/asm
 
-./include
+include
 kernel
 lib
 mnt
-.
 simplefb
 ps2mouse
 usertest

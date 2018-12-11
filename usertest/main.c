@@ -74,9 +74,11 @@ int main(int argc, char *argv[])
                 {
                     int isDir = de->d_type == DT_DIR;
                     struct pmPixMap *icon = isDir ? dirIcon : fileIcon;
-                    pmAlphaBlit(spm, icon, 0, 0, 12, i * 48, icon->Width, icon->Height);
+                    struct wmRectangle rect = pmGetRectangle(icon);
+                    pmAlphaBlit(spm, icon, 0, 0, 12, i * 48, rect.Width, rect.Height);
                     fntDrawString(wmGetDefaultFont(), spm, 72, i * 48 + 32, de->d_name, pmColorBlack);
-                    pmDrawFrame(spm, 0, i * 48, spm->Width, 48, 0);
+                    rect = pmGetRectangle(spm);
+                    pmDrawFrame(spm, 0, i * 48, rect.Width, 48, 0);
                     //printf("%-16s %s\n", de->d_name, isDir ? "<DIR>" : "     ");
                     ++i;
                 }

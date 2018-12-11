@@ -44,8 +44,9 @@ int main(int argc, char *argv[])
             pmClear(spm, pmColorGray);
             wmInvalidateRectangle(wnd, &wnd->ClientRectangle);
 
-            int cx = spm->Width / 2;
-            int cy = spm->Height / 2;
+            struct wmRectangle rect = pmGetRectangle(spm);
+            int cx = rect.Width / 2;
+            int cy = rect.Height / 2;
 
             fntDrawString(font, spm, 1 + cx - timeWidth / 2, 1 + cy + 32, buf, pmColorBlack);
             fntDrawString(font, spm, cx - timeWidth / 2, cy + 32, buf, pmColorWhite);

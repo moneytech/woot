@@ -45,7 +45,7 @@ int WindowManager::inputThread(uintptr_t arg)
                 WM->mousePos.Y = clamp(0, WM->desktopRect.Height - 1, my);
                 WM->SetMousePosition_nolock(WM->mousePos);
 
-                if(event.Mouse.ButtonsPressed &= 1)
+                if(event.Mouse.ButtonsPressed & 1)
                 {
                     Window *dragWnd = nullptr;
                     Window *mWnd = nullptr;
@@ -64,9 +64,9 @@ int WindowManager::inputThread(uintptr_t arg)
                                 dragWnd = wnd;
                         }
                     }
-                    inhibitEvent = mWnd;
                     if(mWnd && mWnd->ID != WM->activeWindowId)
                     {
+                        inhibitEvent = true;
                         WM->activeWindowId = mWnd->ID;
                         BringWindowToFront_nolock(mWnd->ID);
                     }
@@ -430,8 +430,8 @@ bool WindowManager::RedrawWindow_nolock(int id)
 {
     Window *wnd = GetByID_nolock(id);
     if(!wnd) return false;
-    wnd->Invalidate();
-    wnd->Update();
+    wnd->Invalidate_nolock();
+    wnd->Update_nolock();
     return true;
 }
 

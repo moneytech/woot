@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <png.h>
@@ -7,6 +8,21 @@
 #define swap(type, a, b) { type tmp = a; a = b; b = tmp; }
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
+
+struct pmPixMap
+{
+    struct pmPixMap *Parent;
+    struct wmRectangle Contents;
+    struct wmRectangle Dirty;
+    int Pitch;
+    struct pmPixelFormat Format;
+    int ReleasePixels;
+    union
+    {
+        void *Pixels;
+        unsigned char *PixelBytes;
+    };
+};
 
 union pmColor pmColorBlack = { 0xFF, 0x00, 0x00, 0x00 };
 union pmColor pmColorBlue = { 0xFF, 0x00, 0x00, 0xAA };
@@ -112,8 +128,8 @@ struct pmPixMap *pmCreate(int width, int height, struct pmPixelFormat format)
         return NULL;
     struct pmPixMap *pixMap = (struct pmPixMap *)calloc(1, sizeof(struct pmPixMap));
     if(!pixMap) return NULL;
-    pixMap->Width = width;
-    pixMap->Height = height;
+    pixMap->Contents.Width = width;
+    pixMap->Contents.Height = height;
     pixMap->Pitch = width * (format.BPP + 7) / 8;
     pixMap->Format = format;
     pixMap->Pixels = calloc(height, pixMap->Pitch);
@@ -132,8 +148,8 @@ struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelForma
         return NULL;
     struct pmPixMap *pixMap = (struct pmPixMap *)calloc(1, sizeof(struct pmPixMap));
     if(!pixMap) return NULL;
-    pixMap->Width = width;
-    pixMap->Height = height;
+    pixMap->Contents.Width = width;
+    pixMap->Contents.Height = height;
     pixMap->Pitch = pitch;
     pixMap->Format = format;
     pixMap->Pixels = pixels;
@@ -143,20 +159,24 @@ struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelForma
 
 struct pmPixMap *pmFromPixMap(struct pmPixMap *src, struct pmPixelFormat format)
 {
-    struct pmPixMap *pixMap = pmCreate(src->Width, src->Height, format);
+    struct pmPixMap *pixMap = pmCreate(src->Contents.Width, src->Contents.Height, format);
     if(!pixMap) return NULL;
-    pmBlit(pixMap, src, 0, 0, 0, 0, pixMap->Width, pixMap->Height);
+    pmBlit(pixMap, src, 0, 0, 0, 0, pixMap->Contents.Width, pixMap->Contents.Height);
     return pixMap;
 }
 
 struct pmPixMap *pmSubPixMap(struct pmPixMap *src, int x, int y, int w, int h)
 {
-    struct wmRectangle srcRect = { 0, 0, src->Width, src->Height };
+    struct wmRectangle srcRect = { 0, 0, src->Contents.Width, src->Contents.Height };
     struct wmRectangle newRect = { x, y, w, h };
     newRect = wmRectangleIntersection(srcRect, newRect);
     if(newRect.Width <= 0 || newRect.Height <= 0)
         return NULL;
-    return pmCreate2(newRect.Width, newRect.Height, src->Pitch, src->Format, src->PixelBytes + newRect.Y * src->Pitch + pmFormatPixelsToBytes(src->Format, newRect.X), 0);
+    struct pmPixMap *pm = pmCreate2(newRect.Width, newRect.Height, src->Pitch, src->Format, src->PixelBytes + newRect.Y * src->Pitch + pmFormatPixelsToBytes(src->Format, newRect.X), 0);
+    pm->Parent = src;
+    pm->Contents.X = x;
+    pm->Contents.Y = y;
+    return pm;
 }
 
 struct pmPixMap *pmLoadPNG(const char *filename)
@@ -242,9 +262,27 @@ struct pmPixMap *pmLoadPNG(const char *filename)
     return pm;
 }
 
+struct wmRectangle pmGetRectangle(struct pmPixMap *pixMap)
+{
+    if(!pixMap) return wmRectangleEmpty;
+    return pixMap->Contents;
+}
+
+int pmGetPitch(struct pmPixMap *pixMap)
+{
+    if(!pixMap) return -EINVAL;
+    return pixMap->Pitch;
+}
+
+void *pmGetPixels(struct pmPixMap *pixMap)
+{
+    if(!pixMap) return NULL;
+    return pixMap->Pixels;
+}
+
 void pmSetPixel(struct pmPixMap *pixMap, int x, int y, union pmColor color)
 {
-    if(x < 0 || x >= pixMap->Width || y < 0 || y >= pixMap->Height)
+    if(x < 0 || x >= pixMap->Contents.Width || y < 0 || y >= pixMap->Contents.Height)
         return;
     unsigned int col = pmColorToValue(color, pixMap->Format);
     if(pixMap->Format.BPP == 32)
@@ -266,8 +304,8 @@ void pmSetPixel(struct pmPixMap *pixMap, int x, int y, union pmColor color)
 
 union pmColor pmGetPixel(struct pmPixMap *pixMap, int x, int y)
 {
-    x = x < 0 ? pixMap->Width - (-x % pixMap->Width) : x % pixMap->Width;
-    y = y < 0 ? pixMap->Height - (-y % pixMap->Height) : y % pixMap->Height;
+    x = x < 0 ? pixMap->Contents.Width - (-x % pixMap->Contents.Width) : x % pixMap->Contents.Width;
+    y = y < 0 ? pixMap->Contents.Height - (-y % pixMap->Contents.Height) : y % pixMap->Contents.Height;
 
     if(pixMap->Format.BPP == 32)
     {
@@ -297,10 +335,10 @@ union pmColor pmBlendPixel(union pmColor a, union pmColor b)
 void pmHLine(struct pmPixMap *pixMap, int x1, int y, int x2, union pmColor c)
 {
     if(x1 > x2) swap(int, x1, x2);
-    if(y < 0 || y >= pixMap->Height || (x1 < 0 && x2 < 0) || (x1 >= pixMap->Width && x2 >= pixMap->Width))
+    if(y < 0 || y >= pixMap->Contents.Height || (x1 < 0 && x2 < 0) || (x1 >= pixMap->Contents.Width && x2 >= pixMap->Contents.Width))
         return;
     x1 = max(0, x1);
-    x2 = min(pixMap->Width - 1, x2);
+    x2 = min(pixMap->Contents.Width - 1, x2);
 
     unsigned int col = pmColorToValue(c, pixMap->Format);
     int w = x2 - x1 + 1;
@@ -329,7 +367,7 @@ void pmVLine(struct pmPixMap *pixMap, int x, int y1, int y2, union pmColor c)
 {
     // just naive and slow implementation using SetPixel()
     if(y1 > y2) swap(int, y1, y2);
-    if(x < 0 || x >= pixMap->Width || (y1 < 0 && y2 < 0) || (y1 >= pixMap->Height && y2 >= pixMap->Height))
+    if(x < 0 || x >= pixMap->Contents.Width || (y1 < 0 && y2 < 0) || (y1 >= pixMap->Contents.Height && y2 >= pixMap->Contents.Height))
         return;
     for(int Y = y1; Y <= y2; ++Y)
         pmSetPixel(pixMap, x, Y, c);
@@ -339,10 +377,10 @@ void pmVFlip(struct pmPixMap *pixMap)
 {
     void *lineBuf = malloc(pixMap->Pitch);
     if(!lineBuf) return;
-    for(int y = 0; y < pixMap->Height / 2; ++y)
+    for(int y = 0; y < pixMap->Contents.Height / 2; ++y)
     {
-        memcpy(lineBuf, pixMap->PixelBytes + pixMap->Pitch * (pixMap->Height - (y + 1)), pixMap->Pitch);
-        memcpy(pixMap->PixelBytes + pixMap->Pitch * (pixMap->Height - (y + 1)), pixMap->PixelBytes + pixMap->Pitch * y, pixMap->Pitch);
+        memcpy(lineBuf, pixMap->PixelBytes + pixMap->Pitch * (pixMap->Contents.Height - (y + 1)), pixMap->Pitch);
+        memcpy(pixMap->PixelBytes + pixMap->Pitch * (pixMap->Contents.Height - (y + 1)), pixMap->PixelBytes + pixMap->Pitch * y, pixMap->Pitch);
         memcpy(pixMap->PixelBytes + pixMap->Pitch * y, lineBuf, pixMap->Pitch);
     }
     free(lineBuf);
@@ -394,7 +432,7 @@ void pmFillRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union 
     int x2 = x + w - 1;
     int y2 = y + h;
 
-    if(x2 < 0 || x >= pixMap->Width || y2 < 0 || y >= pixMap->Height)
+    if(x2 < 0 || x >= pixMap->Contents.Width || y2 < 0 || y >= pixMap->Contents.Height)
         return;
 
     for(int Y = y; Y < y2; ++Y)
@@ -403,7 +441,7 @@ void pmFillRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union 
 
 void pmClear(struct pmPixMap *pixMap, union pmColor color)
 {
-    pmFillRectangle(pixMap, 0, 0, pixMap->Width, pixMap->Height, color);
+    pmFillRectangle(pixMap, 0, 0, pixMap->Contents.Width, pixMap->Contents.Height, color);
 }
 
 void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h)
@@ -432,16 +470,16 @@ void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, i
         h += sy;
         sy = 0;
     }
-    if(w < 0 || h < 0 || x >= dst->Width || y >= dst->Height)
+    if(w < 0 || h < 0 || x >= dst->Contents.Width || y >= dst->Contents.Height)
         return;
 
-    int x2 = min(dst->Width, x + w);
-    int y2 = min(dst->Height, y + h);
-    if(x2 <= 0 || y2 <= 0 || sx >= src->Width || sy >= src->Height)
+    int x2 = min(dst->Contents.Width, x + w);
+    int y2 = min(dst->Contents.Height, y + h);
+    if(x2 <= 0 || y2 <= 0 || sx >= src->Contents.Width || sy >= src->Contents.Height)
         return;
 
-    int sx2 = min(src->Width, sx + w);
-    int sy2 = min(src->Height, sy + h);
+    int sx2 = min(src->Contents.Width, sx + w);
+    int sy2 = min(src->Contents.Height, sy + h);
 
     unsigned char *d = dst->PixelBytes + y * dst->Pitch + pmFormatPixelsToBytes(dst->Format, x);
     unsigned char *s = src->PixelBytes + sy * src->Pitch + pmFormatPixelsToBytes(src->Format, sx);
@@ -481,25 +519,6 @@ void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, i
     }
 }
 
-void pmDrawFrame(struct pmPixMap *pixMap, int x, int y, int w, int h, int sunken)
-{
-    union pmColor tl = sunken ? pmColorDarkGray : pmColorWhite;
-    union pmColor br = sunken ? pmColorWhite : pmColorDarkGray;
-
-    pmHLine(pixMap, x, y + h - 1, x + w - 1, br);
-    pmVLine(pixMap, x + w - 1, y, y + h - 1, br);
-    pmHLine(pixMap, x, y, x + w - 1, tl);
-    pmVLine(pixMap, x, y, y + h - 1, tl);
-}
-
-void pmDelete(struct pmPixMap *pixMap)
-{
-    if(!pixMap) return;
-    if(pixMap->ReleasePixels && pixMap->Pixels)
-        free(pixMap->Pixels);
-    free(pixMap);
-}
-
 void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h)
 {
     if(!src->Format.AlphaBits)
@@ -529,16 +548,16 @@ void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int
         h += sy;
         sy = 0;
     }
-    if(w < 0 || h < 0 || x >= dst->Width || y >= dst->Height)
+    if(w < 0 || h < 0 || x >= dst->Contents.Width || y >= dst->Contents.Height)
         return;
 
-    int x2 = min(dst->Width, x + w);
-    int y2 = min(dst->Height, y + h);
-    if(x2 <= 0 || y2 <= 0 || sx >= src->Width || sy >= src->Height)
+    int x2 = min(dst->Contents.Width, x + w);
+    int y2 = min(dst->Contents.Height, y + h);
+    if(x2 <= 0 || y2 <= 0 || sx >= src->Contents.Width || sy >= src->Contents.Height)
         return;
 
-    int sx2 = min(src->Width, sx + w);
-    int sy2 = min(src->Height, sy + h);
+    int sx2 = min(src->Contents.Width, sx + w);
+    int sy2 = min(src->Contents.Height, sy + h);
 
     unsigned char *d = dst->PixelBytes + y * dst->Pitch + pmFormatPixelsToBytes(dst->Format, x);
     unsigned char *s = src->PixelBytes + sy * src->Pitch + pmFormatPixelsToBytes(src->Format, sx);
@@ -564,4 +583,43 @@ void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int
                 pmSetPixel(dst, X, Y, pmBlendPixel(pmGetPixel(dst, X, Y), pmGetPixel(src, sX, sY)));
         }
     }
+}
+
+void pmDrawFrame(struct pmPixMap *pixMap, int x, int y, int w, int h, int sunken)
+{
+    union pmColor tl = sunken ? pmColorDarkGray : pmColorWhite;
+    union pmColor br = sunken ? pmColorWhite : pmColorDarkGray;
+
+    pmHLine(pixMap, x, y + h - 1, x + w - 1, br);
+    pmVLine(pixMap, x + w - 1, y, y + h - 1, br);
+    pmHLine(pixMap, x, y, x + w - 1, tl);
+    pmVLine(pixMap, x, y, y + h - 1, tl);
+}
+
+void pmInvalidate(struct pmPixMap *pixMap, int x, int y, int w, int h)
+{
+    if(!pixMap) return;
+    if(pixMap->Parent) pmInvalidate(pixMap->Parent, x + pixMap->Parent->Contents.X, y + pixMap->Parent->Contents.Y, w, h);
+    struct wmRectangle rect = { x, y, w, h };
+    pixMap->Contents = wmRectangleAdd(pixMap->Contents, rect);
+    return;
+}
+
+void pmInvalidateRect(struct pmPixMap *pixMap, struct wmRectangle rect)
+{
+    pmInvalidate(pixMap, rect.X, rect.Y, rect.Width, rect.Height);
+}
+
+void pmClearDirty(struct pmPixMap *pixMap)
+{
+    if(!pixMap) return;
+    pixMap->Dirty = wmRectangleEmpty;
+}
+
+void pmDelete(struct pmPixMap *pixMap)
+{
+    if(!pixMap) return;
+    if(pixMap->ReleasePixels && pixMap->Pixels)
+        free(pixMap->Pixels);
+    free(pixMap);
 }
