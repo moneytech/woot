@@ -598,16 +598,27 @@ void pmDrawFrame(struct pmPixMap *pixMap, int x, int y, int w, int h, int sunken
 
 void pmInvalidate(struct pmPixMap *pixMap, int x, int y, int w, int h)
 {
-    if(!pixMap) return;
-    if(pixMap->Parent) pmInvalidate(pixMap->Parent, x + pixMap->Parent->Contents.X, y + pixMap->Parent->Contents.Y, w, h);
     struct wmRectangle rect = { x, y, w, h };
-    pixMap->Contents = wmRectangleAdd(pixMap->Contents, rect);
-    return;
+    pmInvalidateRect(pixMap, rect);
 }
 
 void pmInvalidateRect(struct pmPixMap *pixMap, struct wmRectangle rect)
 {
-    pmInvalidate(pixMap, rect.X, rect.Y, rect.Width, rect.Height);
+    if(!pixMap) return;
+    if(pixMap->Parent)
+    {
+        rect.X += pixMap->Parent->Contents.X;
+        rect.Y += pixMap->Parent->Contents.Y;
+        pmInvalidateRect(pixMap->Parent, rect);
+        return;
+    }
+    pixMap->Dirty = wmRectangleAdd(pixMap->Dirty, rect);
+}
+
+struct wmRectangle pmGetDirtyRectangle(struct pmPixMap *pixMap)
+{
+    if(!pixMap) return wmRectangleEmpty;
+    return pixMap->Dirty;
 }
 
 void pmClearDirty(struct pmPixMap *pixMap)

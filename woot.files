@@ -104,6 +104,7 @@ libwoot/include/woot/vkeys.h
 libwoot/pixmap.c
 libwoot/ui.c
 test.ttf
+title.ttf
 wallpaper.png
 woot-gcc.template
 woot.specs.template

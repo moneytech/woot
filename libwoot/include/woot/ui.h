@@ -10,6 +10,7 @@ struct wmEvent;
 struct uiControl;
 struct uiLabel;
 struct uiButton;
+struct uiLineEdit;
 
 typedef void (*uiEventHandler)(struct uiControl *sender);
 typedef void (*uiWMEventHandler)(struct uiControl *sender, struct wmEvent *event);
@@ -20,6 +21,8 @@ void uiControlRedraw(struct uiControl *control);
 struct pmPixMap *uiControlGetPixMap(struct uiControl *control);
 char *uiControlGetText(struct uiControl *control);
 int uiControlProcessEvent(struct uiControl *control, struct wmEvent event);
+void uiControlSetTextColor(struct uiControl *control, union pmColor color);
+void uiControlSetBackColor(struct uiControl *control, union pmColor color);
 void uiControlSetOnMousePress(struct uiControl *control, uiWMEventHandler handler);
 void uiControlSetOnMouseRelease(struct uiControl *control, uiWMEventHandler handler);
 void uiControlSetOnMouseMove(struct uiControl *control, uiWMEventHandler handler);
@@ -29,6 +32,9 @@ void uiLabelDelete(struct uiLabel *control);
 
 struct uiButton *uiButtonCreate(struct uiControl *parent, int x, int y, int width, int height, const char *text, struct fntFont *font, uiEventHandler onCreate);
 void uiButtonDelete(struct uiButton *control);
+
+struct uiLineEdit *uiLineEditCreate(struct uiControl *parent, int x, int y, int width, int height, const char *text, struct fntFont *font, uiEventHandler onCreate);
+void uiLineEditDelete(struct uiLineEdit *control);
 
 #ifdef __cplusplus
 }

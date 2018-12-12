@@ -28,15 +28,27 @@ int main(int argc, char *argv[])
     struct pmPixMap *pm = wnd->ClientArea;
     wmShowWindow(wnd);
 
-    struct uiButton *testButton = uiButtonCreate(wnd->RootControl, 50, 20, 50, 40, "Btn1", NULL, NULL);
-    uiControlSetOnMouseMove((struct uiControl *)testButton, mouseMoveTest);
-    uiControlSetOnMousePress((struct uiControl *)testButton, mousePressTest);
-    uiControlSetOnMouseRelease((struct uiControl *)testButton, mouseReleaseTest);
-
-    struct uiButton *testButton2 = uiButtonCreate(wnd->RootControl, 50, 70, 50, 40, "Btn2", NULL, NULL);
-    uiControlSetOnMouseMove((struct uiControl *)testButton2, mouseMoveTest);
-    uiControlSetOnMousePress((struct uiControl *)testButton2, mousePressTest);
-    uiControlSetOnMouseRelease((struct uiControl *)testButton2, mouseReleaseTest);
+    struct uiLineEdit *display = uiLineEditCreate(wnd->RootControl, 4, 4, wnd->ClientRectangle.Width - 8, 24, "0", NULL, NULL);
+    struct uiButton *buttons[20];
+    char *btnLabels[20] =
+    {
+        "CE", "sqrt", "%", "1/x",
+        "7", "8", "9", "/",
+        "4", "5", "6", "*",
+        "1", "2", "3", "-",
+        "0", ".", "=", "+"
+    };
+    int bw = wnd->ClientRectangle.Width / 4;
+    int bh = (wnd->ClientRectangle.Height - 32) / 5;
+    for(int y = 0; y < 5; ++y)
+    {
+        for(int x = 0; x < 4; ++x)
+        {
+            int btn = x + (4 * y);
+            buttons[btn] = uiButtonCreate(wnd->RootControl, 4 + x * bw, 4 + 32 + y * bh, bw - 8, bh - 8, btnLabels[btn], NULL, NULL);
+            uiControlSetOnMousePress((struct uiControl *)buttons[btn], mousePressTest);
+        }
+    }
 
     uiControlRedraw(wnd->RootControl);
     wmUpdateWindow(wnd);

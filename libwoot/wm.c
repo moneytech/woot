@@ -14,6 +14,7 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
+static struct fntFont *defaultFont;
 static struct fntFont *titleFont;
 static union pmColor backColor;
 static union pmColor titleForeground;
@@ -65,9 +66,10 @@ int wmRectangleContainsPoint(struct wmRectangle *rect, int x, int y)
 
 int wmInitialize()
 {
-    titleFont = fntLoad("WOOT_OS:/test.ttf");
-    //if(titleFont) fntSetPixelSize(titleFont, 16);
-    if(titleFont) fntSetPointSize(titleFont, 12, 96);
+    defaultFont = fntLoad("WOOT_OS:/test.ttf");
+    titleFont = fntLoad("WOOT_OS:/title.ttf");
+    if(defaultFont) fntSetPointSize(defaultFont, 11, 96);
+    if(titleFont) fntSetPointSize(titleFont, 11, 96);
     backColor = pmColorGray;
     titleForeground = pmColorWhite;
     titleBackground = pmColorBlue;
@@ -129,8 +131,18 @@ struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char 
 
     if(decorate)
     {
-        struct wmRectangle dragRect = { 2, 2, width - 4, 24 };
-        wmSetDragRectangle(wnd, &dragRect);
+        struct wmRectangle titleRect = { 2, 2, width - 4, 24 };
+        wnd->TitleBar = uiControlCreate(NULL, wnd->Contents, titleRect.X, titleRect.Y, titleRect.Width, titleRect.Height, NULL, NULL);
+        if(wnd->TitleBar)
+        {
+            uiControlSetBackColor(wnd->TitleBar, pmColorBlue);
+            titleRect.Width -= 24;
+            struct uiLabel *label = uiLabelCreate(wnd->TitleBar, 0, 0, titleRect.Width, titleRect.Height, wnd->Name, titleFont, NULL);
+            if(label) uiControlSetTextColor((struct uiControl *)label, pmColorWhite);
+            struct uiButton *closeButton = uiButtonCreate(wnd->TitleBar, titleRect.X + titleRect.Width + 3, 4, 24 - 8, titleRect.Height - 8, "X", titleFont, NULL);
+            uiControlSetBackColor((struct uiControl *)closeButton, pmColorGray);
+        }
+        wmSetDragRectangle(wnd, &titleRect);
         wmDecorateWindow(wnd);
     }
 
@@ -174,10 +186,9 @@ int wmDrawFilledRectangle(int window, struct wmRectangle *rect, int color)
 
 int wmUpdateWindow(struct wmWindow *window)
 {
-    struct pmPixMap *pm = uiControlGetPixMap(window->RootControl);
-    struct wmRectangle rect = pmGetRectangle(pm);
-    wmInvalidateRectangle(window, &rect);
-    pmClearDirty(pm);
+    struct wmRectangle dirty = pmGetDirtyRectangle(window->Contents);
+    wmInvalidateRectangle(window, &dirty);
+    pmClearDirty(window->Contents);
     return syscall1(SYS_update_window, window->ID);
 }
 
@@ -257,9 +268,7 @@ int wmDecorateWindow(struct wmWindow *window)
 {
     struct wmRectangle rect = pmGetRectangle(window->Contents);
     pmDrawFrame(window->Contents, 0, 0, rect.Width, rect.Height, 0);
-    pmFillRectangle(window->Contents, 2, 2, rect.Width - 4, 24, titleBackground);
-    if(titleFont) fntDrawString(titleFont, window->Contents, 8, 19, window->Name, titleForeground);
-    pmDrawFrame(window->Contents, 2, 2, rect.Width - 4, 24, 1);
+    if(window->TitleBar) uiControlRedraw(window->TitleBar);
 }
 
 void wmDeleteWindow(struct wmWindow *window)
@@ -287,7 +296,7 @@ int wmSetDragRectangle(struct wmWindow *window, struct wmRectangle *rect)
 
 struct fntFont *wmGetDefaultFont()
 {
-    return titleFont;
+    return defaultFont;
 }
 
 int wmGetEvent(int window, struct wmEvent *event)

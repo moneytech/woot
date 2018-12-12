@@ -68,6 +68,8 @@ int main(int argc, char *argv[])
             if(!dir) printf("couldn't open directory %s\n", name);
             else
             {
+                struct fntFont *font = wmGetDefaultFont();
+                float fh = fntGetPixelHeight(font);
                 struct dirent *de;
                 int i = 0;
                 while((de = readdir(dir)))
@@ -75,8 +77,8 @@ int main(int argc, char *argv[])
                     int isDir = de->d_type == DT_DIR;
                     struct pmPixMap *icon = isDir ? dirIcon : fileIcon;
                     struct wmRectangle rect = pmGetRectangle(icon);
-                    pmAlphaBlit(spm, icon, 0, 0, 12, i * 48, rect.Width, rect.Height);
-                    fntDrawString(wmGetDefaultFont(), spm, 72, i * 48 + 32, de->d_name, pmColorBlack);
+                    pmAlphaBlit(spm, icon, 0, 0, 12, i * 48, rect.Width, rect.Height);                    
+                    fntDrawString(font, spm, 72, i * 48 + (48 - fh) / 2, de->d_name, pmColorBlack);
                     rect = pmGetRectangle(spm);
                     pmDrawFrame(spm, 0, i * 48, rect.Width, 48, 0);
                     //printf("%-16s %s\n", de->d_name, isDir ? "<DIR>" : "     ");

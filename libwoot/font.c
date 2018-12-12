@@ -54,46 +54,44 @@ int fntSetPointSize(struct fntFont *font, double size, int dpi)
     return error ? -EINVAL : 0;
 }
 
-int fntDrawCharacter(struct fntFont *font, struct pmPixMap *pixMap, int x, int y, int chr, union pmColor color)
+float fntDrawCharacter(struct fntFont *font, struct pmPixMap *pixMap, int x, int y, int chr, union pmColor color)
 {
     FT_Error error = FT_Load_Char(font->face, chr, FT_LOAD_DEFAULT);
     if(error) return -EINVAL;
     error = FT_Render_Glyph(font->face->glyph, FT_RENDER_MODE_NORMAL);
     if(error) return -EINVAL;
+    y += font->face->size->metrics.ascender >> 6;
     for(int i = 0; i < font->face->glyph->bitmap.rows; ++i)
     {
         unsigned char *line = (unsigned char *)(font->face->glyph->bitmap.buffer + i * font->face->glyph->bitmap.pitch);
+        int _y = y + i - font->face->glyph->bitmap_top;
         for(int j = 0; j < font->face->glyph->bitmap.width; ++j)
         {
             int _x = x + j + font->face->glyph->bitmap_left;
-            int _y = y + i - font->face->glyph->bitmap_top;
             pmSetPixel(pixMap, _x, _y, pmBlendPixel(pmGetPixel(pixMap, _x, _y), pmColorFromARGB(line[j], color.R, color.G, color.B)));
         }
     }
-    return font->face->glyph->advance.x >> 6;
+    return font->face->glyph->advance.x / 64.0f;
 }
 
-int fntMeasureCharacter(struct fntFont *font, int chr)
+float fntMeasureCharacter(struct fntFont *font, int chr)
 {
     FT_Error error = FT_Load_Char(font->face, chr, FT_LOAD_ADVANCE_ONLY);
     if(error) return -EINVAL;
-    return font->face->glyph->advance.x >> 6;
+    return font->face->glyph->advance.x / 64.0f;
 }
 
-int fntDrawString(struct fntFont *font, struct pmPixMap *pixMap, int x, int y, const char *str, union pmColor color)
+float fntDrawString(struct fntFont *font, struct pmPixMap *pixMap, int x, int y, const char *str, union pmColor color)
 {
+    float a = x;
     while(*str)
-    {
-        int dx = fntDrawCharacter(font, pixMap, x, y, *str++, color);
-        if(dx < 0) return dx;
-        x += dx;
-    }
-    return x;
+        a += fntDrawCharacter(font, pixMap, a, y, *str++, color);
+    return a;
 }
 
-int fntMeasureString(struct fntFont *font, const char *str)
+float fntMeasureString(struct fntFont *font, const char *str)
 {
-    int x = 0;
+    float x = 0;
     while(*str)
     {
         int dx = fntMeasureCharacter(font, *str++);
@@ -101,6 +99,16 @@ int fntMeasureString(struct fntFont *font, const char *str)
         x += dx;
     }
     return x;
+}
+
+float fntGetPixelAscender(struct fntFont *font)
+{
+    return font->face->size->metrics.ascender / 64.0f;
+}
+
+float fntGetPixelHeight(struct fntFont *font)
+{
+    return font->face->size->metrics.height / 64.0f;
 }
 
 void fntDelete(struct fntFont *font)

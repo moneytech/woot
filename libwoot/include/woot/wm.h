@@ -26,6 +26,7 @@ struct wmWindow
     struct pmPixMap *Contents;
     struct pmPixMap *ClientArea;
     struct wmRectangle ClientRectangle;
+    struct uiControl *TitleBar;
     struct uiControl *RootControl;
 };
 

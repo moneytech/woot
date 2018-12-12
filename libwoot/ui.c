@@ -16,6 +16,8 @@ struct uiControl
     struct pmPixMap *Content;
     void *Context;
     char *Text;
+    union pmColor TextColor;
+    union pmColor BackColor;
 
     uiEventHandler OnCreate;
     uiEventHandler OnDelete;
@@ -49,6 +51,12 @@ struct uiButton
     struct fntFont *Font;
 };
 
+struct uiLineEdit
+{
+    struct uiControl Control;
+    struct fntFont *Font;
+};
+
 struct uiControl *uiControlCreate(struct uiControl *parent, struct pmPixMap *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
 {
     struct uiControl *control = (struct uiControl *)calloc(1, sizeof(struct uiControl));
@@ -70,6 +78,8 @@ struct uiControl *uiControlCreate(struct uiControl *parent, struct pmPixMap *par
         return NULL;
     }
     control->Text = strdup(text ? text : "");
+    control->TextColor = pmColorBlack;
+    control->BackColor = pmColorTransparent;
     control->OnCreate = onCreate;
     if(control->OnCreate)
         control->OnCreate(control);
@@ -105,6 +115,11 @@ void uiControlDelete(struct uiControl *control)
 
 void uiControlRedraw(struct uiControl *control)
 {
+    if(control->BackColor.A != 0)
+    {
+        struct wmRectangle rect = pmGetRectangle(control->Content);
+        pmFillRectangle(control->Content, 0, 0, rect.Width, rect.Height, control->BackColor);
+    }
     if(control->OnPaint)
         control->OnPaint(control);
     for(struct uiControl *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
@@ -164,6 +179,18 @@ int uiControlProcessEvent(struct uiControl *control, struct wmEvent event)
     return 0;
 }
 
+void uiControlSetTextColor(struct uiControl *control, union pmColor color)
+{
+    if(!control) return;
+    control->TextColor = color;
+}
+
+void uiControlSetBackColor(struct uiControl *control, union pmColor color)
+{
+    if(!control) return;
+    control->BackColor = color;
+}
+
 void uiControlSetOnMousePress(struct uiControl *control, uiWMEventHandler handler)
 {
     if(!control) return;
@@ -185,8 +212,9 @@ void uiControlSetOnMouseMove(struct uiControl *control, uiWMEventHandler handler
 static void labelPaint(struct uiControl *sender)
 {
     struct uiLabel *label = (struct uiLabel *)sender;
-    fntDrawString(label->Font, label->Control.Content, 2, 24, label->Control.Text, pmColorBlack);
     struct wmRectangle rect = pmGetRectangle(label->Control.Content);
+    float height = fntGetPixelHeight(label->Font);
+    fntDrawString(label->Font, label->Control.Content, 2, (rect.Height - height) / 2, label->Control.Text, label->Control.TextColor);
     pmInvalidateRect(label->Control.Content, rect);
 }
 
@@ -212,8 +240,10 @@ void uiLabelDelete(struct uiLabel *control)
 static void buttonPaint(struct uiControl *sender)
 {
     struct uiButton *button = (struct uiButton *)sender;
-    fntDrawString(button->Font, button->Control.Content, 2, 24, button->Control.Text, pmColorBlack);
     struct wmRectangle rect = pmGetRectangle(button->Control.Content);
+    float width = fntMeasureString(button->Font, button->Control.Text);
+    float height = fntGetPixelHeight(button->Font);
+    fntDrawString(button->Font, button->Control.Content, (rect.Width - width) / 2, (rect.Height - height) / 2, button->Control.Text, button->Control.TextColor);
     pmDrawFrame(button->Control.Content, 0, 0, rect.Width, rect.Height, 0);
     pmInvalidateRect(button->Control.Content, rect);
 }
@@ -233,6 +263,38 @@ struct uiButton *uiButtonCreate(struct uiControl *parent, int x, int y, int widt
 }
 
 void uiButtonDelete(struct uiButton *control)
+{
+    uiControlDelete((struct uiControl *)control);
+}
+
+static void lineEditPaint(struct uiControl *sender)
+{
+    struct uiLineEdit *edit = (struct uiLineEdit *)sender;
+    struct wmRectangle rect = pmGetRectangle(edit->Control.Content);
+    pmFillRectangle(edit->Control.Content, 0, 0, rect.Width, rect.Height, edit->Control.BackColor);
+    float height = fntGetPixelHeight(edit->Font);
+    fntDrawString(edit->Font, edit->Control.Content, 2, (rect.Height - height) / 2, edit->Control.Text, edit->Control.TextColor);
+    pmDrawFrame(edit->Control.Content, 0, 0, rect.Width, rect.Height, 1);
+    pmDrawFrame(edit->Control.Content, 1, 1, rect.Width - 2, rect.Height - 2, 1);
+    pmInvalidateRect(edit->Control.Content, rect);
+}
+
+struct uiLineEdit *uiLineEditCreate(struct uiControl *parent, int x, int y, int width, int height, const char *text, struct fntFont *font, uiEventHandler onCreate)
+{
+    struct uiLineEdit *control = (struct uiLineEdit *)uiControlCreate(parent, NULL, x, y, width, height, text, onCreate);
+    if(!control) return NULL;
+    control->Font = font ? font : wmGetDefaultFont();
+    if(!control->Font)
+    {
+        uiLineEditDelete(control);
+        return NULL;
+    }
+    control->Control.BackColor = pmColorWhite;
+    control->Control.OnPaint = lineEditPaint;
+    return control;
+}
+
+void uiLineEditDelete(struct uiLineEdit *control)
 {
     uiControlDelete((struct uiControl *)control);
 }

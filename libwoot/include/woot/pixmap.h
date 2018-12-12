@@ -76,6 +76,7 @@ void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int
 void pmDrawFrame(struct pmPixMap *pixMap, int x, int y, int w, int h, int sunken);
 void pmInvalidate(struct pmPixMap *pixMap, int x, int y, int w, int h);
 void pmInvalidateRect(struct pmPixMap *pixMap, struct wmRectangle rect);
+struct wmRectangle pmGetDirtyRectangle(struct pmPixMap *pixMap);
 void pmClearDirty(struct pmPixMap *pixMap);
 void pmDelete(struct pmPixMap *pixMap);
 
