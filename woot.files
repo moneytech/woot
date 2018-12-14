@@ -79,6 +79,12 @@ libfreetype/lib/libfreetype.la
 libfreetype/lib/libfreetype.so
 libfreetype/lib/libfreetype.so.6
 libfreetype/lib/libfreetype.so.6.16.0
+libgmp/configure
+libgmp/include/gmp.h
+libgmp/lib/libgmp.a
+libgmp/lib/libgmp.so
+libgmp/lib/libgmp.so.10
+libgmp/lib/libgmp.so.10.3.2
 libpng/configure
 libpng/configure
 libpng/include/libpng16/png.h

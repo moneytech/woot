@@ -132,10 +132,29 @@ struct pmPixMap *uiControlGetPixMap(struct uiControl *control)
     return control->Content;
 }
 
+void *uiControlGetContext(struct uiControl *control)
+{
+    if(!control) return NULL;
+    return control->Context;
+}
+
+void uiControlSetContext(struct uiControl *control, void *context)
+{
+    if(!control) return;
+    control->Context = context;
+}
+
 char *uiControlGetText(struct uiControl *control)
 {
     if(!control) return NULL;
     return control->Text;
+}
+
+void uiControlSetText(struct uiControl *control, const char *text)
+{
+    if(!control) return;
+    if(control->Text) free(control->Text);
+    control->Text = strdup(text);
 }
 
 int uiControlProcessEvent(struct uiControl *control, struct wmEvent event)

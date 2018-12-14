@@ -39,6 +39,11 @@ int isupper(int c)
     return (c >= 'A' && c <= 'Z');
 }
 
+int islower(int c)
+{
+    return (c >= 'a' && c <= 'z');
+}
+
 int isalnum(int c)
 {
     return isalpha(c) || isdigit(c);

@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <float.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -19,9 +20,9 @@ FILE *stdin = &fstdin;
 FILE *stdout = &fstdout;
 FILE *stderr = &fstderr;
 
-static int ipow(int x, int y)
+static long long ipow(long long x, long long y)
 {
-    int v = 1;
+    long long v = 1;
     for(;;)
     {
         if(y & 1) v *= x;
@@ -462,24 +463,32 @@ static int internalPrintf(writeCallback wc, void *wcarg, const char *fmt, va_lis
 
                 specifier = 0;
             }
-            else if(c == 'f' || c == 'F')
+            else if(c == 'f' || c == 'F' || c == 'g' || c == 'G')
             {
                 double val = ldSpec ? va_arg(arg, long double) : va_arg(arg, double);
                 int upperCase = isupper(c);
+                c = tolower(c);
                 if(isnan(val))
                     bw += writeString(wc, wcarg, upperCase ? "NAN" : "nan", 0);
                 else if(isinf(val))
                     bw += writeString(wc, wcarg, val < 0 ? (upperCase ? "-INF" : "-inf") : (upperCase ? "+INF" : "+inf"), 0);
                 else
                 {
+                    // FIXME: still something wrong here
                     int64_t i = (int64_t)(val);
-                    bw += writeDec(wc, wcarg, i, 1, -1, showPlus, 0, 0);
-                    bw += wc(wcarg, '.');
                     double f = val - i;
+                    bw += writeDec(wc, wcarg, i, 1, -1, showPlus, 0, 0);
+                    val = f;
                     if(!precision) precision = 6;
-                    int64_t ai = (int64_t)(f * ipow(10, precision));
-                    ai = ai < 0 ? - ai : ai;
-                    bw += writeDec(wc, wcarg, ai, precision, -1, 0, 0, 0);
+                    for(int i = 0; i < precision; ++i)
+                    {
+                        if(!i) bw += wc(wcarg, '.');
+                        val *= 10;
+                        int digit = (int)val % 10;
+                        char c = '0' + digit;
+                        bw += wc(wcarg, c);
+                        val -= digit;
+                    }
                 }
                 specifier = 0;
             }
@@ -649,6 +658,12 @@ int rename(const char *oldpath, const char *newpath)
 {
     errno = -ENOSYS;
     return -1;
+}
+
+int ungetc(int character, FILE *stream)
+{
+    // not implemented
+    return EOF;
 }
 
 FILE *fopen(const char *filename, const char *mode)

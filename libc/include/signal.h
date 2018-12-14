@@ -1,6 +1,8 @@
 #ifndef SIGNAL_H
 #define SIGNAL_H
 
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -17,6 +19,7 @@ extern "C" {
 
 typedef void (*__sighandler_t)(int);
 
+int kill(pid_t pid, int sig);
 __sighandler_t signal(int sig, __sighandler_t handler);
 
 #ifdef __cplusplus

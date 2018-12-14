@@ -1,5 +1,6 @@
 #ifndef STDIO_H
 #define STDIO_H
+#define _STDIO_H // for libgmp
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -54,6 +55,7 @@ int putc(int character, FILE *stream);
 int getchar(void);
 int putchar(int character);
 int rename(const char *oldpath, const char *newpath);
+int ungetc(int character, FILE *stream);
 
 FILE *fopen(const char *filename, const char *mode);
 int feof(FILE *stream);

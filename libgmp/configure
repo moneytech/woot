@@ -1,0 +1,10 @@
+#!/bin/sh
+
+mkdir -p build &&
+cd build &&
+rm -rf {,.[!.],..?}* &&
+CC=woot-gcc \
+CFLAGS='-fno-stack-protector' \
+../gmp-6.1.2/configure --prefix=$PWD/.. --host=i686-linux-gnu
+cd ..
+

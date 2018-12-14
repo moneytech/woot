@@ -34,3 +34,6 @@ clock
 wpaper
 calc
 .
+libgmp
+libgmp/include
+libgmp/lib

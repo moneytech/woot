@@ -19,7 +19,10 @@ struct uiControl *uiControlCreate(struct uiControl *parent, struct pmPixMap *par
 void uiControlDelete(struct uiControl *control);
 void uiControlRedraw(struct uiControl *control);
 struct pmPixMap *uiControlGetPixMap(struct uiControl *control);
+void *uiControlGetContext(struct uiControl *control);
+void uiControlSetContext(struct uiControl *control, void *context);
 char *uiControlGetText(struct uiControl *control);
+void uiControlSetText(struct uiControl *control, const char *text);
 int uiControlProcessEvent(struct uiControl *control, struct wmEvent event);
 void uiControlSetTextColor(struct uiControl *control, union pmColor color);
 void uiControlSetBackColor(struct uiControl *control, union pmColor color);
