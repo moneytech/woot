@@ -141,8 +141,8 @@ time_t CDFS::FSINode::GetCreateTime()
 {
     Time::DateTime dt;
     dt.Year = 1900 + DirEntry.RecordingDateTime.Year;
-    dt.Month = DirEntry.RecordingDateTime.Month - 1;
-    dt.Day = DirEntry.RecordingDateTime.Day - 1;
+    dt.Month = DirEntry.RecordingDateTime.Month;
+    dt.Day = DirEntry.RecordingDateTime.Day;
     dt.Hour = DirEntry.RecordingDateTime.Hour;
     dt.Minute = DirEntry.RecordingDateTime.Minute;
     dt.Second = DirEntry.RecordingDateTime.Second;
