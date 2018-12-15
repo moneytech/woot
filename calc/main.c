@@ -31,12 +31,9 @@ long long pow10Table[] =
     1000000000000000000ll
 };
 
-const int maxDecPlaces = 6;
-
 struct calcState
 {
-    // gmp will come in handy here
-    long long T, A, X;
+    double T, A, X;
     char Flag;
     int Shift;
     int Do;
@@ -54,7 +51,10 @@ void buttonMousePress(struct uiControl *sender, struct wmEvent *event)
     {
         state->CCount = 0;
         if(text[1] == '/')
-            state->T = pow10Table[maxDecPlaces + 1] / state->T;
+        {
+            state->T = 1.0 / state->T;
+            state->Decimal = 0;
+        }
         else
         {
             if(state->Shift)
@@ -67,10 +67,16 @@ void buttonMousePress(struct uiControl *sender, struct wmEvent *event)
             }
             int digit = text[0] - '0';
             if(!state->Decimal)
-                state->T = state->T * 10 + digit * pow10Table[maxDecPlaces];
-            else if(state->Decimal <= maxDecPlaces)
-                state->T = state->T + digit * pow10Table[maxDecPlaces - state->Decimal++];
+                state->T = state->T * 10 + digit;
+            else if(state->Decimal <= 10)
+                state->T = state->T + digit / pow(10, state->Decimal++);
         }
+    }
+    else if(text[0] == 's')
+    {
+        state->CCount = 0;
+        state->Decimal = 0;
+        state->T = sqrt(state->T);
     }
     else if(text[0] == 'C')
     {
@@ -106,6 +112,7 @@ void buttonMousePress(struct uiControl *sender, struct wmEvent *event)
     else if(text[0] == '=')
     {
         state->CCount = 0;
+        state->Decimal = 0;
         if(state->Do)
         {
             state->X = state->T;
@@ -123,27 +130,46 @@ void buttonMousePress(struct uiControl *sender, struct wmEvent *event)
             break;
         case '*':
             state->A *= state->X;
-            state->A /= pow10Table[maxDecPlaces];
             state->T = state->A;
             break;
         case '/':
-            state->A = (state->A * pow10Table[maxDecPlaces]) / state->X;
+            state->A /= state->X;
             state->T = state->A;
             break;
-        default:
-            state->A = 0;
+        }
+    }
+    else if(text[0] == '%')
+    {
+        state->CCount = 0;
+        state->Decimal = 0;
+        if(state->Do)
+        {
+            state->X = state->T;
+            state->Do = 0;
+        }
+        switch(state->Flag)
+        {
+        case '+':
+            state->A += state->A * 0.01 * state->X;
+            state->T = state->A;
+            break;
+        case '-':
+            state->A -= state->A * 0.01 * state->X;
+            state->T = state->A;
+            break;
+        case '*':
+            state->A *= 0.01 * state->X;
+            state->T = state->A;
+            break;
+        case '/':
+            state->A /= 0.01 * state->X;
             state->T = state->A;
             break;
         }
     }
 
     char buf[64];
-    int decPlaces = 0;
-    long long integ = state->T / pow10Table[maxDecPlaces];
-    long long frac = state->T % pow10Table[maxDecPlaces];
-    for(; decPlaces < maxDecPlaces && !(frac % pow10Table[decPlaces]); ++decPlaces);
-    decPlaces = 1 + maxDecPlaces - decPlaces;
-    snprintf(buf, sizeof(buf), "%lld.%lld", integ, frac / pow10Table[maxDecPlaces - decPlaces]);
+    snprintf(buf, sizeof(buf), "%.6g", state->T);
     buf[sizeof(buf) - 1] = 0;
     uiControlSetText((struct uiControl *)state->Display, buf);
     uiControlRedraw((struct uiControl *)state->Display);
@@ -191,10 +217,44 @@ int main(int argc, char *argv[])
         struct wmEvent event;
         wmGetEvent(wnd->ID, &event);
         wmProcessEvent(wnd, &event);
-        if(event.Type == ET_KEYBOARD)
+        if(event.Type == ET_KEYBOARD && event.Keyboard.Flags == 0)
         {
             if(event.Keyboard.Key == VK_ESCAPE)
                 break;
+            else if(event.Keyboard.Key == VK_KEY0 || event.Keyboard.Key == VK_NUMPAD0)
+                buttonMousePress((struct uiControl *)buttons[16], &event);
+            else if(event.Keyboard.Key == VK_KEY1 || event.Keyboard.Key == VK_NUMPAD1)
+                buttonMousePress((struct uiControl *)buttons[12], &event);
+            else if(event.Keyboard.Key == VK_KEY2 || event.Keyboard.Key == VK_NUMPAD2)
+                buttonMousePress((struct uiControl *)buttons[13], &event);
+            else if(event.Keyboard.Key == VK_KEY3 || event.Keyboard.Key == VK_NUMPAD3)
+                buttonMousePress((struct uiControl *)buttons[14], &event);
+            else if(event.Keyboard.Key == VK_KEY4 || event.Keyboard.Key == VK_NUMPAD4)
+                buttonMousePress((struct uiControl *)buttons[8], &event);
+            else if(event.Keyboard.Key == VK_KEY5 || event.Keyboard.Key == VK_NUMPAD5)
+                buttonMousePress((struct uiControl *)buttons[9], &event);
+            else if(event.Keyboard.Key == VK_KEY6 || event.Keyboard.Key == VK_NUMPAD6)
+                buttonMousePress((struct uiControl *)buttons[10], &event);
+            else if(event.Keyboard.Key == VK_KEY7 || event.Keyboard.Key == VK_NUMPAD7)
+                buttonMousePress((struct uiControl *)buttons[4], &event);
+            else if(event.Keyboard.Key == VK_KEY8 || event.Keyboard.Key == VK_NUMPAD8)
+                buttonMousePress((struct uiControl *)buttons[5], &event);
+            else if(event.Keyboard.Key == VK_KEY9 || event.Keyboard.Key == VK_NUMPAD9)
+                buttonMousePress((struct uiControl *)buttons[6], &event);
+            else if(event.Keyboard.Key == VK_OEMPERIOD || event.Keyboard.Key == VK_DECIMAL)
+                buttonMousePress((struct uiControl *)buttons[17], &event);
+            else if(event.Keyboard.Key == VK_RETURN)
+                buttonMousePress((struct uiControl *)buttons[18], &event);
+            else if(event.Keyboard.Key == VK_BACK || event.Keyboard.Key == VK_DELETE)
+                buttonMousePress((struct uiControl *)buttons[0], &event);
+            else if(event.Keyboard.Key == VK_OEMPLUS || event.Keyboard.Key == VK_ADD)
+                buttonMousePress((struct uiControl *)buttons[19], &event);
+            else if(event.Keyboard.Key == VK_OEMMINUS || event.Keyboard.Key == VK_SUBTRACT)
+                buttonMousePress((struct uiControl *)buttons[15], &event);
+            else if(event.Keyboard.Key == VK_MULTIPLY)
+                buttonMousePress((struct uiControl *)buttons[11], &event);
+            else if(event.Keyboard.Key == VK_DIVIDE)
+                buttonMousePress((struct uiControl *)buttons[7], &event);
             else if(event.Keyboard.Key == VK_F12)
                 wmRedrawWindow(wnd);
         }

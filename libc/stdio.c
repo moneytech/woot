@@ -177,6 +177,7 @@ static int internalPrintf(writeCallback wc, void *wcarg, const char *fmt, va_lis
     int dot = 0;
     int width = 0;
     int precision = 0;
+    int hasPrec = 0;
     int specifier = 0;
     int argWidth = 0;
     int leftJustify = 0;
@@ -201,6 +202,7 @@ static int internalPrintf(writeCallback wc, void *wcarg, const char *fmt, va_lis
             dot = 0;
             width = 0;
             precision = 0;
+            hasPrec = 0;
             specifier = 0;
             argWidth = 0;
             leftJustify = 0;
@@ -273,6 +275,7 @@ static int internalPrintf(writeCallback wc, void *wcarg, const char *fmt, va_lis
                 {
                     precision *= 10;
                     precision += c - '0';
+                    hasPrec = 1;
                 }
             }
             else if(c == '*')
@@ -290,7 +293,11 @@ static int internalPrintf(writeCallback wc, void *wcarg, const char *fmt, va_lis
                         specifier = 0;
                     }
                 }
-                else precision = va_arg(arg, int);
+                else
+                {
+                    precision = va_arg(arg, int);
+                    hasPrec = 1;
+                }
             }
             else if(c == '-')
             {
@@ -474,20 +481,31 @@ static int internalPrintf(writeCallback wc, void *wcarg, const char *fmt, va_lis
                     bw += writeString(wc, wcarg, val < 0 ? (upperCase ? "-INF" : "-inf") : (upperCase ? "+INF" : "+inf"), 0);
                 else
                 {
-                    // FIXME: still something wrong here
-                    int64_t i = (int64_t)(val);
-                    double f = val - i;
-                    bw += writeDec(wc, wcarg, i, 1, -1, showPlus, 0, 0);
-                    val = f;
-                    if(!precision) precision = 6;
-                    for(int i = 0; i < precision; ++i)
+                    if(!hasPrec) precision = 6;
+                    // FIXME: long long is not enough
+                    long long v = (val * ipow(10, precision)) + (val < 0.0 ? -0.5 : 0.5);
+                    if(c == 'g' && !v)
+                        bw += wc(wcarg, '0');
+                    else
                     {
-                        if(!i) bw += wc(wcarg, '.');
-                        val *= 10;
-                        int digit = (int)val % 10;
-                        char c = '0' + digit;
-                        bw += wc(wcarg, c);
-                        val -= digit;
+                        if(v < 0)
+                        {
+                            bw += wc(wcarg, '-');
+                            v = -v;
+                        }
+                        long long divider = 1000000000000000000ll;
+                        int noskip = 0;
+                        for(int i = 19; i > 0; --i)
+                        {
+                            if(i == precision) bw += wc(wcarg, '.');
+                            int dig = v / divider;
+                            noskip |= dig != 0 || i == (precision + 1) || (!noskip && c == 'g' && v < DBL_EPSILON);
+                            v -= dig * divider;
+                            divider /= 10;
+                            if(!noskip) continue;
+                            bw += wc(wcarg, '0' + dig);
+                            if(i <= (precision + 1) && c == 'g' && v < DBL_EPSILON) break;
+                        }
                     }
                 }
                 specifier = 0;
