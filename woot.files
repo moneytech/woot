@@ -7,8 +7,14 @@ file.png
 include/cdfs.h
 include/messagequeue.h
 include/partitionvolume.h
+include/uhcicontroller.h
+include/usbcontroller.h
+include/usbdevice.h
 kernel/cdfs.cpp
 kernel/partitionvolume.cpp
+kernel/uhcicontroller.cpp
+kernel/usbcontroller.cpp
+kernel/usbdevice.cpp
 libc/asm/cos.asm
 libc/asm/exp.asm
 libc/asm/fmod.asm

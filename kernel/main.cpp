@@ -36,6 +36,8 @@
 #include <thread.h>
 #include <tokenizer.h>
 #include <time.h>
+#include <uhcicontroller.h>
+#include <usbcontroller.h>
 #include <volume.h>
 #include <volumetype.h>
 
@@ -143,6 +145,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Time::Initialize();
     Time::StartSystemTimer();
     PCI::Initialize();
+    USBController::Initialize();
+    UHCIController::Initialize();
     InputDevice::Initialize();
     PS2Keyboard::Initialize();
     Drive::Initialize();
@@ -564,6 +568,39 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         }
         else if(!strcmp(args[0], "utest"))
             cpuEnterUserMode((uintptr_t)(userStack + sizeof(userStack)), (uintptr_t)userTest);
+        else if(!strcmp(args[0], "inb"))
+        {
+            if(!args[1]) printf("missing port number");
+            else printf("%#.2x\n", _inb(strtoul(args[1], nullptr, 0)));
+        }
+        else if(!strcmp(args[0], "inw"))
+        {
+            if(!args[1]) printf("missing port number");
+            else printf("%#.4x\n", _inw(strtoul(args[1], nullptr, 0)));
+        }
+        else if(!strcmp(args[0], "inl") || !strcmp(args[0], "ind"))
+        {
+            if(!args[1]) printf("missing port number");
+            else printf("%#.8x\n", _inl(strtoul(args[1], nullptr, 0)));
+        }
+        else if(!strcmp(args[0], "outb"))
+        {
+            if(!args[1]) printf("missing port number");
+            else if(!args[2]) printf("missing value");
+            else _outb(strtoul(args[1], nullptr, 0), strtoul(args[2], nullptr, 0));
+        }
+        else if(!strcmp(args[0], "outw"))
+        {
+            if(!args[1]) printf("missing port number");
+            else if(!args[2]) printf("missing value");
+            else _outw(strtoul(args[1], nullptr, 0), strtoul(args[2], nullptr, 0));
+        }
+        else if(!strcmp(args[0], "outl") || !strcmp(args[0], "outd"))
+        {
+            if(!args[1]) printf("missing port number");
+            else if(!args[2]) printf("missing value");
+            else _outl(strtoul(args[1], nullptr, 0), strtoul(args[2], nullptr, 0));
+        }
         else
         {
             bool wait = args[0][0] == '&';
@@ -625,6 +662,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     WindowManager::Cleanup();
     PS2Keyboard::Cleanup();
     InputDevice::Cleanup();
+    UHCIController::Cleanup();
+    USBController::Cleanup();
     PCI::Cleanup();
     return 0xD007D007;
 }
