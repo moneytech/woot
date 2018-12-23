@@ -67,7 +67,7 @@ void USBController::Cleanup()
 
 }
 
-int USBController::Transfer(void *buffer, int n, uint8_t pid, uint8_t address, uint8_t endpoint)
+int USBController::ControlTransfer(USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t address, uint8_t endpoint)
 {
     return -ENOSYS;
 }

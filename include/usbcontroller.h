@@ -7,7 +7,7 @@
 #include <types.h>
 
 #define USB_PID_OUT     0xE1
-#define USB_PID_IN      0x59
+#define USB_PID_IN      0x69
 #define USB_PID_SOF     0xA5
 #define USB_PID_SETUP   0x2D
 #define USB_PID_DATA0   0xC3
@@ -22,6 +22,16 @@
 #define USB_PID_SPLIT   0x78
 #define USB_PID_PING    0xB4
 
+#define USB_RT_DIR_H2D              0
+#define USB_RT_DIR_D2H              (1 << 7)
+#define USB_RT_TYPE_STANDARD        0
+#define USB_RT_TYPE_CLASS           (1 << 5)
+#define USB_RT_TYPE_VENDOR          (2 << 5)
+#define USB_RT_RECIPIENT_DEVICE     0
+#define USB_RT_RECIPIENT_INTERFACE  1
+#define USB_RT_RECIPIENT_ENDPOINT   2
+#define USB_RT_RECIPIENT_OTHER      3
+
 #define USB_REQUEST_GET_STATUS          0
 #define USB_REQUEST_CLEAR_FEATURE       1
 #define USB_REQUEST_SET_FEATURE         3
@@ -34,6 +44,13 @@
 #define USB_REQUEST_SET_INTERFACE       11
 #define USB_REQUEST_SYNCH_FRAME         12
 
+#define USB_DESCRIPTOR_DEVICE           1
+#define USB_DESCRIPTOR_CONFIGURATION    2
+#define USB_DESCRIPTOR_STRING           3
+#define USB_DESCRIPTOR_INTERFACE        4
+#define USB_DESCRIPTOR_ENDPOINT         5
+
+#pragma pack(push, 1)
 struct USBSetupPacket
 {
     uint8_t bmRequestType;
@@ -42,6 +59,13 @@ struct USBSetupPacket
     uint16_t wIndex;
     uint16_t wLength;
 };
+
+struct USBUnicodeString
+{
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+};
+#pragma pack(pop)
 
 class USBController
 {
@@ -61,7 +85,7 @@ public:
     static void UnLock();
     static void Cleanup();
 
-    virtual int Transfer(void *buffer, int n, uint8_t pid, uint8_t address, uint8_t endpoint);
+    virtual int ControlTransfer(USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t address, uint8_t endpoint);
 };
 
 #endif // USBCONTROLLER_H

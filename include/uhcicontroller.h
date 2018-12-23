@@ -5,6 +5,9 @@
 #include <types.h>
 #include <usbcontroller.h>
 
+struct QueueHead;
+struct TransferDescriptor;
+
 class UHCIController : public USBController
 {
     uint16_t base;
@@ -13,7 +16,6 @@ class UHCIController : public USBController
     Ints::Handler interruptHandler;
     uint32_t *frameList;
     uintptr_t frameListPhAddr;
-    struct ETD *ETDs;
 
     static bool interrupt(Ints::State *state, void *context);
     UHCIController(uint16_t base, uint8_t irq);
@@ -24,13 +26,17 @@ class UHCIController : public USBController
     void clrw(uint16_t reg, uint16_t mask);
     void reset();
     void enableInterrupts();
-    void stop();    
+    void stop();
     void start();
-    struct ETD *allocETD();
-    void freeETD(struct ETD *etd);
+    void schedule(QueueHead *qh);
+    QueueHead *allocQH();
+    void freeQH(QueueHead *qh);
+    TransferDescriptor *allocTD();
+    TransferDescriptor *allocTD(uintptr_t link, bool vf, bool t, bool ioc, bool iso, bool ls, uint8_t pid, uint8_t addr, uint8_t endpt, bool d, size_t maxLen, uintptr_t buffer);
+    void freeTD(TransferDescriptor *td);
     ~UHCIController();
 protected:
-    virtual int Transfer(void *buffer, int n, uint8_t pid, uint8_t address, uint8_t endpoint);
+    virtual int ControlTransfer(USBSetupPacket *setupPacket, void *buffer, size_t in, int n, uint8_t address, uint8_t endpoint);
 public:
     static void Initialize();
     static void Cleanup();

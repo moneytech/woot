@@ -7,6 +7,7 @@
 #include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sysdefs.h>
 #include <time.h>
 #include <uhcicontroller.h>
@@ -26,6 +27,11 @@
 #define CMD_HCRESET     0x0002
 
 #define STS_HCHALTED    0x0020
+#define STS_PROC_ERR    0x0010
+#define STS_SYS_ERR     0x0008
+#define STS_RES_DET     0x0004
+#define STS_USB_ERROR   0x0002
+#define STS_USBINT      0x0001
 
 #define INTR_TO_CRC     0x0001
 #define INTR_RESUME     0x0002
@@ -39,40 +45,50 @@ struct QueueHead
     uint32_t ELP; // Queue Element Link Pointer
 };
 
-struct TransferDerscriptor
+struct TransferDescriptor
 {
     uint32_t LP; // Link Pointer
-    uint32_t Flags;
-    uint32_t Addr;
+    uint32_t CtrlSts;
+    uint32_t Token;
     uint32_t Buffer;
-};
 
-struct ETD  // transfer descriptor with some extra kernel data
-{           // must be 16 bytes aligned
-    TransferDerscriptor TD;
-    Semaphore *Sem;
-    int Flags;
-    int Padding[2];
+    uint32_t SWUse[4];
+
+    TransferDescriptor() :
+        LP(0), CtrlSts(0), Token(0), Buffer(0),
+        SWUse { 0, 0, 0, 0 }
+    {
+    }
+
+    TransferDescriptor(uintptr_t link, bool vf, bool t, bool ioc, bool iso, bool ls, uint8_t pid, uint8_t addr, uint8_t endpt, bool d, size_t maxLen, uintptr_t buffer) :
+        LP((link & 0xFFFFFFF0) | (t ? 1 : 0) | (vf ? 4 : 0)),
+        CtrlSts((ioc ? 1 << 24 : 0) | (iso ? 1 << 25 : 0) | (ls ? 1 << 26 : 0) | 1 << 23),
+        Token(((maxLen - 1) & 0x07FF) << 21 | (d ? 1 << 19 : 0) | (endpt & 0x0F) << 15 | (addr & 0x7F) << 8 | pid),
+        Buffer(buffer)
+    {
+    }
 };
 
 bool UHCIController::interrupt(Ints::State *state, void *context)
 {
     UHCIController *uhci = (UHCIController *)context;
     uint16_t sts = uhci->readw(USBSTS);
-    if(!(sts & 0x03)) return false;    
+    if(!(sts & 0x1F)) return false;
 
     int16_t frNum = (uhci->readw(FRNUM) - 1) & 0x3FF;
     printf("[uhci] interrupt (%#.4x %#.4x %#.4x)\n", uhci->base, sts, frNum);
 
-    uhci->frameList[frNum] |= 1;
+    //uhci->frameList[frNum] |= 1;
 
-    if(sts & STS_HCHALTED)
+    if(sts & (STS_HCHALTED | STS_PROC_ERR | STS_SYS_ERR | STS_USB_ERROR))
     {
-        printf("      halted\n");
+        if(sts & STS_HCHALTED) printf("[uhci] error: halted\n");
+        if(sts & STS_PROC_ERR) printf("[uhci] error: process error\n");
+        if(sts & STS_SYS_ERR) printf("[uhci] error: system error\n");
+        if(sts & STS_USB_ERROR) printf("[uhci] error: usb error\n");
     }
-    else
-    {
-
+    else if(sts & (STS_USBINT))
+    {        
     }
 
     uhci->writew(USBSTS, 0xFFFF); // clear status flags
@@ -84,8 +100,7 @@ UHCIController::UHCIController(uint16_t base, uint8_t irq) :
     irq(irq),
     interruptHandler({ nullptr, interrupt, this }),
     frameList(new(PAGE_SIZE) dword[1024]),
-    frameListPhAddr(Paging::GetPhysicalAddress(Paging::GetAddressSpace(), (uintptr_t)frameList)),
-    ETDs(new(16) ETD[1024])
+    frameListPhAddr(Paging::GetPhysicalAddress(Paging::GetAddressSpace(), (uintptr_t)frameList))
 {
     // TODO: add legacy kb and mouse disable code here
 
@@ -102,6 +117,8 @@ UHCIController::UHCIController(uint16_t base, uint8_t irq) :
     IRQs::RegisterHandler(irq, &interruptHandler);
     IRQs::Enable(irq);
 
+    Time::Sleep(1000, false);
+
     reset();
     writed(FRBASEADD, frameListPhAddr); // set frame list address
     writew(USBSTS, 0xFFFF); // clear all possible status bits
@@ -110,6 +127,29 @@ UHCIController::UHCIController(uint16_t base, uint8_t irq) :
     // initialize frame list
     for(int i = 0; i < 1024; ++i)
         frameList[i] = 1;
+
+    start();
+
+    // just for testing
+    setw(PORTSC, 4);
+    Time::Sleep(100, false);
+
+    unsigned char buf[64];
+    memset(buf, 0, sizeof(buf));
+    USBSetupPacket sp;
+    sp.bmRequestType = USB_RT_DIR_D2H | USB_RT_TYPE_STANDARD | USB_RT_RECIPIENT_DEVICE;
+    sp.bRequest = USB_REQUEST_GET_DESCRIPTOR;
+    sp.wValue = USB_DESCRIPTOR_STRING << 8 | 2;
+    sp.wIndex = 0;
+    sp.wLength = sizeof(buf);
+
+    int res = ControlTransfer(&sp, buf, true, sp.wLength, 0, 0);
+    Time::Sleep(100, false);
+    printf("res: %d\n", res);
+
+    for(int i = 0; i < sizeof(buf); ++i)
+        printf("%.2x%s", buf[i], (i & 7) == 7 ? "\n" : " ");
+    printf("%-62S\n", buf + 2);
 }
 
 uint16_t UHCIController::readw(uint16_t reg)
@@ -152,8 +192,6 @@ void UHCIController::enableInterrupts()
 void UHCIController::stop()
 {
     clrw(USBCMD, CMD_RS);
-    while(!(readw(USBSTS) & STS_HCHALTED))
-        Time::Sleep(1, false);
 }
 
 void UHCIController::start()
@@ -161,20 +199,45 @@ void UHCIController::start()
     setw(USBCMD, CMD_RS);
 }
 
-ETD *UHCIController::allocETD()
+void UHCIController::schedule(QueueHead *qh)
 {
-    for(int i = 0; i < 1024; ++i)
-    {
-        ETD *etd = ETDs + i;
-        if(!(etd->Flags & 1))
-            return etd;
-    }
-    return nullptr;
+    uintptr_t addrSpace = Paging::GetAddressSpace();
+    uintptr_t qhPhAddr = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)qh);
+
+    // just for testing !!!
+    qh->HLP |= 3;
+    stop();
+    int frNum = readw(FRNUM) & 1023;
+    //printf("qh->hlp:%.8x qh->elp:%.8x frnum: %d\n", qh->HLP, qh->ELP, frNum);
+    frameList[frNum] = qhPhAddr | 2;
+    start();
 }
 
-void UHCIController::freeETD(ETD *etd)
+QueueHead *UHCIController::allocQH()
+{   // simple new for testing only
+    return new (16) QueueHead;
+}
+
+void UHCIController::freeQH(QueueHead *qh)
 {
-    if(etd) etd->Flags &= ~1;
+    delete qh;
+}
+
+TransferDescriptor *UHCIController::allocTD()
+{
+    // 32 byte alignment until proper dma buffer allocation is implemented
+    return new (32) TransferDescriptor;
+}
+
+TransferDescriptor *UHCIController::allocTD(uintptr_t link, bool vf, bool t, bool ioc, bool iso, bool ls, uint8_t pid, uint8_t addr, uint8_t endpt, bool d, size_t maxLen, uintptr_t buffer)
+{
+    // 32 byte alignment until proper dma buffer allocation is implemented
+    return new (32) TransferDescriptor(link, vf, t, ioc, iso, ls, pid, addr, endpt, d, maxLen, buffer);
+}
+
+void UHCIController::freeTD(TransferDescriptor *td)
+{
+    delete td;
 }
 
 UHCIController::~UHCIController()
@@ -187,13 +250,56 @@ UHCIController::~UHCIController()
     IRQs::TryDisable(irq);
     IRQs::UnRegisterHandler(irq, &interruptHandler);
 
-    delete[] ETDs;
     delete[] frameList;
 }
 
-int UHCIController::Transfer(void *buffer, int n, uint8_t pid, uint8_t address, uint8_t endpoint)
+int UHCIController::ControlTransfer(USBSetupPacket *setupPacket, void *buffer, size_t in, int n, uint8_t address, uint8_t endpoint)
 {
-    return -ENOSYS;
+    QueueHead *qh = allocQH();
+    if(!qh) return -ENOMEM;
+
+    bool ls = false;
+    bool d = false;
+
+    uintptr_t addrSpace = Paging::GetAddressSpace();
+    uintptr_t setupPacketPhAddr = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)setupPacket);
+    TransferDescriptor *setup = allocTD(0, true, false, false, false, ls, USB_PID_SETUP, address, endpoint, d, sizeof(USBSetupPacket), setupPacketPhAddr);
+    d = !d;
+    if(!setup)
+    {
+        freeQH(qh);
+        return -ENOMEM;
+    }
+
+    // just up to one TD for now
+    bool hasData = n;
+    TransferDescriptor *data = nullptr;
+    if(hasData)
+    {
+        uintptr_t bufferPhAddr = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)buffer);
+        data = allocTD(0, true, false, false, false, ls, in ? USB_PID_IN : USB_PID_OUT, address, endpoint, d, n, bufferPhAddr);
+        d = !d;
+        if(!data)
+        {
+            freeQH(qh);
+            freeTD(setup);
+            return -ENOMEM;
+        }
+    }
+
+    TransferDescriptor *handshake = allocTD(0, false, true, true, false, ls, in ? USB_PID_OUT : USB_PID_IN, address, endpoint, true, 0, 0);
+
+    // join tds
+    setup->LP |= Paging::GetPhysicalAddress(addrSpace, (uintptr_t)(hasData ? data : handshake));
+    if(hasData) data->LP |= Paging::GetPhysicalAddress(addrSpace, (uintptr_t)handshake);
+
+    // link tds to qh
+    qh->ELP = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)setup);
+
+    // now schedule function should be called
+    schedule(qh);
+
+    return 0;
 }
 
 void UHCIController::Initialize()

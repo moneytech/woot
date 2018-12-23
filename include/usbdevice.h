@@ -20,7 +20,7 @@ public:
     static bool Lock();
     static void UnLock();
 
-    int Transfer(void *buffer, int n, uint8_t pid, uint8_t endpoint);
+    int ControlTransfer(USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t endpoint);
 };
 
 #endif // USBDEVICE_H
