@@ -48,12 +48,14 @@ struct QueueHead
 
     QueueHead *Self; // Virtual address of this queue head
     QueueHead *Next; // Virtual address of next queue head
+    TransferDescriptor *Child; // Virtual address of first transfer descriptor
     Semaphore *Waiter; // Semaphore to signal on completion
-    uint32_t Padding[3];
+    uint32_t Padding[2];
 
     QueueHead() :
         HLP(1), ELP(1),
-        Self(this), Waiter(nullptr)
+        Self(this), Next(nullptr),
+        Child(nullptr), Waiter(nullptr)
     {
     }
 };
@@ -71,7 +73,7 @@ struct TransferDescriptor
 
     TransferDescriptor() :
         LP(1), CtrlSts(0), Token(0), Buffer(0),
-        Self(this), Padding { 0, 0, 0 }
+        Self(this), Padding { 0, 0 }
     {
     }
 
@@ -79,7 +81,7 @@ struct TransferDescriptor
         LP((link & 0xFFFFFFF0) | (t ? 1 : 0) | (vf ? 4 : 0)),
         CtrlSts((ioc ? 1 << 24 : 0) | (iso ? 1 << 25 : 0) | (ls ? 1 << 26 : 0) | 1 << 23),
         Token(((maxLen - 1) & 0x07FF) << 21 | (d ? 1 << 19 : 0) | (endpt & 0x0F) << 15 | (addr & 0x7F) << 8 | pid),
-        Buffer(buffer), Self(this), Padding { 0, 0, 0 }
+        Buffer(buffer), Self(this), Padding { 0, 0 }
     {
     }
 };
@@ -238,6 +240,18 @@ void UHCIController::freeQH(QueueHead *qh)
     delete qh;
 }
 
+void UHCIController::freeQHandTDs(QueueHead *qh)
+{
+    if(!qh) return;
+    for(TransferDescriptor *td = qh->Child; td;)
+    {
+        TransferDescriptor *nextTD = td->Next;
+        freeTD(td);
+        td = nextTD;
+    }
+    freeQH(qh);
+}
+
 TransferDescriptor *UHCIController::allocTD()
 {
     // 32 byte alignment until proper dma buffer allocation is implemented
@@ -322,44 +336,49 @@ int UHCIController::ControlTransfer(USBDevice *device, USBSetupPacket *setupPack
     d = !d;
     if(!setup)
     {
-        freeQH(qh);
+        freeQHandTDs(qh);
         return -ENOMEM;
     }
+    qh->Child = setup;
 
-    // just up to one TD for now
-    bool hasData = n;
-    TransferDescriptor *data = nullptr;
-    if(hasData)
-    {
+    TransferDescriptor *currTD = setup;
+    if(n)
+    {   // allocate data TDs
         uintptr_t bufferPhAddr = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)buffer);
         int maxBytesPerPacket = ls ? 8 : 64;
         int tdCount = align(n, maxBytesPerPacket) / maxBytesPerPacket;
 
-        /*for(int i = 0; i < tdCount; ++i)
+        uint8_t pid = in ? USB_PID_IN : USB_PID_OUT;
+        for(int i = 0; i < tdCount; ++i)
         {
-
-        }*/
-
-        data = allocTD(0, true, false, false, false, ls, in ? USB_PID_IN : USB_PID_OUT, address, endpoint, d, n, bufferPhAddr);
-        d = !d;
-        if(!data)
-        {
-            freeQH(qh);
-            freeTD(setup);
-            return -ENOMEM;
+            TransferDescriptor *td = allocTD(0, true, false, false, false, ls, pid, address, endpoint, d, n, bufferPhAddr + i * maxBytesPerPacket);
+            if(!td)
+            {
+                freeQHandTDs(qh);
+                return -ENOMEM;
+            }
+            d = !d;
+            currTD->Next = td;
+            currTD = currTD->Next;
         }
     }
 
+    // allocate handshake TD
     TransferDescriptor *handshake = allocTD(0, false, true, true, false, ls, in ? USB_PID_OUT : USB_PID_IN, address, endpoint, true, 0, 0);
+    if(!handshake)
+    {
+        freeQHandTDs(qh);
+        return -ENOMEM;
+    }
+    currTD->Next = handshake;
+    currTD = currTD->Next;
 
-    // join tds
-    setup->LP |= Paging::GetPhysicalAddress(addrSpace, (uintptr_t)(hasData ? data : handshake));
-    if(hasData) data->LP |= Paging::GetPhysicalAddress(addrSpace, (uintptr_t)handshake);
+    // calculate physical addresses
+    for(TransferDescriptor *td = qh->Child; td->Next; td = td->Next)
+        td->LP |= Paging::GetPhysicalAddress(addrSpace, (uintptr_t)td->Next);
+    qh->ELP = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)qh->Child);
 
-    // link tds to qh
-    qh->ELP = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)setup);
-
-    // now schedule function should be called
+    // schedule that transfer
     schedule(qh);
 
     return 0;

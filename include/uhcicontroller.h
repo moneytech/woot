@@ -31,6 +31,7 @@ class UHCIController : public USBController
     void schedule(QueueHead *qh);
     QueueHead *allocQH();
     void freeQH(QueueHead *qh);
+    void freeQHandTDs(QueueHead *qh);
     TransferDescriptor *allocTD();
     TransferDescriptor *allocTD(uintptr_t link, bool vf, bool t, bool ioc, bool iso, bool ls, uint8_t pid, uint8_t addr, uint8_t endpt, bool d, size_t maxLen, uintptr_t buffer);
     void freeTD(TransferDescriptor *td);
