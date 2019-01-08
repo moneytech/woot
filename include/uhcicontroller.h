@@ -35,11 +35,12 @@ class UHCIController : public USBController
     TransferDescriptor *allocTD(uintptr_t link, bool vf, bool t, bool ioc, bool iso, bool ls, uint8_t pid, uint8_t addr, uint8_t endpt, bool d, size_t maxLen, uintptr_t buffer);
     void freeTD(TransferDescriptor *td);
     ~UHCIController();
-protected:
-    virtual int ControlTransfer(USBSetupPacket *setupPacket, void *buffer, size_t in, int n, uint8_t address, uint8_t endpoint);
 public:
     static void Initialize();
     static void Cleanup();
+
+    virtual void Probe();
+    virtual int ControlTransfer(USBDevice *device, USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t endpoint);
 };
 
 #endif // UHCICONTROLLER_H

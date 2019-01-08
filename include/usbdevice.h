@@ -20,7 +20,9 @@ public:
     static bool Lock();
     static void UnLock();
 
+    USBDevice(USBController *controller, USBDevice *parent, int port, int address);
     int ControlTransfer(USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t endpoint);
+    ~USBDevice();
 };
 
 #endif // USBDEVICE_H

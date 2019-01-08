@@ -15,7 +15,19 @@ void USBDevice::UnLock()
     lock.Release();
 }
 
+USBDevice::USBDevice(USBController *controller, USBDevice *parent, int port, int address) :
+    Controller(controller),
+    Parent(parent),
+    Port(port),
+    Address(address)
+{
+}
+
 int USBDevice::ControlTransfer(USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t endpoint)
 {
-    return Controller->ControlTransfer(setupPacket, buffer, in, n, Address, endpoint);
+    return Controller->ControlTransfer(this, setupPacket, buffer, in, n, endpoint);
+}
+
+USBDevice::~USBDevice()
+{
 }

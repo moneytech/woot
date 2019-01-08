@@ -67,6 +67,8 @@ struct USBUnicodeString
 };
 #pragma pack(pop)
 
+class USBDevice;
+
 class USBController
 {
     static Sequencer<int> ids;
@@ -85,7 +87,8 @@ public:
     static void UnLock();
     static void Cleanup();
 
-    virtual int ControlTransfer(USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t address, uint8_t endpoint);
+    virtual void Probe();
+    virtual int ControlTransfer(USBDevice *device, USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t endpoint);
 };
 
 #endif // USBCONTROLLER_H

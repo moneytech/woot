@@ -64,10 +64,13 @@ void USBController::UnLock()
 
 void USBController::Cleanup()
 {
-
 }
 
-int USBController::ControlTransfer(USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t address, uint8_t endpoint)
+void USBController::Probe()
+{
+}
+
+int USBController::ControlTransfer(USBDevice *device, USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t endpoint)
 {
     return -ENOSYS;
 }

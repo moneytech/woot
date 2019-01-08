@@ -11,6 +11,8 @@
 #include <sysdefs.h>
 #include <time.h>
 #include <uhcicontroller.h>
+#include <uhcidevice.h>
+#include <usbdevice.h>
 
 #define UHCI_MAX_PORTS  127 // usb spec says 255 but that makes no sense since there can be
                             // up to 127 usb devices on a single controller
@@ -43,6 +45,17 @@ struct QueueHead
 {
     uint32_t HLP; // Queue Head Link Pointer
     uint32_t ELP; // Queue Element Link Pointer
+
+    QueueHead *Self; // Virtual address of this queue head
+    QueueHead *Next; // Virtual address of next queue head
+    Semaphore *Waiter; // Semaphore to signal on completion
+    uint32_t Padding[3];
+
+    QueueHead() :
+        HLP(1), ELP(1),
+        Self(this), Waiter(nullptr)
+    {
+    }
 };
 
 struct TransferDescriptor
@@ -52,11 +65,13 @@ struct TransferDescriptor
     uint32_t Token;
     uint32_t Buffer;
 
-    uint32_t SWUse[4];
+    TransferDescriptor *Self;   // Virtual address of this transfer descriptor
+    TransferDescriptor *Next;   // Virtual address of next transfer descriptor
+    uint32_t Padding[2];
 
     TransferDescriptor() :
-        LP(0), CtrlSts(0), Token(0), Buffer(0),
-        SWUse { 0, 0, 0, 0 }
+        LP(1), CtrlSts(0), Token(0), Buffer(0),
+        Self(this), Padding { 0, 0, 0 }
     {
     }
 
@@ -64,7 +79,7 @@ struct TransferDescriptor
         LP((link & 0xFFFFFFF0) | (t ? 1 : 0) | (vf ? 4 : 0)),
         CtrlSts((ioc ? 1 << 24 : 0) | (iso ? 1 << 25 : 0) | (ls ? 1 << 26 : 0) | 1 << 23),
         Token(((maxLen - 1) & 0x07FF) << 21 | (d ? 1 << 19 : 0) | (endpt & 0x0F) << 15 | (addr & 0x7F) << 8 | pid),
-        Buffer(buffer)
+        Buffer(buffer), Self(this), Padding { 0, 0, 0 }
     {
     }
 };
@@ -143,7 +158,7 @@ UHCIController::UHCIController(uint16_t base, uint8_t irq) :
     sp.wIndex = 0;
     sp.wLength = sizeof(buf);
 
-    int res = ControlTransfer(&sp, buf, true, sp.wLength, 0, 0);
+    int res = ControlTransfer(nullptr, &sp, buf, true, sp.wLength, 0);
     Time::Sleep(100, false);
     printf("res: %d\n", res);
 
@@ -215,7 +230,7 @@ void UHCIController::schedule(QueueHead *qh)
 
 QueueHead *UHCIController::allocQH()
 {   // simple new for testing only
-    return new (16) QueueHead;
+    return new (32) QueueHead;
 }
 
 void UHCIController::freeQH(QueueHead *qh)
@@ -253,55 +268,6 @@ UHCIController::~UHCIController()
     delete[] frameList;
 }
 
-int UHCIController::ControlTransfer(USBSetupPacket *setupPacket, void *buffer, size_t in, int n, uint8_t address, uint8_t endpoint)
-{
-    QueueHead *qh = allocQH();
-    if(!qh) return -ENOMEM;
-
-    bool ls = false;
-    bool d = false;
-
-    uintptr_t addrSpace = Paging::GetAddressSpace();
-    uintptr_t setupPacketPhAddr = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)setupPacket);
-    TransferDescriptor *setup = allocTD(0, true, false, false, false, ls, USB_PID_SETUP, address, endpoint, d, sizeof(USBSetupPacket), setupPacketPhAddr);
-    d = !d;
-    if(!setup)
-    {
-        freeQH(qh);
-        return -ENOMEM;
-    }
-
-    // just up to one TD for now
-    bool hasData = n;
-    TransferDescriptor *data = nullptr;
-    if(hasData)
-    {
-        uintptr_t bufferPhAddr = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)buffer);
-        data = allocTD(0, true, false, false, false, ls, in ? USB_PID_IN : USB_PID_OUT, address, endpoint, d, n, bufferPhAddr);
-        d = !d;
-        if(!data)
-        {
-            freeQH(qh);
-            freeTD(setup);
-            return -ENOMEM;
-        }
-    }
-
-    TransferDescriptor *handshake = allocTD(0, false, true, true, false, ls, in ? USB_PID_OUT : USB_PID_IN, address, endpoint, true, 0, 0);
-
-    // join tds
-    setup->LP |= Paging::GetPhysicalAddress(addrSpace, (uintptr_t)(hasData ? data : handshake));
-    if(hasData) data->LP |= Paging::GetPhysicalAddress(addrSpace, (uintptr_t)handshake);
-
-    // link tds to qh
-    qh->ELP = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)setup);
-
-    // now schedule function should be called
-    schedule(qh);
-
-    return 0;
-}
-
 void UHCIController::Initialize()
 {
     if(!PCI::Lock->Wait(0, false, false))
@@ -333,3 +299,68 @@ void UHCIController::Cleanup()
 
 }
 
+void UHCIController::Probe()
+{
+
+}
+
+int UHCIController::ControlTransfer(USBDevice *device, USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t endpoint)
+{
+    UHCIDevice *uhciDevice = (UHCIDevice *)device;
+
+    QueueHead *qh = allocQH();
+    if(!qh) return -ENOMEM;
+
+    bool ls = uhciDevice ? uhciDevice->LowSpeed : false;
+    bool d = false;
+
+    uint8_t address = device ? device->Address : 0;
+
+    uintptr_t addrSpace = Paging::GetAddressSpace();
+    uintptr_t setupPacketPhAddr = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)setupPacket);
+    TransferDescriptor *setup = allocTD(0, true, false, false, false, ls, USB_PID_SETUP, address, endpoint, d, sizeof(USBSetupPacket), setupPacketPhAddr);
+    d = !d;
+    if(!setup)
+    {
+        freeQH(qh);
+        return -ENOMEM;
+    }
+
+    // just up to one TD for now
+    bool hasData = n;
+    TransferDescriptor *data = nullptr;
+    if(hasData)
+    {
+        uintptr_t bufferPhAddr = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)buffer);
+        int maxBytesPerPacket = ls ? 8 : 64;
+        int tdCount = align(n, maxBytesPerPacket) / maxBytesPerPacket;
+
+        /*for(int i = 0; i < tdCount; ++i)
+        {
+
+        }*/
+
+        data = allocTD(0, true, false, false, false, ls, in ? USB_PID_IN : USB_PID_OUT, address, endpoint, d, n, bufferPhAddr);
+        d = !d;
+        if(!data)
+        {
+            freeQH(qh);
+            freeTD(setup);
+            return -ENOMEM;
+        }
+    }
+
+    TransferDescriptor *handshake = allocTD(0, false, true, true, false, ls, in ? USB_PID_OUT : USB_PID_IN, address, endpoint, true, 0, 0);
+
+    // join tds
+    setup->LP |= Paging::GetPhysicalAddress(addrSpace, (uintptr_t)(hasData ? data : handshake));
+    if(hasData) data->LP |= Paging::GetPhysicalAddress(addrSpace, (uintptr_t)handshake);
+
+    // link tds to qh
+    qh->ELP = Paging::GetPhysicalAddress(addrSpace, (uintptr_t)setup);
+
+    // now schedule function should be called
+    schedule(qh);
+
+    return 0;
+}
