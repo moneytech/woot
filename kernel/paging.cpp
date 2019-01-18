@@ -1,7 +1,9 @@
 #include <bitmap.h>
 #include <cpu.h>
+#include <errno.h>
 #include <gdt.h>
 #include <malloc.h>
+#include <new.h>
 #include <paging.h>
 #include <process.h>
 #include <stdio.h>
@@ -52,10 +54,19 @@ static void free4k(void *ptr)
 void Paging::Initialize(size_t ramSize)
 {
     bool ints = cpuDisableInterrupts();
-    kernelPageDir = (dword *)valloc(PAGE_SIZE);
+
+    dword *currentPageDir = (dword *)(cpuGetCR3() + KERNEL_BASE);
+
+    kernelPageDir = (dword *)sbrk(PAGE_SIZE);
     memset(kernelPageDir, 0, PAGE_SIZE);
-    pageBitmap = new Bitmap(ramSize / PAGE_SIZE, false);
-    kernel4kPT = (dword *)valloc(PAGE_SIZE);
+
+    size_t bitCount = ramSize / PAGE_SIZE;
+    size_t byteCount = bitCount / 8;
+    void *pageBitmapBits = sbrk(align(byteCount, PAGE_SIZE));
+    void *pageBitmapStruct = sbrk(align(sizeof(Bitmap), PAGE_SIZE));
+    pageBitmap = new (pageBitmapStruct) Bitmap(bitCount, pageBitmapBits, false);
+
+    kernel4kPT = (dword *)sbrk(PAGE_SIZE);
     memset(kernel4kPT, 0, PAGE_SIZE);
 
     kernelAddressSpace = ((uintptr_t)kernelPageDir) - KERNEL_BASE;
@@ -64,14 +75,22 @@ void Paging::Initialize(size_t ramSize)
     // identity map first 3 gigs
     for(uintptr_t va = 0, pdidx = 0; va < KERNEL_BASE; va += LARGE_PAGE_SIZE, ++pdidx)
         kernelPageDir[pdidx] = va | 0x83;
+
     // map mmio space
     for(uintptr_t va = MMIO_BASE; va; va += LARGE_PAGE_SIZE)
         kernelPageDir[va >> 22] = va | 0x83;
+
+    // temporarily map 4k region into current address space
+    currentPageDir[kernel4kVA >> 22] = (((uintptr_t)kernel4kPT) - KERNEL_BASE) | 0x03;
+
     // map kernel space
-    for(uintptr_t va = 0; va < KERNEL_SPACE_SIZE; va += LARGE_PAGE_SIZE)
-        kernelPageDir[(KERNEL_BASE + va) >> 22] = va | 0x83;
+    uintptr_t bssEnd = (uintptr_t)sbrk(0);
+    for(uintptr_t va = KERNEL_BASE; va < bssEnd; va += PAGE_SIZE)
+        MapPage(kernelAddressSpace, va, va - KERNEL_BASE, false, false, true);
+
     // map 4k region
     kernelPageDir[kernel4kVA >> 22] = (((uintptr_t)kernel4kPT) - KERNEL_BASE) | 0x03;
+
     // unmap space for modules
     for(uintptr_t va = 0; va < MODULES_SPACE_SIZE; va += LARGE_PAGE_SIZE)
         kernelPageDir[(MODULES_BASE + va) >> 22] = 0;
@@ -506,11 +525,6 @@ uintptr_t Paging::AllocPage()
         return ~0;
     }
     uintptr_t addr = bit * PAGE_SIZE;
-    if(addr <= GetPhysicalAddress(cpuGetCR3(), (uintptr_t)sbrk(0)))
-    {
-        cpuRestoreInterrupts(cs);
-        return ~0;
-    }
     pageBitmap->SetBit(bit, true);
     cpuRestoreInterrupts(cs);
     return addr;
@@ -528,11 +542,6 @@ uintptr_t Paging::AllocPages(size_t n)
     for(uint i = 0; i < n; ++i)
         pageBitmap->SetBit(bit + i, true);
     uintptr_t addr = bit * PAGE_SIZE;
-    if(addr <= GetPhysicalAddress(cpuGetCR3(), (uintptr_t)sbrk(0)))
-    {
-        cpuRestoreInterrupts(cs);
-        return ~0;
-    }
     cpuRestoreInterrupts(cs);
     return addr;
 }
@@ -561,4 +570,39 @@ bool Paging::FreePages(uintptr_t pa, size_t n)
         pa += PAGE_SIZE;
     }
     return true;
+}
+
+int open(const char *filename, int flags)
+{
+    return 3;
+}
+
+void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
+{
+    size_t n = align(length, PAGE_SIZE) / PAGE_SIZE;
+    uintptr_t pa = Paging::AllocPages(n);
+    if(pa == ~0) return nullptr;
+    uintptr_t va = (uintptr_t)(addr ? addr : sbrk(PAGE_SIZE * n));
+    va = align(va, PAGE_SIZE);
+    Paging::MapPages(Paging::GetAddressSpace(), va, pa, false, false, true, n);
+    addr = (void *)va;
+    return addr;
+}
+
+int munmap(void *addr, size_t length)
+{
+    size_t n = align(length, PAGE_SIZE) / PAGE_SIZE;
+    uintptr_t addressSpace = Paging::GetAddressSpace();
+    uintptr_t pa = Paging::GetPhysicalAddress(addressSpace, (uintptr_t)addr);
+    if(pa != ~0) Paging::FreePages(pa, n);
+    int res = Paging::UnMapPages(addressSpace, (uintptr_t)addr, false, n);
+    return res ? 0 : -EINVAL;
+}
+
+extern uint64_t getRAMSize(multiboot_info_t *mboot_info);
+
+void initializePaging(multiboot_info_t *mbootInfo)
+{
+    uint64_t ramSize = getRAMSize(mbootInfo);
+    Paging::Initialize(ramSize);
 }

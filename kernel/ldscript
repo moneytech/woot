@@ -51,6 +51,6 @@ SECTIONS
     . = ALIGN(4096);
     _bss_start = .;
     .bss : AT(ADDR(.bss) - KERNEL_BASE) { *(.bss) *(COMMON) }
-    . = ALIGN(0x00100000);
+    . = ALIGN(4096);
     _bss_end = .;
 }

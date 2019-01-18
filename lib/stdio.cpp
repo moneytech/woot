@@ -1,3 +1,4 @@
+#include <cpu.h>
 #include <debugstream.h>
 #include <mutex.h>
 #include <stdio.h>
@@ -14,9 +15,11 @@ int fprintf(void *f, const char *fmt, ...)
     (void)f;
     va_list args;
     va_start(args, fmt);
-    stdoutMutex.Acquire(0, false);
+    bool ints = cpuDisableInterrupts();
+    //stdoutMutex.Acquire(0, false);
     int res = debugStream.VWriteFmt(fmt, args);
-    stdoutMutex.Release();
+    cpuRestoreInterrupts(ints);
+    //stdoutMutex.Release();
     va_end(args);
     return res;
 }
@@ -25,9 +28,11 @@ int printf(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    stdoutMutex.Acquire(0, false);
+    bool ints = cpuDisableInterrupts();
+    //stdoutMutex.Acquire(0, false);
     int res = debugStream.VWriteFmt(fmt, args);
-    stdoutMutex.Release();
+    cpuRestoreInterrupts(ints);
+    //stdoutMutex.Release();
     va_end(args);
     return res;
 }

@@ -1,3 +1,4 @@
+#include <audiodevice.h>
 #include <cdfs.h>
 #include <cpu.h>
 #include <debugstream.h>
@@ -90,7 +91,7 @@ bool nmiHandlerProc(Ints::State *state, void *context)
 }
 Ints::Handler nmiHandler = { nullptr, nmiHandlerProc, nullptr };
 
-static uint64_t getRAMSize(multiboot_info_t *mboot_info);
+uint64_t getRAMSize(multiboot_info_t *mboot_info);
 
 extern "C" void *_utext_start;
 extern "C" void *_utext_end;
@@ -133,7 +134,6 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     uint64_t ramSize = getRAMSize(mbootInfo);
     printf("[main] Found %.2f MiB of usable memory\n", (double)ramSize / (double)(1 << 20));
 
-    Paging::Initialize(ramSize);
     Thread::Initialize();
     Process::Initialize();
 
@@ -601,6 +601,15 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             else if(!args[2]) printf("missing value");
             else _outl(strtoul(args[1], nullptr, 0), strtoul(args[2], nullptr, 0));
         }
+        else if(!strcmp(args[0],  "play"))
+        {
+            AudioDevice *dev = AudioDevice::GetByID(0);
+            dev->Open(22050, 1, 8, 32768);
+            dev->Start();
+            Time::Sleep(10000, false);
+            dev->Stop();
+            dev->Close();
+        }
         else
         {
             bool wait = args[0][0] == '&';
@@ -668,7 +677,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     return 0xD007D007;
 }
 
-static uint64_t getRAMSize(multiboot_info_t *mboot_info)
+uint64_t getRAMSize(multiboot_info_t *mboot_info)
 {
     uint64_t ramSize = 0;
     for(uintptr_t mmapAddr = mboot_info->mmap_addr,

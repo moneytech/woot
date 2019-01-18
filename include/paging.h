@@ -1,6 +1,7 @@
 #ifndef PAGING_H
 #define PAGING_H
 
+#include <multiboot.h>
 #include <types.h>
 
 class Paging
@@ -24,4 +25,11 @@ public:
     static bool FreePage(uintptr_t pa);
     static bool FreePages(uintptr_t pa, size_t n);
 };
+
+extern "C" void initializePaging(multiboot_info_t *mbootInfo);
+
+int open(const char *filename, int flags);
+void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+int munmap(void *addr, size_t length);
+
 #endif // PAGING_H

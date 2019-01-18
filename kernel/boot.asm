@@ -27,6 +27,7 @@ extern __fini_array_end
 extern __cxa_finalize
 extern cpuEnableSSE
 extern cpuInitFPU
+extern initializePaging
 global _start
 _start:
     cli
@@ -67,6 +68,13 @@ _start:
 
     ; enable SSE
     call cpuEnableSSE
+
+    ; initialize proper paging
+    add ebx, KERNEL_BASE
+    push ebx
+    call initializePaging
+    pop ebx
+    sub ebx, KERNEL_BASE
 
     ; call global constructors
     push ebx    ; we need ebx register to be preserved over constructors

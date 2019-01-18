@@ -23,6 +23,7 @@ kernel/uhcicontroller.cpp
 kernel/uhcidevice.cpp
 kernel/usbcontroller.cpp
 kernel/usbdevice.cpp
+lib/malloc.cpp
 libc/asm/cos.asm
 libc/asm/exp.asm
 libc/asm/fmod.asm
@@ -275,7 +276,6 @@ kernel/tokenizer.cpp
 kernel/uuid.cpp
 kernel/volume.cpp
 kernel/volumetype.cpp
-lib/malloc.c
 lib/sched.cpp
 mnt/placeholder
 include/bitmap.h

@@ -1,14 +1,23 @@
 #define LACKS_SYS_TYPES_H
+
+#define PROT_EXEC 0
+#define PROT_READ 0
+#define PROT_WRITE 0
+#define PROT_NONE 0
+#define O_RDWR 0
+#define MAP_PRIVATE 0
+
 #include <types.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <paging.h>
 #define NO_MALLOC_STATS 0
 #define LACKS_SYS_MMAN_H
 #define LACKS_FCNTL_H
 #define LACKS_UNISTD_H
 #define LACKS_SYS_PARAM_H
-#define HAVE_MMAP 0
-#define HAVE_MORECORE 1
+#define HAVE_MMAP 1
+#define HAVE_MORECORE 0
 #define USE_LOCKS 1
 #undef linux
 
