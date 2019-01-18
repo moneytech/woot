@@ -416,7 +416,7 @@ bool IDEDrive::Controller::identify_nolock(ATAIdentifyResponse *id, bool slave, 
 IDEDrive::Controller::Controller(word base, word control, word bm, byte irq) :
     Lock(new Mutex("ideController")),
     Base(base), Control(control), BM(bm), IRQ(irq),
-    InterruptHandler({ nullptr, interrupt, this })
+    InterruptHandler { nullptr, interrupt, this }
 {
 }
 

@@ -190,7 +190,7 @@ bool PS2Keyboard::isr(Ints::State *state, void *context)
 
 PS2Keyboard::PS2Keyboard(uint16_t data, uint16_t cmd, uint8_t irq) :
     InputDevice(Type::Keyboard, "PS/2 Keyboard"),
-    handler({ nullptr, isr, this }),
+    handler { nullptr, isr, this },
     dataPort(data), cmdPort(cmd), irq(irq), ex(false)
 {
     IRQs::RegisterHandler(irq, &handler);

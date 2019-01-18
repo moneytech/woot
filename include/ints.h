@@ -132,8 +132,6 @@ public:
         Handler *Next; // set to 0
         HandlerCallback Callback;
         void *Context;
-
-        Handler(HandlerCallback callback, void *context);
     };
 private:
     static Handler *Handlers[];

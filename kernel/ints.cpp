@@ -157,8 +157,3 @@ void Ints::DumpState(Ints::State *state)
         printf("UserSS: %.4X UserESP: %.8X\n", state->UserSS, state->UserESP);
     else printf("UserSS: N/A  UserESP: N/A\n");
 }
-
-Ints::Handler::Handler(Ints::HandlerCallback callback, void *context) :
-    Next(nullptr), Callback(callback), Context(Context)
-{
-}

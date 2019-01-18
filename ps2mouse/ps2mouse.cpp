@@ -31,7 +31,7 @@ bool PS2Mouse::isr(Ints::State *state, void *context)
 
 PS2Mouse::PS2Mouse(uint16_t data, uint16_t cmd, uint8_t irq) :
     InputDevice(Type::Mouse, "PS/2 Mouse"),
-    handler({ nullptr, isr, this }),
+    handler { nullptr, isr, this },
     dataPort(data), cmdPort(cmd), irq(irq),
     dataPhase(0)
 {

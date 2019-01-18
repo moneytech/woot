@@ -115,7 +115,7 @@ bool UHCIController::interrupt(Ints::State *state, void *context)
 UHCIController::UHCIController(uint16_t base, uint8_t irq) :
     base(base),
     irq(irq),
-    interruptHandler({ nullptr, interrupt, this }),
+    interruptHandler { nullptr, interrupt, this },
     frameList(new(PAGE_SIZE) dword[1024]),
     frameListPhAddr(Paging::GetPhysicalAddress(Paging::GetAddressSpace(), (uintptr_t)frameList))
 {
