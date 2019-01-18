@@ -87,6 +87,8 @@ public:
     static void UnLock();
     static void Cleanup();
 
+    static int BitStuffTime(int n);
+
     virtual void Probe();
     virtual int ControlTransfer(USBDevice *device, USBSetupPacket *setupPacket, void *buffer, bool in, size_t n, uint8_t endpoint);
 };

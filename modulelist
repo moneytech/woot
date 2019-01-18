@@ -1,3 +1,4 @@
 # list of modules to load at boot time
 system/simplefb.ko
 system/ps2mouse.ko
+system/cmi8738.ko

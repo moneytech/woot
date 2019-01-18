@@ -66,6 +66,11 @@ void USBController::Cleanup()
 {
 }
 
+int USBController::BitStuffTime(int n)
+{
+    return n * 7 / 6;
+}
+
 void USBController::Probe()
 {
 }

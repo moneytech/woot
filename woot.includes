@@ -37,3 +37,4 @@ libc/include
 libc/include/sys
 libc/internal
 libc/asm
+cmi8738

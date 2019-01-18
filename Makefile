@@ -1,13 +1,20 @@
 ROOTDIR = $(shell pwd)
-SUBDIRS = lib kernel libc libwoot ps2mouse simplefb usertest calc clock wpaper
+
+SUBDIRS = lib kernel libc libwoot ps2mouse simplefb cmi8738
+SUBDIRS += usertest calc clock wpaper
+
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
 ISOFILE = woot.iso
 LIBDIR = $(ROOTDIR)/lib
 MOUNTPOINT = mnt
+
 DISTFILES = usertest/usertest logo.bmp libc/libc.so libwoot/libwoot.so zlib/lib/libz.so libpng/lib/libpng.so libpng/lib/libpng16.so
 DISTFILES += wallpaper.png alpha.png libfreetype/lib/libfreetype.so test.ttf directory.png file.png normal.cur clock/clock wpaper/wpaper
 DISTFILES += calc/calc title.ttf libgmp/lib/libgmp.so
+
+MODULES = ps2mouse/ps2mouse.ko simplefb/simplefb.ko cmi8738/cmi8738.ko
+
 CONFIGURE = woot.specs woot-gcc
 ADD_EXEC = woot-gcc
 
@@ -65,8 +72,7 @@ iso: all
 	cp kernel/$(KERNELFILE) $(ISODIR)/
 	cp modulelist $(ISODIR)/
 	mkdir -p $(ISODIR)/system
-	cp simplefb/simplefb.ko $(ISODIR)/system
-	cp ps2mouse/ps2mouse.ko $(ISODIR)/system
+	cp $(MODULES) $(ISODIR)/system
 	cp $(DISTFILES) $(ISODIR)
 	grub-mkrescue -o $(ISOFILE) $(ISODIR) -- --volid WOOT_OS 2>&1
 
@@ -100,8 +106,7 @@ hdd.img: all
 	-sudo cp kernel/$(KERNELFILE) $(MOUNTPOINT)/
 	-sudo cp modulelist $(MOUNTPOINT)/
 	-sudo mkdir -p $(MOUNTPOINT)/system
-	-sudo cp simplefb/simplefb.ko $(MOUNTPOINT)/system
-	-sudo cp ps2mouse/ps2mouse.ko $(MOUNTPOINT)/system
+	-sudo cp $(MODULES) $(MOUNTPOINT)/system
 	-sudo cp $(DISTFILES) $(MOUNTPOINT)
 	sudo umount $(MOUNTPOINT)
 	sudo losetup -d /dev/loop1

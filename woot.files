@@ -2,8 +2,13 @@ calc/Makefile
 calc/main.c
 clock/Makefile
 clock/main.c
+cmi8738/Makefile
+cmi8738/cmi8738.cpp
+cmi8738/cmi8738.h
+cmi8738/main.cpp
 directory.png
 file.png
+include/audiodevice.h
 include/cdfs.h
 include/messagequeue.h
 include/partitionvolume.h
@@ -11,6 +16,7 @@ include/uhcicontroller.h
 include/uhcidevice.h
 include/usbcontroller.h
 include/usbdevice.h
+kernel/audiodevice.cpp
 kernel/cdfs.cpp
 kernel/partitionvolume.cpp
 kernel/uhcicontroller.cpp
