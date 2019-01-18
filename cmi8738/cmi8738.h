@@ -5,6 +5,8 @@
 #include <ints.h>
 #include <types.h>
 
+class Semaphore;
+
 class CMI8738 : public AudioDevice
 {
     static bool interrupt(Ints::State *state, void *context);
@@ -14,11 +16,14 @@ class CMI8738 : public AudioDevice
     Ints::Handler interruptHandler;
     bool opened = false;
 
+    Semaphore *bufSem;
     int samples;
     size_t bufferSize;
     byte *buffer;
     uintptr_t bufferPhAddr;
     uint32_t sf, fmt;
+    int playedBuffer;
+    bool last;
 
     void mixerWrite(byte idx, byte val);
     byte mixerRead(byte idx);
@@ -36,10 +41,12 @@ public:
     virtual const char *GetVendor();
     virtual const char *GetModel();
     virtual int Open(int rate, int channels, int bits, int samples);
+    virtual int GetFrameSize();
     virtual int Start();
     virtual int Stop();
     virtual int Pause();
     virtual int Resume();
+    virtual int Write(void *buffer);
     virtual void Close();
     ~CMI8738();
 };

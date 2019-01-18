@@ -124,6 +124,7 @@ libwoot/include/woot/ui.h
 libwoot/include/woot/vkeys.h
 libwoot/pixmap.c
 libwoot/ui.c
+remove8bit.wav
 test.ttf
 title.ttf
 wallpaper.png

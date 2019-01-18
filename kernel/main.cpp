@@ -602,14 +602,42 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             else if(!args[2]) printf("missing value");
             else _outl(strtoul(args[1], nullptr, 0), strtoul(args[2], nullptr, 0));
         }
-        else if(!strcmp(args[0],  "play"))
+        else if(!strcmp(args[0], "play"))
         {
-            AudioDevice *dev = AudioDevice::GetByID(0);
-            dev->Open(22050, 1, 8, 32768);
-            dev->Start();
-            Time::Sleep(10000, false);
-            dev->Stop();
-            dev->Close();
+            File *f = File::Open(args[1], O_RDONLY);
+            if(f)
+            {
+                f->Seek(44, SEEK_SET); // skip wave header
+                AudioDevice *dev = AudioDevice::GetByID(0);
+                if(dev)
+                {
+                    int sampleRate = 22050;
+                    int frameSamples = 2048;
+                    float secsPerSample = 1.0f / (float)sampleRate;
+                    float secsPerFrame = frameSamples * secsPerSample;
+                    dev->Open(sampleRate, 1, 8, frameSamples);
+                    int frameSize = dev->GetFrameSize();
+                    byte *buf = new byte[frameSize];
+                    for(int i = 0;; ++i)
+                    {
+                        memset(buf, 0, frameSize);
+                        int br = f->Read(buf, frameSize);
+                        if(br < 0) break;
+                        bool last = br != frameSize;
+                        dev->Write(buf);
+                        if(!i) dev->Start();
+                        int time = secsPerFrame * i;
+                        printf("\r%.2d:%.2d", time / 60, time % 60);
+                        if(last)
+                            break;
+                    }
+                    printf("\rdone.\n");
+                    delete[] buf;
+                    dev->Stop();
+                    dev->Close();
+                }
+                delete f;
+            }
         }
         else
         {

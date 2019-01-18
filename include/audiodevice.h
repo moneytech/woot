@@ -26,10 +26,12 @@ public:
     virtual const char *GetVendor();
     virtual const char *GetModel();
     virtual int Open(int rate, int channels, int bits, int samples);
+    virtual int GetFrameSize();
     virtual int Start();
     virtual int Stop();
     virtual int Pause();
     virtual int Resume();
+    virtual int Write(void *buffer);
     virtual void Close();
     ~AudioDevice();
 };

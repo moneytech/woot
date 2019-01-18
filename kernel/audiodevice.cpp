@@ -75,6 +75,11 @@ int AudioDevice::Open(int rate, int channels, int bits, int samples)
     return -ENOSYS;
 }
 
+int AudioDevice::GetFrameSize()
+{
+    return -ENOSYS;
+}
+
 int AudioDevice::Start()
 {
     return -ENOSYS;
@@ -91,6 +96,11 @@ int AudioDevice::Pause()
 }
 
 int AudioDevice::Resume()
+{
+    return -ENOSYS;
+}
+
+int AudioDevice::Write(void *buffer)
 {
     return -ENOSYS;
 }

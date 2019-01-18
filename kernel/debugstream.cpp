@@ -274,6 +274,8 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
 
             if(c == '\n')
                 ++fbY, fbX = 0;
+            else if(c == '\r')
+                fbX = 0;
             else
             {
                 byte *glyph = fbFont[c];

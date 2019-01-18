@@ -5,8 +5,10 @@
 #include <pci.h>
 #include <mutex.h>
 #include <paging.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sysdefs.h>
 #include <time.h>
 
@@ -124,8 +126,6 @@ bool CMI8738::interrupt(Ints::State *state, void *context)
     CMI8738 *dev = (CMI8738 *)context;
     uint32_t status = _inl(dev->base + CM_REG_INT_STATUS);
 
-    printf("status: %.8x\n", status);
-
     if(!(status & CM_INTR))
         return false; // not our interrupt
 
@@ -138,7 +138,8 @@ bool CMI8738::interrupt(Ints::State *state, void *context)
     cpuIOClrBitsL(dev->base + CM_REG_INT_HLDCLR, mask);
     cpuIOSetBitsL(dev->base + CM_REG_INT_HLDCLR, mask);
 
-    _outb(0x3f8, 'X');
+    ++dev->playedBuffer;
+    dev->bufSem->Signal(state);
 
     return true;
 }
@@ -261,7 +262,8 @@ void CMI8738::Cleanup()
 
 CMI8738::CMI8738(uint16_t base, uint8_t irq) :
     base(base), irq(irq),
-    interruptHandler { nullptr, interrupt, this }
+    interruptHandler { nullptr, interrupt, this },
+    bufSem(new Semaphore(1))
 {
     IRQs::RegisterHandler(irq, &interruptHandler);
     IRQs::Enable(irq);
@@ -293,7 +295,7 @@ int CMI8738::Open(int rate, int channels, int bits, int samples)
 
     fullReset();
 
-    bufferSize = samples * (bits / 8) * channels;
+    bufferSize = 2 * samples * (bits / 8) * channels;
     buffer = (byte *)Paging::AllocDMA(bufferSize);
     bufferPhAddr = Paging::GetPhysicalAddress(Paging::GetAddressSpace(), (uintptr_t)buffer);
 
@@ -303,17 +305,24 @@ int CMI8738::Open(int rate, int channels, int bits, int samples)
     return 0;
 }
 
+int CMI8738::GetFrameSize()
+{
+    return bufferSize / 2;
+}
+
 int CMI8738::Start()
 {
     if(!opened) return -EBUSY;
+
+    playedBuffer = 0;
 
     _outl(base + CM_REG_FUNCTRL1, (sf << CM_ASFC_SHIFT) | CM_BREQ);
     cpuIOClrBitsL(base + CM_REG_FUNCTRL0, CM_CHADC0 | CM_PAUSE0 | CM_CHEN0); // ch0 -> playback, ch0 not paused, ch0 disable
     _outl(base + CM_REG_CHFORMAT, (_inl(base + CM_REG_CHFORMAT) & ~0x03) | fmt); // set sample format
 
     _outl(base + CM_REG_CH0_FRAME1, bufferPhAddr);
-    _outw(base + CM_REG_CH0_FRAME2, samples - 1);
-    _outw(base + CM_REG_CH0_FRAME2 + 2, (samples / 2) - 1);
+    _outw(base + CM_REG_CH0_FRAME2, 2 * samples - 1);
+    _outw(base + CM_REG_CH0_FRAME2 + 2, samples - 1);
 
     cpuIOSetBitsL(base + CM_REG_INT_HLDCLR, CM_CH0_INT_EN); // enable interrupts
     cpuIOSetBitsL(base + CM_REG_FUNCTRL0, CM_CHEN0); // start channel 0
@@ -326,18 +335,36 @@ int CMI8738::Stop()
     if(!opened) return -EBUSY;
     cpuIOClrBitsL(base + CM_REG_INT_HLDCLR, CM_CH0_INT_EN); // disable interrupts
     cpuIOClrBitsL(base + CM_REG_FUNCTRL0, CM_CHEN0); // ch0 disable
+    bufSem->Signal(nullptr);
     return 0;
 }
 
 int CMI8738::Pause()
 {
+    if(!opened) return -EBUSY;
     cpuIOSetBitsL(base + CM_REG_FUNCTRL0, CM_PAUSE0);
     return 0;
 }
 
 int CMI8738::Resume()
 {
+    if(!opened) return -EBUSY;
     cpuIOClrBitsL(base + CM_REG_FUNCTRL0, CM_PAUSE0);
+    return 0;
+}
+
+int CMI8738::Write(void *buffer)
+{
+    if(!opened) return -EBUSY;
+    bool ints = cpuAreInterruptsEnabled();
+    if(!bufSem->Wait(5000, false, true))
+    {
+        cpuRestoreInterrupts(ints);
+        return -EBUSY;
+    };
+    byte *dst = this->buffer + (playedBuffer & 1) * bufferSize / 2;
+    memcpy(dst, buffer, bufferSize / 2);
+    cpuRestoreInterrupts(ints);
     return 0;
 }
 
@@ -352,4 +379,7 @@ CMI8738::~CMI8738()
     IRQs::UnRegisterHandler(irq, &interruptHandler);
     IRQs::TryDisable(irq);
     cpuRestoreInterrupts(ints);
+
+    Paging::FreeDMA(buffer, bufferSize);
+    delete bufSem;
 }
