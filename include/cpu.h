@@ -57,6 +57,15 @@ void _outsw(const void *buffer, word port, size_t n);
 void _outsl(const void *buffer, word port, size_t n);
 void _outsd(const void *buffer, word port, size_t n);
 
+void cpuIOSetBitsB(word port, byte mask);
+void cpuIOSetBitsW(word port, word mask);
+void cpuIOSetBitsL(word port, dword mask);
+void cpuIOSetBitsD(word port, dword mask);
+void cpuIOClrBitsB(word port, byte mask);
+void cpuIOClrBitsW(word port, word mask);
+void cpuIOClrBitsL(word port, dword mask);
+void cpuIOClrBitsD(word port, dword mask);
+
 // int n instruction
 void cpuINT(byte intNo);
 

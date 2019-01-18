@@ -247,6 +247,64 @@ _outsd:
     pop esi
     ret
 
+global cpuIOSetBitsB
+cpuIOSetBitsB:
+    mov dx, [esp + 4]
+    in al, dx
+    or al, [esp + 8]
+    out dx, al
+    ret
+
+global cpuIOSetBitsW
+cpuIOSetBitsW:
+    mov dx, [esp + 4]
+    in ax, dx
+    or ax, [esp + 8]
+    out dx, ax
+    ret
+
+global cpuIOSetBitsL
+global cpuIOSetBitsD
+cpuIOSetBitsL:
+cpuIOSetBitsD:
+    mov dx, [esp + 4]
+    in eax, dx
+    or eax, [esp + 8]
+    out dx, eax
+    ret
+
+global cpuIOClrBitsB
+cpuIOClrBitsB:
+    mov dx, [esp + 4]
+    in al, dx
+    mov ecx, [esp + 8]
+    not ecx
+    and al, cl
+    out dx, al
+    ret
+
+global cpuIOClrBitsW
+cpuIOClrBitsW:
+    mov dx, [esp + 4]
+    in ax, dx
+    mov ecx, [esp + 8]
+    not ecx
+    and ax, cx
+    out dx, ax
+    ret
+
+global cpuIOClrBitsL
+global cpuIOClrBitsD
+cpuIOClrBitsL:
+cpuIOClrBitsD:
+    mov dx, [esp + 4]
+    in eax, dx
+    mov ecx, [esp + 8]
+    not ecx
+    and eax, ecx
+    out dx, eax
+    ret
+
 _INT00:
     int 0x00
     ret
