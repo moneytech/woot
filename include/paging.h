@@ -24,6 +24,9 @@ public:
     static uintptr_t AllocPages(size_t n);
     static bool FreePage(uintptr_t pa);
     static bool FreePages(uintptr_t pa, size_t n);
+
+    static void *AllocDMA(size_t size);
+    static void FreeDMA(void *ptr, size_t size);
 };
 
 extern "C" void initializePaging(multiboot_info_t *mbootInfo);

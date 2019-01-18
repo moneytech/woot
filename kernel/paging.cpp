@@ -78,22 +78,32 @@ void Paging::Initialize(size_t ramSize)
 
     // map mmio space
     for(uintptr_t va = MMIO_BASE; va; va += LARGE_PAGE_SIZE)
-        kernelPageDir[va >> 22] = va | 0x83;
+    {
+        for(int i = 0; i < SMALL_PAGES_PER_LARGE_PAGE; ++i)
+            pageBitmap->SetBit((va / PAGE_SIZE) + i, true);
+        kernelPageDir[va >> 22] = va | 0x83;    
+    }
 
     // temporarily map 4k region into current address space
     currentPageDir[kernel4kVA >> 22] = (((uintptr_t)kernel4kPT) - KERNEL_BASE) | 0x03;
 
-    // map kernel space
-    uintptr_t bssEnd = (uintptr_t)sbrk(0);
-    for(uintptr_t va = KERNEL_BASE; va < bssEnd; va += PAGE_SIZE)
-        MapPage(kernelAddressSpace, va, va - KERNEL_BASE, false, false, true);
-
     // map 4k region
-    kernelPageDir[kernel4kVA >> 22] = (((uintptr_t)kernel4kPT) - KERNEL_BASE) | 0x03;
+    uintptr_t pa4k = ((uintptr_t)kernel4kPT) - KERNEL_BASE;
+    pageBitmap->SetBit(pa4k / PAGE_SIZE, true);
+    kernelPageDir[kernel4kVA >> 22] = pa4k | 0x03;
 
-    // unmap space for modules
-    for(uintptr_t va = 0; va < MODULES_SPACE_SIZE; va += LARGE_PAGE_SIZE)
-        kernelPageDir[(MODULES_BASE + va) >> 22] = 0;
+    // map kernel space
+    uintptr_t heapStart = align((uintptr_t)sbrk(0), PAGE_SIZE);
+    uint i = 0;
+    for(; i < ((heapStart - KERNEL_BASE) / PAGE_SIZE); ++i)
+        pageBitmap->SetBit(i, true);
+
+    for(uintptr_t va = KERNEL_BASE; va < heapStart; va += PAGE_SIZE)
+    {
+        uintptr_t pa = va - KERNEL_BASE;
+        pageBitmap->SetBit(pa / PAGE_SIZE, true);
+        MapPage(kernelAddressSpace, va, pa, false, false, true);
+    }
 
     cpuSetCR3(kernelAddressSpace);
 
@@ -153,7 +163,6 @@ bool Paging::MapPage(uintptr_t pd, uintptr_t va, uintptr_t pa, bool ps4m, bool u
 
     uintptr_t rwflag = write ? 0x02 : 0;
     uintptr_t uflag = user ? 0x04 : 0;
-    //uintptr_t uflag = 0x04; // for testing
 
     if(ps4m)
     {
@@ -518,7 +527,7 @@ void Paging::CloneRange(uintptr_t dstPd, uintptr_t srcPd, uintptr_t startVA, siz
 uintptr_t Paging::AllocPage()
 {
     bool cs = cpuDisableInterrupts();
-    uint bit = pageBitmap->FindLast(false);
+    uint bit = pageBitmap->FindFirst(false);
     if(bit == ~0)
     {
         cpuRestoreInterrupts(cs);
@@ -533,7 +542,7 @@ uintptr_t Paging::AllocPage()
 uintptr_t Paging::AllocPages(size_t n)
 {
     bool cs = cpuDisableInterrupts();
-    uint bit = pageBitmap->FindLast(false, n);
+    uint bit = pageBitmap->FindFirst(false, n);
     if(bit == ~0)
     {
         cpuRestoreInterrupts(cs);
@@ -570,6 +579,39 @@ bool Paging::FreePages(uintptr_t pa, size_t n)
         pa += PAGE_SIZE;
     }
     return true;
+}
+
+void *Paging::AllocDMA(size_t size)
+{
+    // FIXME: there is address space leak here
+    //        needs proper allocator
+    static uintptr_t dmaPtr = 0xCE000000;
+
+    size = align(size, PAGE_SIZE);
+    size_t nPages = size / PAGE_SIZE;
+    uintptr_t pa = AllocPages(nPages); // allocate n pages in ONE block
+    if(pa == ~0) return nullptr;
+    bool ints = cpuDisableInterrupts();
+    uintptr_t va = dmaPtr;
+    MapPages(GetAddressSpace(), va, pa, false, false, true, nPages);
+    dmaPtr += size;
+    cpuRestoreInterrupts(ints);
+    return (void *)va;
+}
+
+void Paging::FreeDMA(void *ptr, size_t size)
+{
+    // FIXME: frees memory but does not reclaim dmaPtr
+    //        (see AllocDMA)
+
+    size = align(size, PAGE_SIZE);
+    size_t nPages = size / PAGE_SIZE;
+    uintptr_t va = (uintptr_t)ptr;
+    uintptr_t addressSpace = GetAddressSpace();
+    uintptr_t pa = GetPhysicalAddress(addressSpace, va);
+    if(pa == ~0) return;
+    UnMapPages(addressSpace, va, false, nPages);
+    FreePages(pa, nPages);
 }
 
 int open(const char *filename, int flags)

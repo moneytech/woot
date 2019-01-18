@@ -29,8 +29,8 @@ void abort()
     for(;;);
 }
 
-// FIXME: Just a temporary solution
 extern void *_bss_end;
+
 void *sbrk(intptr_t incr)
 {
     static uintptr_t curPtr = (uintptr_t)&_bss_end;

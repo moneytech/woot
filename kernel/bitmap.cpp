@@ -76,7 +76,7 @@ uint Bitmap::FindFirst(bool val) const
         {
             if((v & (1u << i)) == val)
             {
-                uint bit = dwordOffs + i;
+                uint bit = (dwordOffs << 5) + i;
                 return bit >= bitCount ? InvalidOffset : bit;
             }
         }
@@ -112,7 +112,7 @@ uint Bitmap::FindFirst(bool val, size_t count) const
         }
         ++okBits;
         if(okBits >= count)
-            return bit - okBits - 1;
+            return bit - (okBits - 1);
     }
 
     return InvalidOffset;

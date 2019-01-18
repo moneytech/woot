@@ -97,7 +97,7 @@ void Ints::CommonHandler(Ints::State *state)
                    cpuGetCR2());
         }
         DumpState(state);
-        if(ct && ct->ID != 1) Thread::Finalize(ct, 127);
+        if(ct && ct->ID != 1 && ct->ID != 2) Thread::Finalize(ct, 127);
         else cpuSystemHalt(state->InterruptNumber);
     }
 

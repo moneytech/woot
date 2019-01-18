@@ -191,6 +191,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             }
             Elf32_Sym *cleanupSym = module->FindSymbol("Cleanup");
             module->CleanupProc = (void (*)())(cleanupSym ? cleanupSym->st_value : 0);
+            printf("[main] module '%s' has entry point at %p\n", line, module->EntryPoint);
             int res = module->EntryPoint();
             printf("[main] module '%s'(%p) returned %d\n", line, module->GetBase(), res);
         }

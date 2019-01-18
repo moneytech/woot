@@ -294,9 +294,11 @@ int CMI8738::Open(int rate, int channels, int bits, int samples)
     fullReset();
 
     bufferSize = samples * (bits / 8) * channels;
-    size_t pageCount = align(samples, PAGE_SIZE) / PAGE_SIZE;
-    //bufferPhAddr = Paging::AllocPages(pageCount);
-    //buffer =
+    buffer = (byte *)Paging::AllocDMA(bufferSize);
+    bufferPhAddr = Paging::GetPhysicalAddress(Paging::GetAddressSpace(), (uintptr_t)buffer);
+
+    for(uint i = 0; i < bufferSize; ++i)
+        buffer[i] = i;
 
     return 0;
 }
@@ -309,7 +311,7 @@ int CMI8738::Start()
     cpuIOClrBitsL(base + CM_REG_FUNCTRL0, CM_CHADC0 | CM_PAUSE0 | CM_CHEN0); // ch0 -> playback, ch0 not paused, ch0 disable
     _outl(base + CM_REG_CHFORMAT, (_inl(base + CM_REG_CHFORMAT) & ~0x03) | fmt); // set sample format
 
-    _outl(base + CM_REG_CH0_FRAME1, 1 << 20);//Paging::GetPhysicalAddress(GetCR3(), (uintptr_t)buffer));
+    _outl(base + CM_REG_CH0_FRAME1, bufferPhAddr);
     _outw(base + CM_REG_CH0_FRAME2, samples - 1);
     _outw(base + CM_REG_CH0_FRAME2 + 2, (samples / 2) - 1);
 

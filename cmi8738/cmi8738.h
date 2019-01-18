@@ -16,8 +16,8 @@ class CMI8738 : public AudioDevice
 
     int samples;
     size_t bufferSize;
-    uintptr_t bufferPhAddr;
     byte *buffer;
+    uintptr_t bufferPhAddr;
     uint32_t sf, fmt;
 
     void mixerWrite(byte idx, byte val);

@@ -1,6 +1,7 @@
 #include <bufferedvolume.h>
 #include <drive.h>
 #include <errno.h>
+#include <paging.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -79,7 +80,7 @@ bool BufferedVolume::loadBuffer(int buffer, int64_t sector)
     sector = sectorsPerBuffer * (sector / sectorsPerBuffer);
     BlockBuffer *b = buffers + buffer;
     if(!b->Buffer)
-        b->Buffer = new byte[sectorsPerBuffer * Drive->SectorSize];
+        b->Buffer = (byte *)Paging::AllocDMA(sectorsPerBuffer * Drive->SectorSize);
     b->Used = true;
     if(b->Dirty) // should be flushed already but just to be sure
     {
@@ -157,7 +158,7 @@ BufferedVolume::~BufferedVolume()
     for(int i = 0; i < bufferCount; ++i)
     {
         if(buffers[i].Buffer)
-            delete[] buffers[i].Buffer;
+            Paging::FreeDMA(buffers[i].Buffer, sectorsPerBuffer * Drive->SectorSize);
     }
     delete[] buffers;
 }
