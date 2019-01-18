@@ -205,7 +205,7 @@ int IDEDrive::sectorTransfer(bool write, void *buffer, uint64_t start, int64_t c
 
 void IDEDrive::Initialize()
 {
-    PCI::Lock->Wait(0, false, false);
+    PCI::Lock->Acquire(0, false);
     for(PCI::Device *pciDev : *PCI::Devices)
     {
         if(pciDev->Class != 0x01 || pciDev->SubClass != 0x01)
@@ -263,7 +263,7 @@ void IDEDrive::Initialize()
             delete id;
         }
     }
-    PCI::Lock->Signal(nullptr);
+    PCI::Lock->Release();
 }
 
 int64_t IDEDrive::ReadSectors(void *buffer, uint64_t start, int64_t count)

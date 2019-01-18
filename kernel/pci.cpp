@@ -1,11 +1,11 @@
 #include <cpu.h>
 #include <pci.h>
-#include <semaphore.h>
+#include <mutex.h>
 #include <stdio.h>
 
 #define PCI_SHOW_LIST 1
 
-Semaphore *PCI::Lock;
+Mutex *PCI::Lock;
 List<PCI::Device *> *PCI::Devices;
 
 PCI::Device::Device(PCI::Address address, uint16_t vid, uint16_t did, uint8_t cls, uint8_t subCls, uint8_t progif) :
@@ -73,7 +73,7 @@ void PCI::CheckFunction(uint8_t bus, uint8_t device, uint8_t func)
 void PCI::Initialize()
 {
     Devices = new List<Device *>();
-    Lock = new Semaphore(1);
+    Lock = new Mutex("pci");
     Check();
 }
 

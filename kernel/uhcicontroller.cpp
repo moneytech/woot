@@ -284,7 +284,7 @@ UHCIController::~UHCIController()
 
 void UHCIController::Initialize()
 {
-    if(!PCI::Lock->Wait(0, false, false))
+    if(!PCI::Lock->Acquire(0, false))
         return;
     for(PCI::Device *pciDev : *PCI::Devices)
     {
@@ -305,7 +305,7 @@ void UHCIController::Initialize()
         uint8_t irq = cfg.Header.Default.InterruptLine;
         printf("       base: %#.4x irq: %d id: %d\n", base, irq, USBController::Add(new UHCIController(base, irq)));
     }
-    PCI::Lock->Signal(nullptr);
+    PCI::Lock->Release();
 }
 
 void UHCIController::Cleanup()

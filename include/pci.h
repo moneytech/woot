@@ -12,7 +12,7 @@
 #define PCI_ADDR_REG(addr)  (((addr) >> 2) & 0x3F)
 #define PCI_ADDR_OFFS(addr) ((addr) & 0xFF)
 
-class Semaphore;
+class Mutex;
 
 class PCI
 {
@@ -126,7 +126,7 @@ private:
     static void CheckDevice(uint8_t bus, uint8_t device);
     static void CheckFunction(uint8_t bus, uint8_t device, uint8_t func);
 public:
-    static Semaphore *Lock;
+    static Mutex *Lock;
     static List<Device *> *Devices;
     static void Initialize();
     static uint8_t ReadConfigByte(Address address);
