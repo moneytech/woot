@@ -133,7 +133,11 @@ void DebugStream::DisableLineBuffer()
 
 int64_t DebugStream::Read(void *buffer, int64_t n)
 {
-    if(!window) return 0;
+    if(!window)
+    {
+        cpuSystemHalt(0xDEADBEEF);
+        return 0;
+    }
 
     static bool shift = false, alt = false, ctrl = false, caps = false, num = false;
     static int mx = 0;

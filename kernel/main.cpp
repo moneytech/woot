@@ -1,3 +1,4 @@
+#include <ahcidrive.h>
 #include <audiodevice.h>
 #include <cdfs.h>
 #include <cpu.h>
@@ -151,6 +152,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     PS2Keyboard::Initialize();
     Drive::Initialize();
     IDEDrive::Initialize();
+    AHCIDrive::Initialize();
     VolumeType::Initialize();
     Volume::Initialize();
     FileSystemType::Initialize();
