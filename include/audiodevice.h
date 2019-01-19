@@ -37,6 +37,7 @@ public:
     virtual const char *GetModel();
     virtual const MixerSetting *GetMixerSettings(int *count);
     virtual int SetMixerSetting(int setting, int value);
+    virtual int GetMixerSetting(int setting);
     virtual int Open(int rate, int channels, int bits, int samples);
     virtual int GetFrameSize();
     virtual int Start();

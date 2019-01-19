@@ -613,7 +613,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 const AudioDevice::MixerSetting *settings = d->GetMixerSettings(&setCnt);
                 printf("%s %s mixer controls:\n", d->GetVendor(), d->GetModel());
                 for(int i = 0; i < setCnt; ++i)
-                    printf("%d. %s %d %d\n", i, settings[i].Name, settings[i].MinValue, settings[i].MaxValue);
+                    printf("%d. %s %d (min: %d max: %d)\n", i, settings[i].Name, d->GetMixerSetting(i), settings[i].MinValue, settings[i].MaxValue);
             }
             else if(!args[3]) printf("missing value\n");
             else

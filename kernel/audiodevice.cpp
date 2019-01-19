@@ -81,6 +81,11 @@ int AudioDevice::SetMixerSetting(int setting, int value)
     return -ENOSYS;
 }
 
+int AudioDevice::GetMixerSetting(int setting)
+{
+    return 0;
+}
+
 int AudioDevice::Open(int rate, int channels, int bits, int samples)
 {
     return -ENOSYS;

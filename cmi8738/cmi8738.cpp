@@ -398,6 +398,78 @@ int CMI8738::SetMixerSetting(int setting, int value)
     return 0;
 }
 
+int CMI8738::GetMixerSetting(int setting)
+{
+    if(setting < 0 || setting >= 24) return 0;
+    const AudioDevice::MixerSetting *s = mixerSettings + setting;
+    switch(setting)
+    {
+    case 0: // master left
+        return mapValue(0, 31, s->MinValue, s->MaxValue, mixerRead(0x30) >> 3);
+    case 1: // master right
+        return mapValue(0, 31, s->MinValue, s->MaxValue, mixerRead(0x31) >> 3);
+    case 2: // wave left
+        return mapValue(0, 15, s->MinValue, s->MaxValue, mixerRead(0x32) >> 4);
+    case 3: // wave right
+        return mapValue(0, 15, s->MinValue, s->MaxValue, mixerRead(0x33) >> 4);
+    case 4: // midi left
+        return mapValue(0, 15, s->MinValue, s->MaxValue, mixerRead(0x34) >> 4);
+    case 5: // midi right
+        return mapValue(0, 15, s->MinValue, s->MaxValue, mixerRead(0x35) >> 4);
+    case 6: // cd left
+        return mapValue(0, 15, s->MinValue, s->MaxValue, mixerRead(0x36) >> 4);
+    case 7: // cd right
+        return mapValue(0, 15, s->MinValue, s->MaxValue, mixerRead(0x37) >> 4);
+    case 8: // line left
+        return mapValue(0, 15, s->MinValue, s->MaxValue, mixerRead(0x38) >> 4);
+    case 9: // line right
+        return mapValue(0, 15, s->MinValue, s->MaxValue, mixerRead(0x39) >> 4);
+    case 10: // mic
+        return mapValue(0, 15, s->MinValue, s->MaxValue, mixerRead(0x3A) >> 4);
+    case 11: // pc squeaker
+        return mapValue(0, 3, s->MinValue, s->MaxValue, mixerRead(0x3B) >> 6);
+    case 12: // line left mute
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3C) >> 4) & 1);
+    case 13: // line right mute
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3C) >> 3) & 1);
+    case 14: // cd left mute
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3C) >> 2) & 1);
+    case 15: // cd right mute
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3C) >> 1) & 1);
+    case 16: // mic mute
+        return mapValue(0, 1, s->MinValue, s->MaxValue, mixerRead(0x3C) & 1);
+    case 17: // fm left record left
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3D) >> 6) & 1);
+    case 18: // fm right record left
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3D) >> 5) & 1);
+    case 19: // line left record left
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3D) >> 4) & 1);
+    case 20: // line right record left
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3D) >> 3) & 1);
+    case 21: // cd left record left
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3D) >> 2) & 1);
+    case 22: // cd right record left
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3D) >> 1) & 1);
+    case 23: // mic record left
+        return mapValue(0, 1, s->MinValue, s->MaxValue, mixerRead(0x3D) & 1);
+    case 24: // fm left record right
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3E) >> 6) & 1);
+    case 25: // fm right record right
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3E) >> 5) & 1);
+    case 26: // line left record right
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3E) >> 4) & 1);
+    case 27: // line right record right
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3E) >> 3) & 1);
+    case 28: // cd left record right
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3E) >> 2) & 1);
+    case 29: // cd right record right
+        return mapValue(0, 1, s->MinValue, s->MaxValue, (mixerRead(0x3E) >> 1) & 1);
+    case 30: // mic record right
+        return mapValue(0, 1, s->MinValue, s->MaxValue, mixerRead(0x3E) & 1);
+    }
+    return 0;
+}
+
 int CMI8738::Open(int rate, int channels, int bits, int samples)
 {
     sf = getSFSel(rate);
