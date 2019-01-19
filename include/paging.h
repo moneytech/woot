@@ -21,11 +21,14 @@ public:
     static void CloneRange(uintptr_t dstPd, uintptr_t srcPd, uintptr_t startVA, size_t rangeSize);
 
     static uintptr_t AllocPage();
+    static uintptr_t AllocPage(size_t alignment);
     static uintptr_t AllocPages(size_t n);
+    static uintptr_t AllocPages(size_t n, size_t alignment);
     static bool FreePage(uintptr_t pa);
     static bool FreePages(uintptr_t pa, size_t n);
 
     static void *AllocDMA(size_t size);
+    static void *AllocDMA(size_t size, size_t alignment);
     static void FreeDMA(void *ptr, size_t size);
 };
 

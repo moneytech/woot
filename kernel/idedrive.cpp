@@ -40,10 +40,11 @@ IDEDrive::IDEDrive(ATAIdentifyResponse *id, bool atapi, class Controller *ctrl, 
           nullptr, nullptr),
     Controller(ctrl), Slave(slave), ATAPI(atapi),
     PRDTsAllocated(8), // some arbitrary value
-    PRDTs(new (64 << 10) PRDTEntry[PRDTsAllocated]),
+    PRDTs((PRDTEntry *)Paging::AllocDMA(sizeof(PRDTEntry) * PRDTsAllocated, 64 << 10)),
     TransferDone(new Semaphore(0)),
     MaxBlockTransfer(id->MaximumBlockTransfer ? id->MaximumBlockTransfer : 1)
 {
+    memset(PRDTs, 0, sizeof(PRDTEntry) * PRDTsAllocated);
     memcpy(&IDResp, id, sizeof(ATAIdentifyResponse));
     Model = getStringFromID(id, offsetof(ATAIdentifyResponse, ModelNumber), 40);
     Serial = getStringFromID(id, offsetof(ATAIdentifyResponse, SerialNumber), 20);
@@ -310,7 +311,7 @@ int64_t IDEDrive::WriteSectors(const void *buffer, uint64_t start, int64_t count
 
 IDEDrive::~IDEDrive()
 {
-    if(PRDTs) delete[] PRDTs;
+    if(PRDTs) Paging::FreeDMA(PRDTs, sizeof(PRDTEntry) * PRDTsAllocated);
     if(TransferDone) delete TransferDone;
     if(Controller)
     {

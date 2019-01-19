@@ -539,6 +539,28 @@ uintptr_t Paging::AllocPage()
     return addr;
 }
 
+uintptr_t Paging::AllocPage(size_t alignment)
+{
+    if(alignment % PAGE_SIZE)
+        return ~0; // alignment must be multiple of page size
+    if(!alignment) alignment = PAGE_SIZE;
+    uint bit = 0;
+    uint bitCount = pageBitmap->GetBitCount();
+    uint step = alignment / PAGE_SIZE;
+    bool cs = cpuDisableInterrupts();
+
+    for(; bit < bitCount && pageBitmap->GetBit(bit); bit += step);
+    if(bit >= bitCount)
+    {
+        cpuRestoreInterrupts(cs);
+        return ~0;
+    }
+
+    pageBitmap->SetBit(bit, true);
+    cpuRestoreInterrupts(cs);
+    return bit * PAGE_SIZE;
+}
+
 uintptr_t Paging::AllocPages(size_t n)
 {
     bool cs = cpuDisableInterrupts();
@@ -553,6 +575,39 @@ uintptr_t Paging::AllocPages(size_t n)
     uintptr_t addr = bit * PAGE_SIZE;
     cpuRestoreInterrupts(cs);
     return addr;
+}
+
+uintptr_t Paging::AllocPages(size_t n, size_t alignment)
+{
+    if(alignment % PAGE_SIZE)
+        return ~0; // alignment must be multiple of page size
+    if(!alignment) alignment = PAGE_SIZE;
+    uint bit = 0;
+    uint bitCount = pageBitmap->GetBitCount();
+    uint step = alignment / PAGE_SIZE;
+    bool cs = cpuDisableInterrupts();
+
+    for(; bit < bitCount; bit += step)
+    {
+        int obit = bit;
+        int okbits = 0;
+        for(; bit < bitCount && !pageBitmap->GetBit(bit) && okbits < n ; ++bit, ++okbits);
+        if(okbits >= n)
+        {
+            bit = obit;
+            break;
+        }
+    }
+    if(bit >= bitCount)
+    {
+        cpuRestoreInterrupts(cs);
+        return ~0;
+    }
+
+    for(int i = 0; i < n; ++ i)
+        pageBitmap->SetBit(bit + i, true);
+    cpuRestoreInterrupts(cs);
+    return bit * PAGE_SIZE;
 }
 
 bool Paging::FreePage(uintptr_t pa)
@@ -583,13 +638,18 @@ bool Paging::FreePages(uintptr_t pa, size_t n)
 
 void *Paging::AllocDMA(size_t size)
 {
+    return AllocDMA(size, PAGE_SIZE);
+}
+
+void *Paging::AllocDMA(size_t size, size_t alignment)
+{
     // FIXME: there is address space leak here
     //        needs proper allocator
     static uintptr_t dmaPtr = 0xCE000000;
 
     size = align(size, PAGE_SIZE);
     size_t nPages = size / PAGE_SIZE;
-    uintptr_t pa = AllocPages(nPages); // allocate n pages in ONE block
+    uintptr_t pa = AllocPages(nPages, alignment); // allocate n pages in ONE block
     if(pa == ~0) return nullptr;
     bool ints = cpuDisableInterrupts();
     uintptr_t va = dmaPtr;
