@@ -12,6 +12,16 @@ class AudioDevice
     static List<AudioDevice *> devices;
     static Mutex lock;
 public:
+    struct MixerSetting
+    {
+        int MinValue;
+        int MaxValue;
+        const char *Name;
+
+        MixerSetting();
+        MixerSetting(int minValue, int maxValue, const char *name);
+    };
+
     int ID;
 
     static int Add(AudioDevice *device);
@@ -25,6 +35,8 @@ public:
     AudioDevice();
     virtual const char *GetVendor();
     virtual const char *GetModel();
+    virtual const MixerSetting *GetMixerSettings(int *count);
+    virtual int SetMixerSetting(int setting, int value);
     virtual int Open(int rate, int channels, int bits, int samples);
     virtual int GetFrameSize();
     virtual int Start();

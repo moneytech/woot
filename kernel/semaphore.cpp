@@ -90,6 +90,14 @@ int Semaphore::GetCount() const
     return Count;
 }
 
+void Semaphore::Reset(int count)
+{
+    bool is = cpuDisableInterrupts();
+    Waiters->Clear();
+    Count = count;
+    cpuRestoreInterrupts(is);
+}
+
 Semaphore::~Semaphore()
 {
     if(Waiters) delete Waiters;

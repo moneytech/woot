@@ -70,6 +70,17 @@ const char *AudioDevice::GetModel()
     return "unknown";
 }
 
+const AudioDevice::MixerSetting *AudioDevice::GetMixerSettings(int *count)
+{
+    if(count) *count = 0;
+    return nullptr;
+}
+
+int AudioDevice::SetMixerSetting(int setting, int value)
+{
+    return -ENOSYS;
+}
+
 int AudioDevice::Open(int rate, int channels, int bits, int samples)
 {
     return -ENOSYS;
@@ -113,3 +124,13 @@ AudioDevice::~AudioDevice()
 {
 }
 
+
+AudioDevice::MixerSetting::MixerSetting() :
+    MinValue(0), MaxValue(0), Name(nullptr)
+{
+}
+
+AudioDevice::MixerSetting::MixerSetting(int minValue, int maxValue, const char *name) :
+    MinValue(minValue), MaxValue(maxValue), Name(name)
+{
+}

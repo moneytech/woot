@@ -114,11 +114,18 @@
 #define CM_REG_CH1_FRAME1	0x88	/* 0-15: count of samples at bus master; buffer size */
 #define CM_REG_CH1_FRAME2	0x8C	/* 16-31: count of samples at codec; fragment size */
 
+AudioDevice::MixerSetting mixerSettings[32];
+
 static bool testAndSet(bool *lock)
 {
     bool init = *lock;
     *lock = true;
     return init;
+}
+
+static int mapValue(int imin, int imax, int omin, int omax, int val)
+{
+    return (float)(val - imin) / (imax - imin) * (omax - omin) + omin;
 }
 
 bool CMI8738::interrupt(Ints::State *state, void *context)
@@ -281,6 +288,116 @@ const char *CMI8738::GetModel()
     return "CMI8738";
 }
 
+const AudioDevice::MixerSetting *CMI8738::GetMixerSettings(int *count)
+{
+    if(count) *count = 31;
+    return mixerSettings;
+}
+
+int CMI8738::SetMixerSetting(int setting, int value)
+{
+    if(setting < 0 || setting >= 24) return -EINVAL;
+    const AudioDevice::MixerSetting *s = mixerSettings + setting;
+    value = clamp(s->MinValue, s->MaxValue, value);
+    switch(setting)
+    {
+    case 0: // master left
+        mixerWrite(0x30, mapValue(s->MinValue, s->MaxValue, 0, 31, value) << 3);
+        break;
+    case 1: // master right
+        mixerWrite(0x31, mapValue(s->MinValue, s->MaxValue, 0, 31, value) << 3);
+        break;
+    case 2: // wave left
+        mixerWrite(0x32, mapValue(s->MinValue, s->MaxValue, 0, 15, value) << 4);
+        break;
+    case 3: // wave right
+        mixerWrite(0x33, mapValue(s->MinValue, s->MaxValue, 0, 15, value) << 4);
+        break;
+    case 4: // midi left
+        mixerWrite(0x34, mapValue(s->MinValue, s->MaxValue, 0, 15, value) << 4);
+        break;
+    case 5: // midi right
+        mixerWrite(0x35, mapValue(s->MinValue, s->MaxValue, 0, 15, value) << 4);
+        break;
+    case 6: // cd left
+        mixerWrite(0x36, mapValue(s->MinValue, s->MaxValue, 0, 15, value) << 4);
+        break;
+    case 7: // cd right
+        mixerWrite(0x37, mapValue(s->MinValue, s->MaxValue, 0, 15, value) << 4);
+        break;
+    case 8: // line left
+        mixerWrite(0x38, mapValue(s->MinValue, s->MaxValue, 0, 15, value) << 4);
+        break;
+    case 9: // line right
+        mixerWrite(0x39, mapValue(s->MinValue, s->MaxValue, 0, 15, value) << 4);
+        break;
+    case 10: // mic
+        mixerWrite(0x3A, mapValue(s->MinValue, s->MaxValue, 0, 15, value) << 4);
+        break;
+    case 11: // pc squeaker
+        mixerWrite(0x3B, mapValue(s->MinValue, s->MaxValue, 0, 3, value) << 6);
+        break;
+    case 12: // line left mute
+        mixerWrite(0x3C, mixerRead(0x3C) & 0xEF | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 4);
+        break;
+    case 13: // line right mute
+        mixerWrite(0x3C, mixerRead(0x3C) & 0xF7 | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 3);
+        break;
+    case 14: // cd left mute
+        mixerWrite(0x3C, mixerRead(0x3C) & 0xFB | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 2);
+        break;
+    case 15: // cd right mute
+        mixerWrite(0x3C, mixerRead(0x3C) & 0xFD | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 1);
+        break;
+    case 16: // mic mute
+        mixerWrite(0x3C, mixerRead(0x3C) & 0xFE | mapValue(s->MinValue, s->MaxValue, 0, 1, value));
+        break;
+    case 17: // fm left record left
+        mixerWrite(0x3D, mixerRead(0x3D) & 0xBF | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 6);
+        break;
+    case 18: // fm right record left
+        mixerWrite(0x3D, mixerRead(0x3D) & 0xDF | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 5);
+        break;
+    case 19: // line left record left
+        mixerWrite(0x3D, mixerRead(0x3D) & 0xEF | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 4);
+        break;
+    case 20: // line right record left
+        mixerWrite(0x3D, mixerRead(0x3D) & 0xF7 | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 3);
+        break;
+    case 21: // cd left record left
+        mixerWrite(0x3D, mixerRead(0x3D) & 0xFB | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 2);
+        break;
+    case 22: // cd right record left
+        mixerWrite(0x3D, mixerRead(0x3D) & 0xFD | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 1);
+        break;
+    case 23: // mic record left
+        mixerWrite(0x3D, mixerRead(0x3D) & 0xFE | mapValue(s->MinValue, s->MaxValue, 0, 1, value));
+        break;
+    case 24: // fm left record right
+        mixerWrite(0x3E, mixerRead(0x3E) & 0xBF | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 6);
+        break;
+    case 25: // fm right record right
+        mixerWrite(0x3E, mixerRead(0x3E) & 0xDF | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 5);
+        break;
+    case 26: // line left record right
+        mixerWrite(0x3E, mixerRead(0x3E) & 0xEF | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 4);
+        break;
+    case 27: // line right record right
+        mixerWrite(0x3E, mixerRead(0x3E) & 0xF7 | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 3);
+        break;
+    case 28: // cd left record right
+        mixerWrite(0x3E, mixerRead(0x3E) & 0xFB | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 2);
+        break;
+    case 29: // cd right record right
+        mixerWrite(0x3E, mixerRead(0x3E) & 0xFD | mapValue(s->MinValue, s->MaxValue, 0, 1, value) << 1);
+        break;
+    case 30: // mic record right
+        mixerWrite(0x3E, mixerRead(0x3E) & 0xFE | mapValue(s->MinValue, s->MaxValue, 0, 1, value));
+        break;
+    }
+    return 0;
+}
+
 int CMI8738::Open(int rate, int channels, int bits, int samples)
 {
     sf = getSFSel(rate);
@@ -293,14 +410,16 @@ int CMI8738::Open(int rate, int channels, int bits, int samples)
     if(testAndSet(&opened))
         return -EBUSY;
 
-    fullReset();
-
     bufferSize = 2 * samples * (bits / 8) * channels;
     buffer = (byte *)Paging::AllocDMA(bufferSize);
     bufferPhAddr = Paging::GetPhysicalAddress(Paging::GetAddressSpace(), (uintptr_t)buffer);
 
+    // some buzzing for testing
     for(uint i = 0; i < bufferSize; ++i)
         buffer[i] = i;
+
+    playedBuffer = 0;
+    bufSem->Reset(1);
 
     return 0;
 }
@@ -315,6 +434,7 @@ int CMI8738::Start()
     if(!opened) return -EBUSY;
 
     playedBuffer = 0;
+    bufSem->Reset(1);
 
     _outl(base + CM_REG_FUNCTRL1, (sf << CM_ASFC_SHIFT) | CM_BREQ);
     cpuIOClrBitsL(base + CM_REG_FUNCTRL0, CM_CHADC0 | CM_PAUSE0 | CM_CHEN0); // ch0 -> playback, ch0 not paused, ch0 disable
@@ -335,7 +455,10 @@ int CMI8738::Stop()
     if(!opened) return -EBUSY;
     cpuIOClrBitsL(base + CM_REG_INT_HLDCLR, CM_CH0_INT_EN); // disable interrupts
     cpuIOClrBitsL(base + CM_REG_FUNCTRL0, CM_CHEN0); // ch0 disable
-    bufSem->Signal(nullptr);
+
+    playedBuffer = 0;
+    bufSem->Reset(1);
+
     return 0;
 }
 

@@ -91,6 +91,16 @@ public:
         return replaced;
     }
 
+    void Clear()
+    {
+        for(;;)
+        {
+            bool ok = false;
+            Read(&ok);
+            if(!ok) break;
+        }
+    }
+
     ~Queue()
     {
         if(Data) delete[] Data;

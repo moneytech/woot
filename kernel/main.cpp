@@ -602,6 +602,30 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             else if(!args[2]) printf("missing value");
             else _outl(strtoul(args[1], nullptr, 0), strtoul(args[2], nullptr, 0));
         }
+        else if(!strcmp(args[0], "mix"))
+        {
+            if(!args[1]) printf("missing device number\n");
+            else if(!args[2])
+            {
+                int dev = strtol(args[1], nullptr, 0);
+                AudioDevice *d = AudioDevice::GetByID(dev);
+                int setCnt = 0;
+                const AudioDevice::MixerSetting *settings = d->GetMixerSettings(&setCnt);
+                printf("%s %s mixer controls:\n", d->GetVendor(), d->GetModel());
+                for(int i = 0; i < setCnt; ++i)
+                    printf("%d. %s %d %d\n", i, settings[i].Name, settings[i].MinValue, settings[i].MaxValue);
+            }
+            else if(!args[3]) printf("missing value\n");
+            else
+            {
+                int dev = strtol(args[1], nullptr, 0);
+                int set = strtol(args[2], nullptr, 0);
+                int val = strtol(args[3], nullptr, 0);
+                AudioDevice *d = AudioDevice::GetByID(dev);
+                if(!d) printf("device %d does not exist\n");
+                else d->SetMixerSetting(set, val);
+            }
+        }
         else if(!strcmp(args[0], "play"))
         {
             File *f = File::Open(args[1], O_RDONLY);
@@ -612,7 +636,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 if(dev)
                 {
                     int sampleRate = 22050;
-                    int frameSamples = 2048;
+                    int frameSamples = 4096;
                     float secsPerSample = 1.0f / (float)sampleRate;
                     float secsPerFrame = frameSamples * secsPerSample;
                     dev->Open(sampleRate, 1, 8, frameSamples);

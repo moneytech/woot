@@ -40,6 +40,8 @@ public:
     CMI8738(uint16_t base, uint8_t irq);
     virtual const char *GetVendor();
     virtual const char *GetModel();
+    virtual const MixerSetting *GetMixerSettings(int *count);
+    virtual int SetMixerSetting(int setting, int value);
     virtual int Open(int rate, int channels, int bits, int samples);
     virtual int GetFrameSize();
     virtual int Start();

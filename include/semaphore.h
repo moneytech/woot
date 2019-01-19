@@ -21,6 +21,7 @@ public:
     void Signal(Ints::State *state); // passing state != 0 makes this method usable in ISRs
     void Cancel(Thread *t);
     int GetCount() const;
+    void Reset(int count);
     ~Semaphore();
 };
 
