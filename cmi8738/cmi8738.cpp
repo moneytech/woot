@@ -574,7 +574,6 @@ CMI8738::~CMI8738()
     IRQs::UnRegisterHandler(irq, &interruptHandler);
     IRQs::TryDisable(irq);
     cpuRestoreInterrupts(ints);
-
-    Paging::FreeDMA(buffer, bufferSize);
+    Paging::FreeDMA(buffer);
     delete bufSem;
 }

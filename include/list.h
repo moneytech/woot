@@ -34,6 +34,10 @@ private:
             return { Current };
         }
         bool operator !=(Iterator b) { return this->Current != b.Current; }
+        Node *GetNextNode()
+        {
+            return Current->Next;
+        }
     };
 public:
     List() : First(nullptr)
@@ -156,7 +160,7 @@ public:
             if(comparer(node->Value, value))
                 return node->Value;
         }
-        return nullptr;
+        return T();
     }
 
     bool Swap(T a, T b, Comparer comparer)

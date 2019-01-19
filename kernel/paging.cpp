@@ -16,11 +16,23 @@
 // allows for accessing whole physical memory using 4k windows
 // from any address space that maps kernel address space
 
+struct DMAPointerHead
+{
+    uintptr_t Address = 0;
+    size_t Size = 0;
+
+    bool operator ==(DMAPointerHead ph)
+    {
+        return Address == ph.Address;
+    }
+};
+
 static dword *kernelPageDir = nullptr;
 static Bitmap *pageBitmap = nullptr;
 static dword *kernel4kPT = nullptr;
 uintptr_t kernelAddressSpace = 0;
 static uintptr_t kernel4kVA = KERNEL_BASE + KERNEL_SPACE_SIZE - (4 << 20);
+static List<DMAPointerHead> dmaPtrList;
 
 static void *map4k(uint slot, uintptr_t pa)
 {
@@ -643,35 +655,77 @@ void *Paging::AllocDMA(size_t size)
 
 void *Paging::AllocDMA(size_t size, size_t alignment)
 {
-    // FIXME: there is address space leak here
-    //        needs proper allocator
-    static uintptr_t dmaPtr = 0xCE000000;
+    if(!size) return nullptr;
 
     size = align(size, PAGE_SIZE);
     size_t nPages = size / PAGE_SIZE;
     uintptr_t pa = AllocPages(nPages, alignment); // allocate n pages in ONE block
     if(pa == ~0) return nullptr;
     bool ints = cpuDisableInterrupts();
-    uintptr_t va = dmaPtr;
+    uintptr_t va = 0;
+    if(!dmaPtrList.Count())
+    {
+        va = DMA_HEAP_START;
+        dmaPtrList.Append(DMAPointerHead { va, size });
+    }
+    else
+    {
+        for(auto it = dmaPtrList.begin(); it != dmaPtrList.end(); ++it)
+        {
+            DMAPointerHead ph = *it;
+            uintptr_t blockEnd = ph.Address + ph.Size;
+            auto nextNode = it.GetNextNode();
+
+            if(!nextNode)
+            {
+                va = blockEnd;
+                dmaPtrList.Append(DMAPointerHead { va, size });
+                break;
+            }
+
+            DMAPointerHead nextPh = nextNode->Value;
+            uintptr_t newBlockEnd = blockEnd + size;
+
+            if(nextPh.Address >= newBlockEnd)
+            {
+                va = blockEnd;
+                DMAPointerHead newPh = { va, size };
+                dmaPtrList.InsertBefore(newPh, nextPh, nullptr);
+                break;
+            }
+        }
+    }
+
     MapPages(GetAddressSpace(), va, pa, false, false, true, nPages);
-    dmaPtr += size;
     cpuRestoreInterrupts(ints);
     return (void *)va;
 }
 
-void Paging::FreeDMA(void *ptr, size_t size)
+void Paging::FreeDMA(void *ptr)
 {
-    // FIXME: frees memory but does not reclaim dmaPtr
-    //        (see AllocDMA)
-
-    size = align(size, PAGE_SIZE);
-    size_t nPages = size / PAGE_SIZE;
     uintptr_t va = (uintptr_t)ptr;
+    bool ints = cpuDisableInterrupts();
+    DMAPointerHead ph = { va, 0 };
+    ph = dmaPtrList.Find(ph, nullptr);
+    if(!ph.Address || !ph.Size)
+    {
+        cpuRestoreInterrupts(ints);
+        return;
+    }
+    dmaPtrList.Remove(ph, nullptr, false);
+    size_t size = ph.Size;
+    size_t nPages = size / PAGE_SIZE;
+
     uintptr_t addressSpace = GetAddressSpace();
     uintptr_t pa = GetPhysicalAddress(addressSpace, va);
-    if(pa == ~0) return;
+    if(pa == ~0)
+    {
+        cpuRestoreInterrupts(ints);
+        return;
+    }
     UnMapPages(addressSpace, va, false, nPages);
     FreePages(pa, nPages);
+    cpuRestoreInterrupts(ints);
 }
 
 int open(const char *filename, int flags)

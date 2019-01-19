@@ -14,6 +14,7 @@
 #define SMALL_PAGES_PER_LARGE_PAGE  (LARGE_PAGE_SIZE / PAGE_SIZE)
 #define KERNEL_SPACE_SIZE           0x10000000
 #define MODULES_SPACE_SIZE          (MMIO_BASE - MODULES_BASE - LARGE_PAGE_SIZE)
+#define DMA_HEAP_START              0xCE000000
 #define PDE_SIZE                    4
 #define PTE_SIZE                    4
 #define PDE_PER_TABLE               1024

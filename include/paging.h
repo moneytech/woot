@@ -29,7 +29,7 @@ public:
 
     static void *AllocDMA(size_t size);
     static void *AllocDMA(size_t size, size_t alignment);
-    static void FreeDMA(void *ptr, size_t size);
+    static void FreeDMA(void *ptr);
 };
 
 extern "C" void initializePaging(multiboot_info_t *mbootInfo);

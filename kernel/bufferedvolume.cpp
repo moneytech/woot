@@ -158,7 +158,7 @@ BufferedVolume::~BufferedVolume()
     for(int i = 0; i < bufferCount; ++i)
     {
         if(buffers[i].Buffer)
-            Paging::FreeDMA(buffers[i].Buffer, sectorsPerBuffer * Drive->SectorSize);
+            Paging::FreeDMA(buffers[i].Buffer);
     }
     delete[] buffers;
 }

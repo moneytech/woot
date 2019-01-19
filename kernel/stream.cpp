@@ -52,14 +52,16 @@ int64_t Stream::ReadLine(char *buffer, int64_t maxLen)
         }
         else if(!c)
         {
-            buffer[i] = c;
+            if(buffer) buffer[i] = c;
             return i;
         }
         else if(c == '\n' || c == '\r')
             break;
-        buffer[i++] = c;
+        if(buffer) buffer[i] = c;
+        ++i;
     }
-    buffer[i++] = 0;
+    if(buffer) buffer[i] = 0;
+    ++i;
     return i;
 }
 

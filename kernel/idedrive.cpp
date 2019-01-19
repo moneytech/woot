@@ -311,7 +311,7 @@ int64_t IDEDrive::WriteSectors(const void *buffer, uint64_t start, int64_t count
 
 IDEDrive::~IDEDrive()
 {
-    if(PRDTs) Paging::FreeDMA(PRDTs, sizeof(PRDTEntry) * PRDTsAllocated);
+    if(PRDTs) Paging::FreeDMA(PRDTs);
     if(TransferDone) delete TransferDone;
     if(Controller)
     {
