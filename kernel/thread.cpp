@@ -173,7 +173,10 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     ReturnCodePtr(returnCodePtr),
     Finished(finished ? finished : new Semaphore(0)),
     DeleteFinished(!finished),
-    SelfDestruct(selfDestruct)
+    SelfDestruct(selfDestruct),
+    WaitingMutex(nullptr),
+    WaitingSemaphore(nullptr),
+    WakeCount(0)
 {
     if(!process)
     {
@@ -329,6 +332,12 @@ void Thread::Yield()
 void Thread::Suspend()
 {
     bool ints = cpuDisableInterrupts();
+    if(WakeCount) --WakeCount;
+    if(WakeCount)
+    {   // ignore suspend if WakeCount != 0
+        cpuRestoreInterrupts(ints);
+        return;
+    }
     if(this == currentThread)
     {
         currentThread->State = State::Suspending;
@@ -349,6 +358,7 @@ void Thread::Suspend()
 bool Thread::Resume(bool prepend)
 {
     bool ints = cpuDisableInterrupts();
+    ++WakeCount;
     if(suspendedThreads.Remove(this, nullptr))
     {
         State = State::Ready;
@@ -388,6 +398,12 @@ bool Thread::QuickResume(Ints::State *state)
 uint Thread::TicksSleep(uint ticks, bool interruptible)
 {
     bool ints = cpuDisableInterrupts();
+    if(WakeCount) --WakeCount;
+    if(WakeCount)
+    {   // ignore sleep if WakeCount != 0
+        cpuRestoreInterrupts(ints);
+        return ticks;
+    }
     readyThreads.Remove(this, nullptr);
     suspendedThreads.Remove(this, nullptr);
     sleepingThreads.Remove(this, nullptr);

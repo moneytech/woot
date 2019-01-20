@@ -82,6 +82,7 @@ public:
     // locking
     Mutex *WaitingMutex;
     Semaphore *WaitingSemaphore;
+    int WakeCount; // used to avoid lost wakeup problem
 
     static void Initialize();
     static Thread *GetIdleThread();

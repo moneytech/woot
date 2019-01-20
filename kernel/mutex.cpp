@@ -46,22 +46,17 @@ bool Mutex::Acquire(uint timeout, bool tryAcquire)
     }
     if(Waiters->Write(ct))
     {
-        bool r = true;
+        bool success = true;
 
         ct->WaitingMutex = this;
-        if(timeout) r = ct->Sleep(timeout, true) != 0;
+        if(timeout) success = ct->Sleep(timeout, true) != 0;
         else ct->Suspend();
         ct->WaitingMutex = nullptr;
 
-        if(!r)
-        {
-            Thread *t = Waiters->Peek();
-            if(ct == t) Waiters->Read(nullptr);
-            else Waiters->ReplaceFirst(ct, nullptr);
-        }
+        if(!success) Waiters->RemoveFirst(ct);
 
         cpuRestoreInterrupts(is);
-        return r;
+        return success;
     }
     // if no free waiter slots then print message and fail
     cpuRestoreInterrupts(is);

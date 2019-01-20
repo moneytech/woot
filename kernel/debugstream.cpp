@@ -185,7 +185,7 @@ int64_t DebugStream::Read(void *buffer, int64_t n)
         if(window)
         {
             bool ok = false;
-            InputDevice::Event event = window->Events.Get(0, &ok);
+            InputDevice::Event event = window->Events.Get(50, &ok);
             if(ok && event.DeviceType == InputDevice::Type::Keyboard)
             {
                 if(event.Keyboard.Key == VirtualKey::LShift ||
@@ -223,12 +223,11 @@ int64_t DebugStream::Read(void *buffer, int64_t n)
                 chr = vkToChar(event.Keyboard.Key, shift, caps, num);
             }
 #ifdef USE_SERIAL
-            /*else if(serialHasData())
+            else if(serialHasData())
             {
-                WriteStr("-");
                 chr = serialGetChar();
                 if(chr == '\r') chr = '\n';
-            }*/
+            }
 #endif // USE_SERIAL
         }
         else

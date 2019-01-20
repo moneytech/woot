@@ -2,71 +2,63 @@
 #define MESSAGEQUEUE_H
 
 #include <cpu.h>
+#include <queue.h>
 #include <semaphore.h>
 #include <types.h>
 
-#include <stdio.h>
 
 template<class T>
 class MessageQueue
 {
-    size_t capacity;
-    T *data;
-    Semaphore sl, msg;
-    uint tail, head;
+    Queue<T> queue;
+    Semaphore msgs;
+    Semaphore slts;
 public:
     MessageQueue(size_t capacity) :
-        capacity(capacity),
-        data(new T[capacity]),
-        sl(capacity, "msgSlots"),
-        msg(0, "msgMsgs"),
-        tail(0),
-        head(0)
+        queue(capacity),
+        msgs(0), slts(capacity)
     {
     }
 
     T Get(uint timeout, bool *ok)
     {
-        if(!msg.Wait(timeout, false, false))
+        if(!msgs.Wait(timeout, false, false))
         {
             if(ok) *ok = false;
             return T();
         }
-        T m = data[tail];
-        tail = (tail + 1) % capacity;
-        sl.Signal(nullptr);
-        if(ok) *ok = true;
-        return m;
+        T res = queue.Read(ok);
+        slts.Signal(nullptr);
+        return res;
     }
 
     T Peek(bool *ok)
     {
         bool ints = cpuDisableInterrupts();
-        if(msg.GetCount())
-        {
-            if(ok) *ok = true;
-            T m = data[tail];
-            cpuRestoreInterrupts(ints);
-            return m;
-        }
+        T res = queue.Peek(ok);
         cpuRestoreInterrupts(ints);
-        if(ok) *ok = false;
-        return T();
+        return res;
+    }
+
+    uint Count()
+    {
+        bool ints = cpuDisableInterrupts();
+        uint res = queue.Count();
+        cpuRestoreInterrupts(ints);
+        return res;
     }
 
     bool Put(T m, uint timeout, bool tryput)
     {
-        if(!sl.Wait(timeout, tryput, false))
+        if(!slts.Wait(timeout, tryput, false))
             return false;
-        data[head] = m;
-        head = (head + 1) % capacity;
-        msg.Signal(nullptr);
-        return true;
+        bool ok = queue.Write(m);
+        msgs.Signal(nullptr);
+        return ok;
     }
 
     ~MessageQueue()
     {
-        delete[] data;
     }
 };
 

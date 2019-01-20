@@ -38,7 +38,7 @@ InputDevice::Event InputDevice::GetEvent(uint timeout)
 InputDevice::Event InputDevice::PeekEvent()
 {
     bool ints = cpuDisableInterrupts();
-    Event event = eventQueue.Peek();
+    Event event = eventQueue.Peek(nullptr);
     cpuRestoreInterrupts(ints);
     return event;
 }

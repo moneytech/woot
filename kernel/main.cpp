@@ -139,7 +139,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Process::Initialize();
 
     Process *kernelProcess = Process::GetCurrent();
-    GDT::MainTSS.CR3 = kernelProcess->AddressSpace;
+    GDT::MainTSS.CR3 = kernelProcess->AddressSpace;    
 
     IRQs::Initialize();
     cpuEnableInterrupts();

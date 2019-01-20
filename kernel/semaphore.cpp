@@ -31,23 +31,19 @@ bool Semaphore::Wait(uint timeout, bool tryWait, bool disableInts)
     }
     if(Waiters->Write(ct))
     {
-        bool r = true;
+        bool success = true;
 
         ct->WaitingSemaphore = this;
-        if(timeout) r = ct->Sleep(timeout, true) != 0;
+        if(timeout) success = ct->Sleep(timeout, true) != 0;
         else ct->Suspend();
         ct->WaitingSemaphore = nullptr;
 
-        if(!r)
-        {
-            Thread *t = Waiters->Peek();
-            if(ct == t) Waiters->Read(nullptr);
-            else Waiters->ReplaceFirst(ct, nullptr);
-        }
+        if(!success) Waiters->RemoveFirst(ct);
+        else --Count;
 
-        if(!disableInts || !r)
+        if(!disableInts || !success)
             cpuRestoreInterrupts(is);
-        return r;
+        return success;
     }
     // if no free waiter slots then print message and fail
     cpuRestoreInterrupts(is); // ignore disableInts on failure
@@ -71,7 +67,6 @@ void Semaphore::Signal(Ints::State *state)
         }
     } while(!t);
 
-    --Count;
     if(state) t->QuickResume(state);
     else t->Resume(false);
 
@@ -81,7 +76,7 @@ void Semaphore::Signal(Ints::State *state)
 void Semaphore::Cancel(Thread *t)
 {
     bool is = cpuDisableInterrupts();
-    Waiters->ReplaceAll(t, nullptr);
+    Waiters->RemoveFirst(t);
     cpuRestoreInterrupts(is);
 }
 
