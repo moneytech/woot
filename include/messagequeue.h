@@ -5,6 +5,8 @@
 #include <semaphore.h>
 #include <types.h>
 
+#include <stdio.h>
+
 template<class T>
 class MessageQueue
 {

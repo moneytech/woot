@@ -8,6 +8,7 @@
 
 #define EXTRA_RETURN
 //#define USE_VGA_TEXT
+#define USE_SERIAL
 
 #ifdef USE_VGA_TEXT
 static word *vgaText = (word *)0xC00B8000;
@@ -35,6 +36,31 @@ static void vgaSetCursorPos(uint16_t pos)
     cpuRestoreInterrupts(cs);
 }
 #endif // USE_VGA_TEXT
+
+#ifdef USE_SERIAL
+#define SERIAL_PORT 0x03F8
+static bool serialHasData()
+{
+    return _inb(SERIAL_PORT + 5) & 0x01;
+}
+
+static char serialGetChar()
+{
+    return _inb(SERIAL_PORT);
+}
+
+static char serialRead()
+{
+    while(!serialHasData());
+    return serialGetChar();
+}
+
+static void serialWrite(char c)
+{
+    while(!(_inb(SERIAL_PORT + 5) & 0x20));
+    _outb(SERIAL_PORT, c);
+}
+#endif // USE_SERIAL
 
 static char vkToChar(VirtualKey vk, bool shift, bool caps, bool num)
 {
@@ -111,6 +137,18 @@ DebugStream::DebugStream(word port)
     vgaSetCursorSize(13, 14);
     vgaSetCursorPos(0);
 #endif // USE_VGA_TEXT
+
+#ifdef USE_SERIAL
+    // initialize some kind of serial port communication
+    // so we can debug on real hardware easier
+    _outb(SERIAL_PORT + 1, 0x00);    // No interrupts
+    _outb(SERIAL_PORT + 3, 0x80);    // Enable DLAB
+    _outb(SERIAL_PORT + 0, 0x01);    // 115200 baud rate
+    _outb(SERIAL_PORT + 1, 0x00);
+    _outb(SERIAL_PORT + 3, 0x03);    // Disable DLAB and set 8N1
+    _outb(SERIAL_PORT + 2, 0xC7);    // FIFO 14 bytes
+    _outb(SERIAL_PORT + 4, 0x03);    // RTS and DTR asserted
+#endif // USE_SERIAL
 }
 
 void DebugStream::SetWindow(WindowManager::Window *pixmap)
@@ -133,12 +171,6 @@ void DebugStream::DisableLineBuffer()
 
 int64_t DebugStream::Read(void *buffer, int64_t n)
 {
-    if(!window)
-    {
-        cpuSystemHalt(0xDEADBEEF);
-        return 0;
-    }
-
     static bool shift = false, alt = false, ctrl = false, caps = false, num = false;
     static int mx = 0;
     static int my = 0;
@@ -149,70 +181,92 @@ int64_t DebugStream::Read(void *buffer, int64_t n)
 
     for(;;)
     {
-        InputDevice::Event event = window->Events.Get(0, nullptr);
-        if(event.DeviceType == InputDevice::Type::Keyboard)
+        char chr = 0;
+        if(window)
         {
-            if(event.Keyboard.Key == VirtualKey::LShift ||
-                    event.Keyboard.Key == VirtualKey::RShift)
+            bool ok = false;
+            InputDevice::Event event = window->Events.Get(0, &ok);
+            if(ok && event.DeviceType == InputDevice::Type::Keyboard)
             {
-                shift = !event.Keyboard.Release;
-                continue;
-            }
-            if(event.Keyboard.Key == VirtualKey::LMenu ||
-                    event.Keyboard.Key == VirtualKey::RMenu)
-            {
-                alt = !event.Keyboard.Release;
-                continue;
-            }
-            if(event.Keyboard.Key == VirtualKey::LControl ||
-                    event.Keyboard.Key == VirtualKey::RControl)
-            {
-                ctrl = !event.Keyboard.Release;
-                continue;
-            }
-
-            if(event.Keyboard.Release)
-            {
-                if(event.Keyboard.Key == VirtualKey::Capital)
-                    caps = !caps;
-                if(event.Keyboard.Key == VirtualKey::NumLock)
-                    num = !num;
-                continue;
-            }
-            if(ctrl && alt && event.Keyboard.Key == VirtualKey::Delete)
-            {
-                _outb(0x64, 0xFE);
-                continue;
-            }
-            char chr = vkToChar(event.Keyboard.Key, shift, caps, num);
-            if(!chr) continue;
-            if(!lineBufferState)
-            {
-                *((byte *)buffer) = chr;
-                return 1;
-            }
-
-            if(chr == '\b')
-            {
-                if(lineBufferPos)
+                if(event.Keyboard.Key == VirtualKey::LShift ||
+                        event.Keyboard.Key == VirtualKey::RShift)
                 {
-                    Write("\b", 1);
-                    lineBuffer[--lineBufferPos] = 0;
+                    shift = !event.Keyboard.Release;
+                    continue;
                 }
-                continue;
+                if(event.Keyboard.Key == VirtualKey::LMenu ||
+                        event.Keyboard.Key == VirtualKey::RMenu)
+                {
+                    alt = !event.Keyboard.Release;
+                    continue;
+                }
+                if(event.Keyboard.Key == VirtualKey::LControl ||
+                        event.Keyboard.Key == VirtualKey::RControl)
+                {
+                    ctrl = !event.Keyboard.Release;
+                    continue;
+                }
+
+                if(event.Keyboard.Release)
+                {
+                    if(event.Keyboard.Key == VirtualKey::Capital)
+                        caps = !caps;
+                    if(event.Keyboard.Key == VirtualKey::NumLock)
+                        num = !num;
+                    continue;
+                }
+                if(ctrl && alt && event.Keyboard.Key == VirtualKey::Delete)
+                {
+                    _outb(0x64, 0xFE);
+                    continue;
+                }
+                chr = vkToChar(event.Keyboard.Key, shift, caps, num);
             }
-            if(lineBufferPos >= sizeof(lineBuffer))
-                continue;
-            Write(&chr, 1);
-            if(chr == '\n')
+#ifdef USE_SERIAL
+            /*else if(serialHasData())
             {
-                lineBuffer[lineBufferPos] = '\n';
-                break;
-            }
-            lineBuffer[lineBufferPos++] = chr;
-            if(lineBufferPos >= n)
-                break;
+                WriteStr("-");
+                chr = serialGetChar();
+                if(chr == '\r') chr = '\n';
+            }*/
+#endif // USE_SERIAL
         }
+        else
+        {
+#ifdef USE_SERIAL
+            chr = serialRead();
+            if(chr == '\r') chr = '\n';
+#else // USE_SERIAL
+            cpuSystemHalt(0x1234ABCD);
+#endif // USE_SERIAL
+        }
+        if(!chr) continue;
+        if(!lineBufferState)
+        {
+            *((byte *)buffer) = chr;
+            return 1;
+        }
+
+        if(chr == '\b')
+        {
+            if(lineBufferPos)
+            {
+                Write("\b", 1);
+                lineBuffer[--lineBufferPos] = 0;
+            }
+            continue;
+        }
+        if(lineBufferPos >= sizeof(lineBuffer))
+            continue;
+        Write(&chr, 1);
+        if(chr == '\n')
+        {
+            lineBuffer[lineBufferPos] = '\n';
+            break;
+        }
+        lineBuffer[lineBufferPos++] = chr;
+        if(lineBufferPos >= n)
+            break;
     }
     int res = lineBufferPos;
     memcpy(buffer, lineBuffer, lineBufferPos);
@@ -229,9 +283,17 @@ int64_t DebugStream::Write(const void *buffer, int64_t n)
         byte c = *b++;
 #ifdef EXTRA_RETURN
         if(c == '\n')
+        {
             _outb(port, '\r');
+#ifdef USE_SERIAL
+            serialWrite('\r');
+#endif // USE_SERIAL
+        }
 #endif // EXTRA_RETURN
         _outb(port, c);
+#ifdef USE_SERIAL
+            serialWrite(c);
+#endif // USE_SERIAL
 #ifdef USE_VGA_TEXT
         if(c == '\n')
             ++vgaCurY, vgaCurX = 0;
