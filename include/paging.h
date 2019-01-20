@@ -29,6 +29,7 @@ public:
 
     static void *AllocDMA(size_t size);
     static void *AllocDMA(size_t size, size_t alignment);
+    static uintptr_t GetDMAPhysicalAddress(void *ptr);
     static void FreeDMA(void *ptr);
 };
 

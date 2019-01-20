@@ -62,7 +62,7 @@ class IDEDrive : public Drive
     static bool interrupt(Ints::State *state, void *context);
 
     IDEDrive(ATAIdentifyResponse *id, bool atapi, class Controller *ctrl, bool slave);
-    char *getStringFromID(ATAIdentifyResponse *id, uint offset, uint length);
+    static char *getStringFromID(ATAIdentifyResponse *id, uint offset, uint length);
     int sectorTransfer(bool write, void *buffer, uint64_t start, int64_t count);
 public:
     static void Initialize();

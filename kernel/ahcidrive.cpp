@@ -3,10 +3,12 @@
 #include <errno.h>
 #include <ints.h>
 #include <irqs.h>
+#include <limits.h>
 #include <list.h>
 #include <mutex.h>
 #include <paging.h>
 #include <pci.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -14,98 +16,98 @@
 #pragma pack(push, 1)
 struct FIS_REG_H2D
 {
-    uint8_t fis_type;   // FIS_TYPE_REG_H2D
-    uint8_t pmport : 4; // Port multiplier
-    uint8_t rsv0:3;     // Reserved
-    uint8_t c:1;        // 1: Command, 0: Control
-    uint8_t command;    // Command register
-    uint8_t featurel;   // Feature register, 7:0
-    uint8_t lba0;       // LBA low register, 7:0
-    uint8_t lba1;       // LBA mid register, 15:8
-    uint8_t lba2;       // LBA high register, 23:16
-    uint8_t device;     // Device register
-    uint8_t lba3;       // LBA register, 31:24
-    uint8_t lba4;       // LBA register, 39:32
-    uint8_t lba5;       // LBA register, 47:40
-    uint8_t featureh;   // Feature register, 15:8
-    uint8_t countl;     // Count register, 7:0
-    uint8_t counth;     // Count register, 15:8
-    uint8_t icc;        // Isochronous command completion
-    uint8_t control;    // Control register
-    uint8_t rsv1[4];    // Reserved
+    uint8_t FISType;        // FIS_TYPE_REG_H2D
+    uint8_t PMPort : 4;     // Port multiplier
+    uint8_t Reserved0 : 3;  // Reserved
+    uint8_t C : 1;          // 1: Command, 0: Control
+    uint8_t Command;        // Command register
+    uint8_t FeatureL;       // Feature register, 7:0
+    uint8_t LBA0;           // LBA low register, 7:0
+    uint8_t LBA1;           // LBA mid register, 15:8
+    uint8_t LBA2;           // LBA high register, 23:16
+    uint8_t Device;         // Device register
+    uint8_t LBA3;           // LBA register, 31:24
+    uint8_t LBA4;           // LBA register, 39:32
+    uint8_t LBA5;           // LBA register, 47:40
+    uint8_t FeatureH;       // Feature register, 15:8
+    uint8_t CountL;         // Count register, 7:0
+    uint8_t CountH;         // Count register, 15:8
+    uint8_t ICC;            // Isochronous command completion
+    uint8_t Control;        // Control register
+    uint8_t Reserved1[4];   // Reserved
 };
 
 struct FIS_REG_D2H
 {
-    uint8_t fis_type;   // FIS_TYPE_REG_D2H
-    uint8_t pmport : 4; // Port multiplier
-    uint8_t rsv0 : 2;   // Reserved
-    uint8_t i : 1;      // Interrupt bit
-    uint8_t rsv1 : 1;   // Reserved
-    uint8_t status;     // Status register
-    uint8_t error;      // Error register
-    uint8_t lba0;       // LBA low register, 7:0
-    uint8_t lba1;       // LBA mid register, 15:8
-    uint8_t lba2;       // LBA high register, 23:16
-    uint8_t device;     // Device register
-    uint8_t lba3;       // LBA register, 31:24
-    uint8_t lba4;       // LBA register, 39:32
-    uint8_t lba5;       // LBA register, 47:40
-    uint8_t rsv2;       // Reserved
-    uint8_t countl;     // Count register, 7:0
-    uint8_t counth;     // Count register, 15:8
-    uint8_t rsv3[2];    // Reserved
-    uint8_t rsv4[4];    // Reserved
+    uint8_t FISType;        // FIS_TYPE_REG_D2H
+    uint8_t PMPort : 4;     // Port multiplier
+    uint8_t Reserved0 : 2;  // Reserved
+    uint8_t I : 1;          // Interrupt bit
+    uint8_t Reserved1 : 1;  // Reserved
+    uint8_t Status;         // Status register
+    uint8_t Error;          // Error register
+    uint8_t LBA0;           // LBA low register, 7:0
+    uint8_t LBA1;           // LBA mid register, 15:8
+    uint8_t LBA2;           // LBA high register, 23:16
+    uint8_t Device;         // Device register
+    uint8_t LBA3;           // LBA register, 31:24
+    uint8_t LBA4;           // LBA register, 39:32
+    uint8_t LBA5;           // LBA register, 47:40
+    uint8_t Reserved2;      // Reserved
+    uint8_t CountL;         // Count register, 7:0
+    uint8_t CountH;         // Count register, 15:8
+    uint8_t Reserved3[2];   // Reserved
+    uint8_t Reserved4[4];   // Reserved
 };
 
 struct FIS_DATA
 {
-    uint8_t fis_type;   // FIS_TYPE_DATA
-    uint8_t pmport : 4; // Port multiplier
-    uint8_t rsv0 : 4;   // Reserved
-    uint8_t rsv1[2];    // Reserved
+    uint8_t FISType;        // FIS_TYPE_DATA
+    uint8_t PMPort : 4;     // Port multiplier
+    uint8_t Reserved0 : 4;  // Reserved
+    uint8_t Reserved1[2];   // Reserved
 };
 
 struct FIS_PIO_SETUP
 {
-    uint8_t fis_type;   // FIS_TYPE_PIO_SETUP
-    uint8_t pmport : 4; // Port multiplier
-    uint8_t rsv0 : 1;   // Reserved
-    uint8_t d : 1;      // Data transfer direction, 1 - device to host
-    uint8_t i : 1;      // Interrupt bit
-    uint8_t rsv1 : 1;
-    uint8_t status;     // Status register
-    uint8_t error;      // Error register
-    uint8_t lba0;       // LBA low register, 7:0
-    uint8_t lba1;       // LBA mid register, 15:8
-    uint8_t lba2;       // LBA high register, 23:16
-    uint8_t device;     // Device register
-    uint8_t lba3;       // LBA register, 31:24
-    uint8_t lba4;       // LBA register, 39:32
-    uint8_t lba5;       // LBA register, 47:40
-    uint8_t rsv2;       // Reserved
-    uint8_t countl;     // Count register, 7:0
-    uint8_t counth;     // Count register, 15:8
-    uint8_t rsv3;       // Reserved
-    uint8_t e_status;   // New value of status register
-    uint16_t tc;        // Transfer count
-    uint8_t rsv4[2];    // Reserved
+    uint8_t FISType;        // FIS_TYPE_PIO_SETUP
+    uint8_t PMPort : 4;     // Port multiplier
+    uint8_t Reserved0 : 1;  // Reserved
+    uint8_t D : 1;          // Data transfer direction, 1 - device to host
+    uint8_t I : 1;          // Interrupt bit
+    uint8_t Reserved1 : 1;  // Reserved
+    uint8_t Status;         // Status register
+    uint8_t Error;          // Error register
+    uint8_t LBA0;           // LBA low register, 7:0
+    uint8_t LBA1;           // LBA mid register, 15:8
+    uint8_t LBA2;           // LBA high register, 23:16
+    uint8_t Device;         // Device register
+    uint8_t LBA3;           // LBA register, 31:24
+    uint8_t LBA4;           // LBA register, 39:32
+    uint8_t LBA5;           // LBA register, 47:40
+    uint8_t Reserved2;      // Reserved
+    uint8_t CountL;         // Count register, 7:0
+    uint8_t CountH;         // Count register, 15:8
+    uint8_t Reserved3;      // Reserved
+    uint8_t EStatus;        // New value of status register
+    uint16_t TC;            // Transfer count
+    uint8_t Reserved4[2];   // Reserved
 };
 
 struct FIS_DMA_SETUP
 {
-    uint8_t fis_type;       // FIS_TYPE_DMA_SETUP
-    uint8_t pmport : 4;     // Port multiplier
-    uint8_t rsv0 : 1;       // Reserved
-    uint8_t d : 1;          // Data transfer direction, 1 - device to host
-    uint8_t i : 1;          // Interrupt bit
-    uint8_t a : 1;          // Auto-activate. Specifies if DMA Activate FIS is needed
-    uint8_t rsved[2];       // Reserved
-    uint64_t DMAbufferID;   // DMA Buffer Identifier. Used to Identify DMA buffer in host memory. SATA Spec says host specific and not in Spec. Trying AHCI spec might work.
-    uint32_t rsvd;          // More reserved
-    uint32_t DMAbufOffset;  // Byte offset into buffer. First 2 bits must be 0
+    uint8_t FISType;        // FIS_TYPE_DMA_SETUP
+    uint8_t PMPort : 4;     // Port multiplier
+    uint8_t Reserved0 : 1;  // Reserved
+    uint8_t D : 1;          // Data transfer direction, 1 - device to host
+    uint8_t I : 1;          // Interrupt bit
+    uint8_t A : 1;          // Auto-activate. Specifies if DMA Activate FIS is needed
+    uint8_t Reserved1[2];   // Reserved
+    uint64_t DMABufferID;   // DMA Buffer Identifier. Used to Identify DMA buffer in host memory. SATA Spec says host specific and not in Spec. Trying AHCI spec might work.
+    uint32_t Reserved2;     // More reserved
+    uint32_t DMABufOffset;  // Byte offset into buffer. First 2 bits must be 0
     uint32_t TransferCount; // Number of bytes to transfer. Bit 0 must be 0
-    uint32_t resvd;         // Reserved
+    uint32_t Reserved3;     // Reserved
 };
 
 struct HBA_PORT
@@ -169,19 +171,23 @@ struct HBA_CMD_HEADER
 
 struct HBA_PRDT_ENTRY
 {
-    uint32_t dba;       // Data base address
-    uint32_t dbau;      // Data base address upper 32 bits
-    uint32_t rsv0;      // Reserved
-    uint32_t dbc : 22;  // Byte count, 4M max
-    uint32_t rsv1 : 9;  // Reserved
-    uint32_t i : 1;     // Interrupt on completion
+    uint32_t DBA;           // Data base address
+
+    uint32_t DBAU;          // Data base address upper 32 bits
+
+    uint32_t Reserved0;     // Reserved
+
+    uint32_t PRDBC : 22;    // Byte count, 4M max
+    uint32_t Reserved1 : 9; // Reserved
+    uint32_t I : 1;         // Interrupt on completion
 };
 
 struct HBA_CMD_TBL
 {
-    uint8_t cfis[64];   // Command FIS
-    uint8_t acmd[16];   // ATAPI command, 12 or 16 bytes
-    uint8_t rsv[48];    // Reserved
+    uint8_t CFIS[64];       // Command FIS
+    uint8_t ACMD[16];       // ATAPI command, 12 or 16 bytes
+    uint8_t Reserved[48];   // Reserved
+    HBA_PRDT_ENTRY PRDT[0]; // PRDT entries
 };
 
 typedef uint64_t FIS_DEV_BITS;
@@ -199,6 +205,16 @@ struct HBA_FIS
     uint8_t rsv[0x100 - 0xA0];
 };
 #pragma pack(pop)
+
+#define FIS_TYPE_REG_H2D    0x27    // Register FIS - host to device
+#define FIS_TYPE_REG_D2H    0x34    // Register FIS - device to host
+#define FIS_TYPE_DMA_ACT    0x39    // DMA activate FIS - device to host
+#define FIS_TYPE_DMA_SETUP  0x41    // DMA setup FIS - bidirectional
+#define FIS_TYPE_DATA       0x46    // Data FIS - bidirectional
+#define FIS_TYPE_BIST       0x58    // BIST activate FIS - bidirectional
+#define FIS_TYPE_PIO_SETUP  0x5F    // PIO setup FIS - device to host
+#define FIS_TYPE_DEV_BITS   0xA1    // Set device bits FIS - device to host
+
 
 #define HBA_GHC_AE      (1 << 31)
 #define HBA_GHC_MRSM    (1 << 2)
@@ -265,6 +281,122 @@ static const char *deviceTypeNames[] =
 
 List<AHCIDrive::Controller *> AHCIDrive::controllers;
 
+AHCIDrive::AHCIDrive(Port *port, size_t sectorSize, size64_t sectorCount, const char *model, const char *serial, int maxBlockTransfer) :
+    Drive(sectorSize, port->DevType == DeviceType::SATAPI ? LONG_MAX : sectorCount, model, serial),
+    parent(port), MaxBlockTransfer(maxBlockTransfer)
+{
+}
+
+char *AHCIDrive::getStringFromID(ATAIdentifyResponse *id, uint offset, uint length)
+{
+    byte *src = (byte *)id; src += offset;
+    char *dst = (char *)malloc(length);
+    memcpy(dst, src, length);
+    for(uint i = 0; i < length; i += 2)
+        swap(char, dst[i], dst[i + 1]);
+    while(--length)
+    {
+        if(dst[length] != ' ')
+            break;
+        dst[length] = 0;
+    }
+    return dst;
+}
+
+int AHCIDrive::sectorTransfer(bool write, void *buffer, uint64_t start, int64_t count)
+{
+    //printf("[ahcidrive] sectorTransfer: start: %lu\n", start);
+
+    if(!count) return 0;
+
+    int res = parent->StopCommandEngine();
+    if(res) return res;
+
+    parent->Prepare();
+    uintptr_t bufPtr = Paging::GetDMAPhysicalAddress(buffer);
+    size_t prdtCount = (count + MaxBlockTransfer - 1) / MaxBlockTransfer;
+    size_t bytesLeft = count * SectorSize;
+    size_t bytesPerPRDT = SectorSize * MaxBlockTransfer;
+
+    if(prdtCount > parent->MaxPRDTs)
+    {
+        printf("[ahcidrive] prdtCount > parent->MaxPRDTs\n");
+        return -ENOMEM;
+    }
+
+    // set up command header
+    parent->CmdHeader->CFL = sizeof(FIS_REG_H2D) / 4;
+    parent->CmdHeader->PRDTL = prdtCount;
+    parent->CmdHeader->CTBA = Paging::GetDMAPhysicalAddress((void *)parent->CmdTable);
+    parent->CmdHeader->CTBAU = 0;
+
+    // set up PRDTs
+    for(int i = 0; i < prdtCount && bytesLeft; ++i)
+    {
+        size_t byteCount = bytesLeft >= bytesPerPRDT ? bytesPerPRDT : bytesLeft;
+        parent->CmdTable->PRDT[i].DBA = (uint32_t)bufPtr;
+        parent->CmdTable->PRDT[i].DBAU = 0;
+        parent->CmdTable->PRDT[i].PRDBC = byteCount - 1;
+        parent->CmdTable->PRDT[i].I = byteCount < bytesPerPRDT;
+        bytesLeft -= byteCount;
+        bufPtr += byteCount;
+    }
+
+    // set up FIS
+    if(parent->DevType == DeviceType::SATAPI)
+    {   // for SATAPI drive
+        FIS_REG_H2D *fis = (FIS_REG_H2D *)parent->CmdTable->CFIS;
+        fis->FISType = FIS_TYPE_REG_H2D;
+        fis->Command = ATA_CMD_PACKET;
+        fis->C = 1;
+        fis->FeatureL = 1 | (write ? 0 : 4); // bit 0 DMA bit 2 direction
+
+        // prepare ATAPI packet
+        parent->CmdHeader->A = 1;
+        memset((void *)parent->CmdTable->ACMD, 0, sizeof(parent->CmdTable->ACMD));
+        parent->CmdTable->ACMD[0] = write ? 0xAA : 0xA8;
+        parent->CmdTable->ACMD[9] = count;
+        parent->CmdTable->ACMD[2] = start >> 24;
+        parent->CmdTable->ACMD[3] = start >> 16;
+        parent->CmdTable->ACMD[4] = start >> 8;
+        parent->CmdTable->ACMD[5] = start;
+    }
+    else
+    {   // for SATA drive
+        FIS_REG_H2D *fis = (FIS_REG_H2D *)parent->CmdTable->CFIS;
+        fis->FISType = FIS_TYPE_REG_H2D;
+        fis->Command = write ? ATA_CMD_WRITE_EXT : ATA_CMD_READ_EXT;
+        fis->C = 1;
+        fis->Device = 0x40; // LBA mode
+        fis->LBA0 = start;
+        fis->LBA1 = start >> 8;
+        fis->LBA2 = start >> 16;
+        fis->LBA3 = start >> 24;
+        fis->LBA4 = start >> 32;
+        fis->LBA5 = start >> 40;
+        fis->CountL = count;
+        fis->CountH = count >> 8;
+    }
+
+    res = parent->StartCommandEngine();
+    if(res) return res;
+
+    int retry = 1000;
+    while(parent->Registers->TFD & (ATA_DEV_BUSY | ATA_DEV_DRQ) && --retry)
+        Time::Sleep(1, false);
+    if(!retry) return -EBUSY;
+
+    // run the command
+    parent->Registers->CI = 1;
+    if(!parent->Interrupt->Wait(5000, false, false))
+        return -EBUSY;
+
+    if(parent->Registers->TFD & ATA_DEV_ERR)
+        return -EIO;
+
+    return count;
+}
+
 void AHCIDrive::Initialize()
 {
     if(!PCI::Lock->Acquire(0, false))
@@ -312,7 +444,21 @@ void AHCIDrive::Initialize()
                 continue;
             }
 
-            // TODO: Create AHCIDrive objects here
+            ATAIdentifyResponse resp;
+            res = port->IdentifyDrive(&resp);
+            if(res)
+            {
+                printf("[ahcidrive] Couldn't identify drive on port %d (error: %d)\n", i, res);
+                continue;
+            }
+
+            AHCIDrive *drive = new AHCIDrive(port, port->DevType == DeviceType::SATAPI ? 2048 : 512,
+                                             resp.CommandSetActive.BigLba ? resp.Max48BitLBA : resp.UserAddressableSectors,
+                                             nullptr, nullptr, resp.MaximumBlockTransfer ? resp.MaximumBlockTransfer : 1);
+            drive->Model = getStringFromID(&resp, offsetof(ATAIdentifyResponse, ModelNumber), 40);
+            drive->Serial = getStringFromID(&resp, offsetof(ATAIdentifyResponse, SerialNumber), 20);
+            printf("            %s %s %.2f MiB\n", drive->Model, drive->Serial, (double)(drive->Serial, drive->SectorCount * drive->SectorSize) / (1 << 20));
+            Drive::Add(drive);
         }
     }
 }
@@ -324,12 +470,82 @@ void AHCIDrive::Cleanup()
     controllers.Clear();
 }
 
+int64_t AHCIDrive::ReadSectors(void *buffer, uint64_t start, int64_t count)
+{
+    int64_t blocks = align(count, MaxBlockTransfer) / MaxBlockTransfer;
+    byte *buf = (byte *)buffer;
+    int64_t st = 0;
+    for(int64_t i = 0; i < blocks; ++i)
+    {
+        int64_t str = min(count, MaxBlockTransfer);
+        int64_t sr = sectorTransfer(false, buf, start, str);
+        if(sr < 0)
+            return sr;
+        st += sr;
+        start += sr;
+        count -= sr;
+        buf += sr * SectorSize;
+        if(!count || sr != str)
+            break;
+    }
+    return st;
+}
+
+int64_t AHCIDrive::WriteSectors(const void *buffer, uint64_t start, int64_t count)
+{
+    int64_t blocks = align(count, MaxBlockTransfer) / MaxBlockTransfer;
+    byte *buf = (byte *)buffer;
+    int64_t st = 0;
+    for(int64_t i = 0; i < blocks; ++i)
+    {
+        int64_t stw = min(count, MaxBlockTransfer);
+        int64_t sw = sectorTransfer(true, buf, start, stw);
+        if(sw < 0)
+            return sw;
+        st += sw;
+        start += sw;
+        count -= sw;
+        buf += sw * SectorSize;
+        if(!count || sw != stw)
+            break;
+    }
+    return st;
+}
+
+AHCIDrive::~AHCIDrive()
+{
+}
+
+bool AHCIDrive::Controller::interrupt(Ints::State *state, void *context)
+{
+    Controller *ctrl = (Controller *)context;
+    uint32_t IS = ctrl->Registers->IS;    
+    if(!IS) return false;
+
+    //printf("[ahcidrive] interrupt\n");
+
+    for(int i = 0; i < 32; ++i)
+    {
+        volatile Port *port = ctrl->Ports[i];
+        if(!port || !port->Registers->IS) continue;
+        port->Registers->IS = ~0; // clear all interrupts flags on this port
+        port->Interrupt->Signal(state);
+    }
+
+    ctrl->Registers->IS = ~0; // clear interrupt flags on the controller
+    return true;
+}
+
 AHCIDrive::Controller::Controller(uintptr_t base, uint8_t irq) :
+    interruptHandler { nullptr, interrupt, this },
     Registers((HBA_MEM *)base), IRQ(irq)
 {
     memset(Ports, 0, sizeof(Ports));
+    IRQs::RegisterHandler(irq, &interruptHandler);
+    IRQs::Enable(irq);
 
     Enable();
+    EnableInterrupts();
 
     for(uint32_t i = 0, PI = Registers->PI; PI; ++i, PI >>= 1)
     {
@@ -367,12 +583,24 @@ void AHCIDrive::Controller::Reset()
 
 AHCIDrive::Controller::~Controller()
 {
+    DisableInterrupts();
+
+    bool ints = cpuDisableInterrupts();
+    IRQs::UnRegisterHandler(IRQ, &interruptHandler);
+    IRQs::TryDisable(IRQ);
+    cpuRestoreInterrupts(ints);
+
+    for(Port *p : Ports)
+        delete p;
 }
 
 AHCIDrive::Port::Port(AHCIDrive::Controller *controller, int portNumber) :
     Parent(controller), PortNumber(portNumber),
-    Registers(controller->Registers->Ports + portNumber)
+    Registers(controller->Registers->Ports + portNumber),
+    DevType(GetDeviceType()),
+    Interrupt(new Semaphore(0, "ahcidriveport"))
 {
+    Registers->IE = 0x0000000F; // enable needed interrupts
 }
 
 AHCIDrive::DeviceType AHCIDrive::Port::GetDeviceType()
@@ -431,24 +659,84 @@ int AHCIDrive::Port::Rebase()
     FIS = (HBA_FIS *)Paging::AllocDMA(sizeof(HBA_FIS));
     CmdTableSize = sizeof(HBA_CMD_TBL) + MaxPRDTs * sizeof(HBA_PRDT_ENTRY);
     CmdTable = (HBA_CMD_TBL *)Paging::AllocDMA(CmdTableSize);
-
-    // zero allocated structures
-    memset((void *)CmdHeader, 0, sizeof(HBA_CMD_HEADER));
-    memset((void *)FIS, 0, sizeof(HBA_FIS));
-    memset((void *)CmdTable, 0, sizeof(HBA_CMD_TBL));
+    Prepare();
 
     // present it to the hardware
-    uintptr_t addressSpace = Paging::GetAddressSpace();
-    Registers->CLB = Paging::GetPhysicalAddress(addressSpace, (uintptr_t)CmdHeader);
+    Registers->CLB = Paging::GetDMAPhysicalAddress((void *)CmdHeader);
     Registers->CLBU = 0;
-    Registers->FB = Paging::GetPhysicalAddress(addressSpace, (uintptr_t)FIS);
+    Registers->FB = Paging::GetDMAPhysicalAddress((void *)FIS);
     Registers->FBU = 0;
-    CmdHeader->CTBA = Paging::GetPhysicalAddress(addressSpace, (uintptr_t)CmdTable);
+    CmdHeader->CTBA = Paging::GetDMAPhysicalAddress((void *)CmdTable);
     CmdHeader->CTBAU = 0;
 
     return StartCommandEngine();
 }
 
+int AHCIDrive::Port::Prepare()
+{
+    memset((void *)CmdHeader, 0, sizeof(HBA_CMD_HEADER));
+    memset((void *)FIS, 0, sizeof(HBA_FIS));
+    memset((void *)CmdTable, 0, CmdTableSize);
+}
+
+int AHCIDrive::Port::IdentifyDrive(ATAIdentifyResponse *resp)
+{
+    int res = StopCommandEngine();
+    if(res) return res;
+
+    void *respBuf = Paging::AllocDMA(sizeof(ATAIdentifyResponse));
+    Prepare();
+
+    // prepare command header and PRDT
+    CmdHeader->CFL = sizeof(FIS_REG_H2D) >> 2;
+    CmdHeader->PRDTL = 1;
+    CmdHeader->CTBA = Paging::GetDMAPhysicalAddress((void *)CmdTable);
+    CmdHeader->CTBAU = 0;
+    CmdTable->PRDT[0].DBA = Paging::GetDMAPhysicalAddress(respBuf);
+    CmdTable->PRDT[0].DBAU = 0;
+    CmdTable->PRDT[0].PRDBC = sizeof(ATAIdentifyResponse) - 1;
+
+    // prepare FIS
+    FIS_REG_H2D *fis = (FIS_REG_H2D *)CmdTable->CFIS;
+    fis->FISType = FIS_TYPE_REG_H2D;
+    fis->Command = DevType == DeviceType::SATAPI ? ATA_CMD_ID_ATAPI : ATA_CMD_ID_ATA;
+    fis->Device = 0;
+    fis->C = 1;
+
+    res = StartCommandEngine();
+    if(res)
+    {
+        Paging::FreeDMA(respBuf);
+        return res;
+    }
+
+    int retry = 1000;
+    while(Registers->TFD & (ATA_DEV_BUSY | ATA_DEV_DRQ) && --retry)
+        Time::Sleep(1, false);
+    if(!retry)
+    {
+        Paging::FreeDMA(respBuf);
+        return -EBUSY;
+    }
+
+    // run the command
+    Registers->CI = 1;
+    if(!Interrupt->Wait(5000, false, false))
+    {
+        Paging::FreeDMA(respBuf);
+        return -EBUSY;
+    }
+    memcpy(resp, respBuf, sizeof(ATAIdentifyResponse));
+    Paging::FreeDMA(respBuf);
+    return 0;
+}
+
 AHCIDrive::Port::~Port()
 {
+    StopCommandEngine();
+    if(CmdTable) Paging::FreeDMA((void *)CmdTable);
+    if(FIS) Paging::FreeDMA((void *)FIS);
+    if(CmdHeader) Paging::FreeDMA((void *)CmdHeader);
+    if(Drive) delete Drive;
+    if(Interrupt) delete Interrupt;
 }

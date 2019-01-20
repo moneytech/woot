@@ -701,6 +701,11 @@ void *Paging::AllocDMA(size_t size, size_t alignment)
     return (void *)va;
 }
 
+uintptr_t Paging::GetDMAPhysicalAddress(void *ptr)
+{
+    return GetPhysicalAddress(GetAddressSpace(), (uintptr_t)ptr);
+}
+
 void Paging::FreeDMA(void *ptr)
 {
     uintptr_t va = (uintptr_t)ptr;
