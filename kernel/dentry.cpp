@@ -64,6 +64,6 @@ size_t DEntry::GetFullPath(char *buffer, size_t bufferSize)
 DEntry::~DEntry()
 {
     if(Name) free(Name);
-    FileSystem::PutINode_nolock(INode);
+    if(INode) FileSystem::PutINode_nolock(INode);
     if(Parent) FileSystem::PutDEntry_nolock(Parent);
 }

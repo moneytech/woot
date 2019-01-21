@@ -148,7 +148,7 @@ void Volume::FlushAll()
 {
     Lock();
     for(Volume *v : volumes)
-        v->Flush();
+        v->Flush_nolock();
     UnLock();
 }
 
@@ -157,7 +157,7 @@ void Volume::Cleanup()
     Lock();
     for(Volume *v : volumes)
     {
-        v->Flush();
+        v->Flush_nolock();
         delete v;
     }
     UnLock();
@@ -197,7 +197,15 @@ int64_t Volume::WriteSectors(const void *buffer, uint64_t start, int64_t count)
     return -ENOSYS;
 }
 
-bool Volume::Flush()
+bool Volume::Flush_nolock()
 {
     return false;
+}
+
+bool Volume::Flush()
+{
+    if(!Lock()) return false;
+    bool res = Flush_nolock();
+    UnLock();
+    return res;
 }

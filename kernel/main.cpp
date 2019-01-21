@@ -78,8 +78,9 @@ int testThread(uintptr_t arg)
         //File *f = File::Open("wallpaper.png", O_RDONLY);
         //printf("abca\n");
         //delete f;
-        ct->Sleep(3003, false);
+        ct->Sleep(1000, false);
     }
+    printf("[main] test thread quit\n");
     return 0x11 * arg;
 }
 
@@ -191,8 +192,6 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                 printf("[main] Couldn't load module '%s'\n", line);
                 continue;
             }
-            Elf32_Sym *cleanupSym = module->FindSymbol("Cleanup");
-            module->CleanupProc = (void (*)())(cleanupSym ? cleanupSym->st_value : 0);
             printf("[main] module '%s' has entry point at %p\n", line, module->EntryPoint);
             int res = module->EntryPoint();
             printf("[main] module '%s'(%p) returned %d\n", line, module->GetBase(), res);
@@ -708,6 +707,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         ELF *elf = kernelProcess->Images[i];
         if(!elf || !elf->CleanupProc)
             continue;
+        printf("[main] Calling CleanupProc() for module '%s'\n", elf->Name);
         elf->CleanupProc();
     }
 

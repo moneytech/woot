@@ -23,15 +23,30 @@ FileSystem::FileSystem(class Volume *vol, FileSystemType *type) :
 
 FileSystem::~FileSystem()
 {
-    GlobalLock();
     for(File *f : *openedFiles)
         delete f;
+
+restartdentrycache:
     for(DEntry *d : dentryCache)
-        delete d;
+    {
+        if(d->INode->FS == this)
+        {
+            PutDEntry_nolock(d);
+            goto restartdentrycache;
+        }
+    }
+
+restartinodecache:
     for(INode *i : inodeCache)
-        delete i;
+    {
+        if(i->FS == this)
+        {
+            PutINode_nolock(i);
+            goto restartinodecache;
+        }
+    }
+
     delete openedFiles;
-    GlobalUnLock();
 }
 
 void FileSystem::Initialize()

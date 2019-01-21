@@ -173,12 +173,10 @@ int64_t BufferedVolume::Write(const void *buffer, uint64_t position, int64_t n)
     return access((byte *)buffer, n, position, true);
 }
 
-bool BufferedVolume::Flush()
+bool BufferedVolume::Flush_nolock()
 {
-    if(!Lock()) return false;
     bool res = true;
     for(int i = 0; i < bufferCount; ++i)
         res &= flushBuffer(i);
-    UnLock();
     return res;
 }

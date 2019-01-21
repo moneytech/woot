@@ -692,7 +692,7 @@ bool EXT2::zeroBlock(uint32_t block)
 
 EXT2::~EXT2()
 {
-    if(Root) PutDEntry(Root);
+    if(Root) PutDEntry_nolock(Root);
     WriteSuperBlock();
     Volume->Flush();
     delete superBlock;

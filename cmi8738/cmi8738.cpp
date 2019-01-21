@@ -264,7 +264,6 @@ void CMI8738::Initialize()
 
 void CMI8738::Cleanup()
 {
-
 }
 
 CMI8738::CMI8738(uint16_t base, uint8_t irq) :

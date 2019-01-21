@@ -48,7 +48,9 @@ public:
     virtual int64_t Write(const void *buffer, uint64_t position, int64_t n); // may be buferred
     virtual int64_t ReadSectors(void *buffer, uint64_t start, int64_t count);  // unbuffered read
     virtual int64_t WriteSectors(const void *buffer, uint64_t start, int64_t count); // unbuffered write
-    virtual bool Flush(); // synchronizes buffers with media
+    virtual bool Flush_nolock(); // synchronizes buffers with media without locking
+
+    bool Flush(); // synchronizes buffers with media
 };
 
 #endif // VOLUME_H
