@@ -2,7 +2,7 @@
 #define SYSDEFS_H
 
 #define KERNEL_VERSION_MAJOR        0
-#define KERNEL_VERSION_MINOR        1
+#define KERNEL_VERSION_MINOR        2
 #define KERNEL_VERSION_DESCRIPTION  "internal"
 
 #define KERNEL_BASE                 0xC0000000

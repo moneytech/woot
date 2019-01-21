@@ -262,7 +262,7 @@ struct ATAIdentifyResponse
     uint16_t CurrentAcousticValue : 8;
     uint16_t RecommendedAcousticValue : 8;
     uint16_t ReservedWord95[5];
-    uint64_t  Max48BitLBA;
+    uint64_t Max48BitLBA;
     uint16_t StreamingTransferTime;
     uint16_t ReservedWord105;
     struct

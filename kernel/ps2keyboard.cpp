@@ -1,7 +1,9 @@
 #include <cpu.h>
+#include <errno.h>
 #include <ints.h>
 #include <irqs.h>
 #include <ps2keyboard.h>
+#include <time.h>
 
 VirtualKey scancodeTable[] =
 {
@@ -195,6 +197,11 @@ PS2Keyboard::PS2Keyboard(uint16_t data, uint16_t cmd, uint8_t irq) :
 {
     IRQs::RegisterHandler(irq, &handler);
     IRQs::Enable(irq);
+
+    // set scancode set
+    DeviceWrite(false, 0xF0);
+    DeviceWrite(false, 2);
+    DeviceRead();
 }
 
 PS2Keyboard::~PS2Keyboard()
@@ -205,11 +212,80 @@ PS2Keyboard::~PS2Keyboard()
     cpuRestoreInterrupts(ints);
 }
 
+bool PS2Keyboard::DualPort = false;
+
 void PS2Keyboard::Initialize()
 {
-    // TODO: add actual detection and initialization code
+    // do a couple of dummy reads
+    for(int i = 0; i < 20; ++i)
+        _inb(0x60);
+
+    // do another dummy read
+    _inb(0x60);
+
+    // set new configuration byte
+    ControllerCommand(0x60, false, true, 0x00);
+
+    // one more dummy read
+    _inb(0x60);
+
+    // disable second port
+    ControllerCommand(0xA7, false, false, 0);
+
+    // check if second port clock reacted do disable command
+    DualPort = ControllerCommand(0x20, true, false, 0) & 0x20;
+
+    // reenable interrupts and second if present
+    ControllerCommand(0x60, false, true, DualPort ? 0x43 : 0x63);
+
     PS2Keyboard *kbd = new PS2Keyboard(0x60, 0x64, 1);
     Add(kbd);
+}
+
+int PS2Keyboard::ControllerCommand(uint8_t cmd, bool resp, bool arg, uint8_t argv)
+{
+    // send command
+    _outb(0x64, cmd);
+
+    if(arg)
+    {   // send argument if needed
+        int retry = 100;
+        while(_inb(0x64) & 0x02 && --retry)
+            Time::Sleep(1, false);
+        if(!retry) return -EBUSY;
+        _outb(0x60, argv);
+    }
+
+    if(resp)
+    {   // read response if applicable
+        int retry = 100;
+        while(!(_inb(0x64) & 0x01) && --retry)
+            Time::Sleep(1, false);
+        if(!retry) return -EBUSY;
+        return _inb(0x60);
+    }
+
+    return 0;
+}
+
+int PS2Keyboard::DeviceWrite(bool second, uint8_t val)
+{
+    if(second) _outb(0x64, 0xD4);
+    int retry = 100;
+    while(_inb(0x64) & 0x02 && --retry)
+        Time::Sleep(1, false);
+    if(!retry) return -EBUSY;
+    _outb(0x60, val);
+    return 0;
+}
+
+int PS2Keyboard::DeviceRead()
+{
+    int retry = 100;
+    while(!(_inb(0x64) & 0x01) && --retry)
+        Time::Sleep(1, false);
+    if(!retry) return -EBUSY;
+    return _inb(0x60);
 }
 
 void PS2Keyboard::Cleanup()

@@ -227,6 +227,7 @@ int64_t DebugStream::Read(void *buffer, int64_t n)
             {
                 chr = serialGetChar();
                 if(chr == '\r') chr = '\n';
+                if(chr == 127) chr = '\b';
             }
 #endif // USE_SERIAL
         }

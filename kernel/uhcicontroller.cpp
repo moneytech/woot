@@ -148,7 +148,7 @@ UHCIController::UHCIController(uint16_t base, uint8_t irq) :
     start();
 
     // just for testing
-    setw(PORTSC, 4);
+    /*setw(PORTSC, 4);
     Time::Sleep(100, false);
 
     unsigned char buf[64];
@@ -166,7 +166,7 @@ UHCIController::UHCIController(uint16_t base, uint8_t irq) :
 
     for(int i = 0; i < sizeof(buf); ++i)
         printf("%.2x%s", buf[i], (i & 7) == 7 ? "\n" : " ");
-    printf("%-62S\n", buf + 2);
+    printf("%-62S\n", buf + 2);*/
 }
 
 uint16_t UHCIController::readw(uint16_t reg)

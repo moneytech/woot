@@ -331,12 +331,12 @@ bool IDEDrive::Controller::waitFornBSYorERR_nolock(int timeout, byte *status)
     byte s;
     if(timeout <= 0)
     {
-        while(((s = _inb(Control)) & 0x80) && !(s & 0x01));
+        while(((s = _inb(Base + 7)) & 0x80) && !(s & 0x01));
         if(status) *status = s;
         return true;
     }
 
-    while(--timeout && ((s = _inb(Control)) & 0x80) && !(s & 0x01))
+    while(--timeout && ((s = _inb(Base + 7)) & 0x80) && !(s & 0x01))
         Time::Sleep(1, false);
     if(status) *status = s;
     return timeout != 0;
@@ -347,12 +347,12 @@ bool IDEDrive::Controller::waitForDRQorERR_nolock(int timeout, byte *status)
     byte s;
     if(timeout <= 0)
     {
-        while(!((s = _inb(Control)) & 0x08) && !(s & 0x01));
+        while(!((s = _inb(Base + 7)) & 0x08) && !(s & 0x01));
         if(status) *status = s;
         return true;
     }
 
-    while(--timeout && !((s = _inb(Control)) & 0x08) && !(s & 0x01))
+    while(--timeout && !((s = _inb(Base + 7)) & 0x08) && !(s & 0x01))
         Time::Sleep(1, false);
     if(status) *status = s;
     return timeout != 0;
@@ -363,12 +363,12 @@ bool IDEDrive::Controller::waitFornBSY_nolock(int timeout, byte *status)
     byte s;
     if(timeout <= 0)
     {
-        while((s = _inb(Control)) & 0x80);
+        while((s = _inb(Base + 7)) & 0x80);
         if(status) *status = s;
         return true;
     }
 
-    while(--timeout && ((s = _inb(Control)) & 0x80))
+    while(--timeout && ((s = _inb(Base + 7)) & 0x80))
         Time::Sleep(1, false);
     if(status) *status = s;
     return timeout != 0;
@@ -379,12 +379,12 @@ bool IDEDrive::Controller::waitForDRDY_nolock(int timeout, byte *status)
     byte s;
     if(timeout <= 0)
     {
-        while(!((s = _inb(Control)) & 0x40));
+        while(!((s = _inb(Base + 7)) & 0x40));
         if(status) *status = s;
         return true;
     }
 
-    while(--timeout && !((s = _inb(Control)) & 0x40))
+    while(--timeout && !((s = _inb(Base + 7)) & 0x40))
         Time::Sleep(1, false);
     if(status) *status = s;
     return timeout != 0;
@@ -393,18 +393,18 @@ bool IDEDrive::Controller::waitForDRDY_nolock(int timeout, byte *status)
 bool IDEDrive::Controller::identify_nolock(ATAIdentifyResponse *id, bool slave, bool atapi)
 {
     byte status;
-    DisableIRQ();
+    DisableIRQ();    
     _outb(Base + 6, slave ? 0x10 : 0x00);
     Wait400ns();
     _outb(Base + 7, atapi ? ATA_CMD_ID_ATAPI : ATA_CMD_ID_ATA);
     bool ok = waitFornBSYorERR_nolock(100, &status);
-    if(!ok || (status & 0x01))
+    if(!ok || status & 0x01 || status & 0x20)
     {
         EnableIRQ();
         return false;
     }
     ok = waitForDRQorERR_nolock(100, &status);
-    if(!ok || (status & 0x01))
+    if(!ok || status & 0x01 || status & 0x20)
     {
         EnableIRQ();
         return false;

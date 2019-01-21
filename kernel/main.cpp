@@ -147,7 +147,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Time::StartSystemTimer();
     PCI::Initialize();
     USBController::Initialize();
-    UHCIController::Initialize();
+    //UHCIController::Initialize();
     InputDevice::Initialize();
     PS2Keyboard::Initialize();
     Drive::Initialize();
@@ -726,7 +726,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     WindowManager::Cleanup();
     PS2Keyboard::Cleanup();
     InputDevice::Cleanup();
-    UHCIController::Cleanup();
+    //UHCIController::Cleanup();
     USBController::Cleanup();
     PCI::Cleanup();
     return 0xD007D007;
