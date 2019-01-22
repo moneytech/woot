@@ -649,16 +649,27 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
                         int br = f->Read(buf, frameSize);
                         if(br < 0) break;
                         bool last = br != frameSize;
-                        dev->Write(buf);
-                        if(!i) dev->Start();
+                        if(dev->Write(buf))
+                        {
+                            printf("write error.\n");
+                            break;
+                        }
+                        if(!i)
+                        {
+                            if(dev->Start())
+                            {
+                                printf("error.\n");
+                                break;
+                            }
+                        }
                         int time = secsPerFrame * i;
                         printf("\r%.2d:%.2d", time / 60, time % 60);
                         if(last)
                             break;
                     }
                     printf("\rdone.\n");
-                    delete[] buf;
                     dev->Stop();
+                    delete[] buf;
                     dev->Close();
                 }
                 delete f;

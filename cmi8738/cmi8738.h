@@ -13,6 +13,7 @@ class CMI8738 : public AudioDevice
 
     uint16_t base;
     uint8_t irq;
+
     Ints::Handler interruptHandler;
     bool opened = false;
 

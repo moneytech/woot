@@ -12,6 +12,7 @@ es1371/es1371.cpp
 es1371/es1371.h
 es1371/main.cpp
 file.png
+include/ac97.h
 include/ahcidrive.h
 include/audiodevice.h
 include/cdfs.h
@@ -21,6 +22,7 @@ include/uhcicontroller.h
 include/uhcidevice.h
 include/usbcontroller.h
 include/usbdevice.h
+kernel/ac97.cpp
 kernel/ahcidrive.cpp
 kernel/audiodevice.cpp
 kernel/cdfs.cpp

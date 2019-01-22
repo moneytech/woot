@@ -503,10 +503,6 @@ int CMI8738::GetFrameSize()
 int CMI8738::Start()
 {
     if(!opened) return -EBUSY;
-
-    playedBuffer = 0;
-    bufSem->Reset(1);
-
     _outl(base + CM_REG_FUNCTRL1, (sf << CM_ASFC_SHIFT) | CM_BREQ);
     cpuIOClrBitsL(base + CM_REG_FUNCTRL0, CM_CHADC0 | CM_PAUSE0 | CM_CHEN0); // ch0 -> playback, ch0 not paused, ch0 disable
     _outl(base + CM_REG_CHFORMAT, (_inl(base + CM_REG_CHFORMAT) & ~0x03) | fmt); // set sample format
@@ -564,6 +560,7 @@ int CMI8738::Write(void *buffer)
 
 void CMI8738::Close()
 {
+    Paging::FreeDMA(buffer);
     opened = false;
 }
 
@@ -573,6 +570,5 @@ CMI8738::~CMI8738()
     IRQs::UnRegisterHandler(irq, &interruptHandler);
     IRQs::TryDisable(irq);
     cpuRestoreInterrupts(ints);
-    Paging::FreeDMA(buffer);
     delete bufSem;
 }
