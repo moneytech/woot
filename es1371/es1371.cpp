@@ -302,6 +302,22 @@ const char *ES1371::GetModel()
     return "ES1371";
 }
 
+const AudioDevice::MixerSetting *ES1371::GetMixerSettings(int *count)
+{
+    if(count) *count = (sizeof(mixerSettings) / sizeof(AudioDevice::MixerSetting)) - 1;
+    return mixerSettings;
+}
+
+int ES1371::SetMixerSetting(int setting, int value)
+{
+    return AC97::SetMixerSetting(setting, value);
+}
+
+int ES1371::GetMixerSetting(int setting)
+{
+    return AC97::GetMixerSetting(setting);
+}
+
 int ES1371::Open(int rate, int channels, int bits, int samples)
 {
     if(rate < 4000 || rate > 48000 || channels < 1 || channels > 2 || (bits != 8 && bits != 16))
@@ -391,6 +407,16 @@ int ES1371::Write(void *buffer)
 void ES1371::Close()
 {
     opened = false;
+}
+
+int ES1371::RegisterWrite(uint8_t reg, uint16_t val)
+{
+    return codecWrite(reg, val);
+}
+
+int ES1371::RegisterRead(uint8_t reg)
+{
+    return codecRead(reg);
 }
 
 ES1371::~ES1371()
