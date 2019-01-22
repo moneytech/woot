@@ -2,3 +2,4 @@
 system/simplefb.ko
 system/ps2mouse.ko
 system/cmi8738.ko
+system/es1371.ko

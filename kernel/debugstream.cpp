@@ -184,50 +184,55 @@ int64_t DebugStream::Read(void *buffer, int64_t n)
         char chr = 0;
         if(window)
         {
-            bool ok = false;
-            InputDevice::Event event = window->Events.Get(50, &ok);
-            if(ok && event.DeviceType == InputDevice::Type::Keyboard)
-            {
-                if(event.Keyboard.Key == VirtualKey::LShift ||
-                        event.Keyboard.Key == VirtualKey::RShift)
-                {
-                    shift = !event.Keyboard.Release;
-                    continue;
-                }
-                if(event.Keyboard.Key == VirtualKey::LMenu ||
-                        event.Keyboard.Key == VirtualKey::RMenu)
-                {
-                    alt = !event.Keyboard.Release;
-                    continue;
-                }
-                if(event.Keyboard.Key == VirtualKey::LControl ||
-                        event.Keyboard.Key == VirtualKey::RControl)
-                {
-                    ctrl = !event.Keyboard.Release;
-                    continue;
-                }
-
-                if(event.Keyboard.Release)
-                {
-                    if(event.Keyboard.Key == VirtualKey::Capital)
-                        caps = !caps;
-                    if(event.Keyboard.Key == VirtualKey::NumLock)
-                        num = !num;
-                    continue;
-                }
-                if(ctrl && alt && event.Keyboard.Key == VirtualKey::Delete)
-                {
-                    _outb(0x64, 0xFE);
-                    continue;
-                }
-                chr = vkToChar(event.Keyboard.Key, shift, caps, num);
-            }
 #ifdef USE_SERIAL
-            else if(serialHasData())
+            if(serialHasData())
             {
                 chr = serialGetChar();
                 if(chr == '\r') chr = '\n';
                 if(chr == 127) chr = '\b';
+            }
+            else
+            {
+#endif // USE_SERIAL
+                bool ok = false;
+                InputDevice::Event event = window->Events.Get(50, &ok);
+                if(ok && event.DeviceType == InputDevice::Type::Keyboard)
+                {
+                    if(event.Keyboard.Key == VirtualKey::LShift ||
+                            event.Keyboard.Key == VirtualKey::RShift)
+                    {
+                        shift = !event.Keyboard.Release;
+                        continue;
+                    }
+                    if(event.Keyboard.Key == VirtualKey::LMenu ||
+                            event.Keyboard.Key == VirtualKey::RMenu)
+                    {
+                        alt = !event.Keyboard.Release;
+                        continue;
+                    }
+                    if(event.Keyboard.Key == VirtualKey::LControl ||
+                            event.Keyboard.Key == VirtualKey::RControl)
+                    {
+                        ctrl = !event.Keyboard.Release;
+                        continue;
+                    }
+
+                    if(event.Keyboard.Release)
+                    {
+                        if(event.Keyboard.Key == VirtualKey::Capital)
+                            caps = !caps;
+                        if(event.Keyboard.Key == VirtualKey::NumLock)
+                            num = !num;
+                        continue;
+                    }
+                    if(ctrl && alt && event.Keyboard.Key == VirtualKey::Delete)
+                    {
+                        _outb(0x64, 0xFE);
+                        continue;
+                    }
+                    chr = vkToChar(event.Keyboard.Key, shift, caps, num);
+                }
+#ifdef USE_SERIAL
             }
 #endif // USE_SERIAL
         }

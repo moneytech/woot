@@ -2,7 +2,7 @@
 #include <cmi8738.h>
 #include <stdio.h>
 
-extern AudioDevice::MixerSetting mixerSettings[25];
+extern AudioDevice::MixerSetting mixerSettings[];
 
 extern "C" int Initialize()
 {

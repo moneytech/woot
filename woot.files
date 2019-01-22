@@ -7,6 +7,10 @@ cmi8738/cmi8738.cpp
 cmi8738/cmi8738.h
 cmi8738/main.cpp
 directory.png
+es1371/Makefile
+es1371/es1371.cpp
+es1371/es1371.h
+es1371/main.cpp
 file.png
 include/ahcidrive.h
 include/audiodevice.h

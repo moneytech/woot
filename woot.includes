@@ -38,3 +38,4 @@ libc/include/sys
 libc/internal
 libc/asm
 cmi8738
+es1371

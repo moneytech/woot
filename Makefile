@@ -1,6 +1,6 @@
 ROOTDIR = $(shell pwd)
 
-SUBDIRS = lib kernel libc libwoot ps2mouse simplefb cmi8738
+SUBDIRS = lib kernel libc libwoot ps2mouse simplefb cmi8738 es1371
 SUBDIRS += usertest calc clock wpaper
 
 KERNELFILE = woot
@@ -13,7 +13,7 @@ DISTFILES = usertest/usertest logo.bmp libc/libc.so libwoot/libwoot.so zlib/lib/
 DISTFILES += wallpaper.png alpha.png libfreetype/lib/libfreetype.so test.ttf directory.png file.png normal.cur clock/clock wpaper/wpaper
 DISTFILES += calc/calc title.ttf libgmp/lib/libgmp.so remove8bit.wav
 
-MODULES = ps2mouse/ps2mouse.ko simplefb/simplefb.ko cmi8738/cmi8738.ko
+MODULES = ps2mouse/ps2mouse.ko simplefb/simplefb.ko cmi8738/cmi8738.ko es1371/es1371.ko
 
 CONFIGURE = woot.specs woot-gcc
 ADD_EXEC = woot-gcc
