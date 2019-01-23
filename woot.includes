@@ -1,3 +1,9 @@
+libc
+libc/include
+libc/include/sys
+libc/internal
+libc/asm
+
 include
 kernel
 lib
@@ -32,11 +38,6 @@ libgmp/lib
 
 libwoot/include
 
-libc
-libc/include
-libc/include/sys
-libc/internal
-libc/asm
 cmi8738
 es1371
 sndplay

@@ -410,5 +410,7 @@
 #define SYS_audio_start_playback    408
 #define SYS_audio_stop_playback     409
 #define SYS_audio_get_buffer_count  410
+#define SYS_audio_get_device_vendor 411
+#define SYS_audio_get_device_model  412
 
 #endif // SYS_SYSCALL_H

@@ -109,7 +109,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 352 - 367
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 368 - 383
     nullptr, nullptr, sys_create_window, sys_show_window, sys_hide_window, sys_destroy_window, sys_draw_rectangle, sys_draw_filled_rectangle, sys_update_window, sys_redraw_window, sys_draw_line, sys_blit, sys_alpha_blit, sys_map_window, sys_invalidate_rect, sys_get_window_size, // 384 - 399
-    sys_get_pixel_format, sys_set_drag_rect, sys_get_event, sys_peek_event, sys_audio_open, sys_audio_close, sys_audio_get_frame_size, sys_audio_write, sys_audio_start_playback, sys_audio_stop_playback, sys_audio_get_buffer_count, nullptr, nullptr, nullptr, nullptr, nullptr, // 400 - 415
+    sys_get_pixel_format, sys_set_drag_rect, sys_get_event, sys_peek_event, sys_audio_open, sys_audio_close, sys_audio_get_frame_size, sys_audio_write, sys_audio_start_playback, sys_audio_stop_playback, sys_audio_get_buffer_count, sys_audio_get_device_vendor, sys_audio_get_device_model, nullptr, nullptr, nullptr, // 400 - 415
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 416 - 431
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 432 - 447
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 448 - 463
@@ -706,6 +706,56 @@ long SysCalls::sys_audio_get_buffer_count(long *args) // 410
     res = dev->GetBufferCount();
     AudioDevice::UnLock();
     return res;
+}
+
+long SysCalls::sys_audio_get_device_vendor(long *args) // 411
+{
+    int id = args[1];
+    char *buffer = (char *)args[2];
+    int bufSize = args[3];
+    if(!buffer || bufSize <= 0)
+        return -EINVAL;
+    buffer[0] = 0;
+
+    int res = AudioDevice::Lock();
+    if(res) return res;
+    AudioDevice *dev = AudioDevice::GetByID_nolock(id);
+    if(!dev)
+    {
+        AudioDevice::UnLock();
+        return -EINVAL;
+    }
+    const char *str = dev->GetVendor();
+    strncpy(buffer, str, bufSize);
+    buffer[bufSize - 1] = 0;
+    AudioDevice::UnLock();
+
+    return 0;
+}
+
+long SysCalls::sys_audio_get_device_model(long *args) // 412
+{
+    int id = args[1];
+    char *buffer = (char *)args[2];
+    int bufSize = args[3];
+    if(!buffer || bufSize <= 0)
+        return -EINVAL;
+    buffer[0] = 0;
+
+    int res = AudioDevice::Lock();
+    if(res) return res;
+    AudioDevice *dev = AudioDevice::GetByID_nolock(id);
+    if(!dev)
+    {
+        AudioDevice::UnLock();
+        return -EINVAL;
+    }
+    const char *str = dev->GetModel();
+    strncpy(buffer, str, bufSize);
+    buffer[bufSize - 1] = 0;
+    AudioDevice::UnLock();
+
+    return 0;
 }
 
 void SysCalls::Initialize()

@@ -299,15 +299,16 @@ struct fntFont *wmGetDefaultFont()
     return defaultFont;
 }
 
-int wmGetEvent(int window, struct wmEvent *event)
+int wmGetEvent(struct wmWindow *window, struct wmEvent *event)
 {
-    return syscall2(SYS_get_event, window, (long)event);
+    if(!window || !event) return -EINVAL;
+    return syscall2(SYS_get_event, window->ID, (long)event);
 }
 
-int wmPeekEvent(int window, struct wmEvent *event, int remove)
+int wmPeekEvent(struct wmWindow *window, struct wmEvent *event, int remove)
 {
-    int res = syscall3(SYS_peek_event, window, (long)event, remove);
-    if(res < 0) return res;
+    if(!window || !event) return -EINVAL;
+    return syscall3(SYS_peek_event, window->ID, (long)event, remove);
 }
 
 int wmProcessEvent(struct wmWindow *window, struct wmEvent *event)
@@ -320,6 +321,7 @@ int wmProcessEvent(struct wmWindow *window, struct wmEvent *event)
     }
     uiControlProcessEvent(window->RootControl, *event);
     wmUpdateWindow(window);
+    return 0;
 }
 
 void wmCleanup()

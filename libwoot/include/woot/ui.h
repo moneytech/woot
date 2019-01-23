@@ -1,6 +1,9 @@
 #ifndef UI_H
 #define UI_H
 
+#include <woot/font.h>
+#include <woot/pixmap.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

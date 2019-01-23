@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
         {
             int quit = 0;
             struct wmEvent event;
-            while(wmPeekEvent(wnd->ID, &event, 1) > 0)
+            while(wmPeekEvent(wnd, &event, 1) > 0)
             {
                 wmProcessEvent(wnd, &event);
                 if(event.Type == ET_KEYBOARD && event.Keyboard.Key == VK_ESCAPE)

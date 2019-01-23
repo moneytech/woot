@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
     for(;;)
     {
         struct wmEvent event;
-        wmGetEvent(wnd->ID, &event);
+        wmGetEvent(wnd, &event);
         wmProcessEvent(wnd, &event);
         if(event.Type == ET_KEYBOARD && event.Keyboard.Flags == 0)
         {

@@ -37,3 +37,13 @@ int auGetBufferCount(int id)
 {
     return syscall1(SYS_audio_get_buffer_count, id);
 }
+
+int auGetDeviceVendor(int id, char *buffer, int bufSize)
+{
+    return syscall3(SYS_audio_get_device_vendor, id, (long)buffer, bufSize);
+}
+
+int auGetDeviceModel(int id, char *buffer, int bufSize)
+{
+    return syscall3(SYS_audio_get_device_model, id, (long)buffer, bufSize);
+}
