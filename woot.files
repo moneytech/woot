@@ -126,7 +126,9 @@ libpng/lib/libpng16.so
 libpng/lib/libpng16.so.16
 libpng/lib/libpng16.so.16.35.0
 libwoot/asm/lmemset.asm
+libwoot/audio.c
 libwoot/font.c
+libwoot/include/woot/audio.h
 libwoot/include/woot/font.h
 libwoot/include/woot/pixmap.h
 libwoot/include/woot/ui.h
@@ -134,6 +136,8 @@ libwoot/include/woot/vkeys.h
 libwoot/pixmap.c
 libwoot/ui.c
 remove8bit.wav
+sndplay/Makefile
+sndplay/main.c
 test.ttf
 title.ttf
 v0.1.tar.xz

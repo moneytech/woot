@@ -288,6 +288,9 @@ ES1371::ES1371(uint16_t base, uint8_t irq) :
     srcReset();
     codecReset();
 
+    SetMixerSetting(2, 0);
+    SetMixerSetting(30, 0);
+
     IRQs::RegisterHandler(irq, &interruptHandler);
     IRQs::Enable(irq);
 }
@@ -318,9 +321,14 @@ int ES1371::GetMixerSetting(int setting)
     return AC97::GetMixerSetting(setting);
 }
 
+int ES1371::GetBufferCount()
+{
+    return BUFFERS - 1;
+}
+
 int ES1371::Open(int rate, int channels, int bits, int samples)
 {
-    if(rate < 4000 || rate > 48000 || channels < 1 || channels > 2 || (bits != 8 && bits != 16))
+    if(rate < 4000 || rate > 48000 || channels < 1 || channels > 2 || (bits != 8 && bits != 16) || samples < 0 || samples > 32768)
         return -EINVAL;
 
     // set playback rate

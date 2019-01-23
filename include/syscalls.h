@@ -51,6 +51,14 @@ class SysCalls
     static long sys_set_drag_rect(long *args); // 401
     static long sys_get_event(long *args); // 402
     static long sys_peek_event(long *args); // 403
+
+    static long sys_audio_open(long *args); // 404
+    static long sys_audio_close(long *args); // 405
+    static long sys_audio_get_frame_size(long *args); // 406
+    static long sys_audio_write(long *args); // 407
+    static long sys_audio_start_playback(long *args); // 408
+    static long sys_audio_stop_playback(long *args); // 409
+    static long sys_audio_get_buffer_count(long *args); // 410
 public:
     static void Initialize();
     static void Cleanup();
