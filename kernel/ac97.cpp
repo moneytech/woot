@@ -27,12 +27,152 @@ int AC97::ResetCODEC()
 
 int AC97::SetMixerSetting(int setting, int value)
 {
-    return -EINVAL;
+    if(setting < 0 || setting >= (sizeof(mixerSettings) / sizeof(AudioDevice::MixerSetting)))
+        return -EINVAL;
+    AudioDevice::MixerSetting *set = mixerSettings + setting;
+    int regVal = RegisterRead(regMap[setting]);
+    if(regVal < 0) return regVal;
+    switch(setting)
+    {
+    case 0: // master left
+        regVal = regVal & ~0x3F00 | mapValue(set->MinValue, set->MaxValue, 63, 0, value) << 8;
+        break;
+    case 1: // master right
+        regVal = regVal & ~0x003F | mapValue(set->MinValue, set->MaxValue, 63, 0, value);
+        break;
+    case 2: // master mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 3: // aux left
+        regVal = regVal & ~0x3F00 | mapValue(set->MinValue, set->MaxValue, 63, 0, value) << 8;
+        break;
+    case 4: // aux right
+        regVal = regVal & ~0x003F | mapValue(set->MinValue, set->MaxValue, 63, 0, value);
+        break;
+    case 5: // aux mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 6: // mono
+        regVal = regVal & ~0x003F | mapValue(set->MinValue, set->MaxValue, 63, 0, value);
+        break;
+    case 7: // mono mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 8: // master bass
+        regVal = regVal & ~0x0F00 | mapValue(set->MinValue, set->MaxValue, 15, 0, value) << 8;
+        break;
+    case 9: // master treble
+        regVal = regVal & ~0x000F | mapValue(set->MinValue, set->MaxValue, 15, 0, value);
+        break;
+
+    case 10: // beep volume
+        regVal = regVal & ~0x001E | mapValue(set->MinValue, set->MaxValue, 15, 0, value) << 1;
+        break;
+
+    case 11: // phone
+        regVal = regVal & ~0x001F | mapValue(set->MinValue, set->MaxValue, 31, 0, value);
+        break;
+    case 12: // phone mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 13: // mic volume
+        regVal = regVal & ~0x001F | mapValue(set->MinValue, set->MaxValue, 31, 0, value);
+        break;
+    case 14: // mic boost
+        regVal = regVal & ~0x0040 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 6;
+        break;
+    case 15: // mic mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 16: // line left
+        regVal = regVal & ~0x1F00 | mapValue(set->MinValue, set->MaxValue, 31, 0, value) << 8;
+        break;
+    case 17: // line right
+        regVal = regVal & ~0x001F | mapValue(set->MinValue, set->MaxValue, 31, 0, value);
+        break;
+    case 18: // line mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 19: // cd left
+        regVal = regVal & ~0x1F00 | mapValue(set->MinValue, set->MaxValue, 31, 0, value) << 8;
+        break;
+    case 20: // cd right
+        regVal = regVal & ~0x001F | mapValue(set->MinValue, set->MaxValue, 31, 0, value);
+        break;
+    case 21: // cd mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 22: // video left
+        regVal = regVal & ~0x1F00 | mapValue(set->MinValue, set->MaxValue, 31, 0, value) << 8;
+        break;
+    case 23: // video right
+        regVal = regVal & ~0x001F | mapValue(set->MinValue, set->MaxValue, 31, 0, value);
+        break;
+    case 24: // video mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 25: // aux left
+        regVal = regVal & ~0x1F00 | mapValue(set->MinValue, set->MaxValue, 31, 0, value) << 8;
+        break;
+    case 26: // aux right
+        regVal = regVal & ~0x001F | mapValue(set->MinValue, set->MaxValue, 31, 0, value);
+        break;
+    case 27: // aux mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 28: // pcm left
+        regVal = regVal & ~0x1F00 | mapValue(set->MinValue, set->MaxValue, 31, 0, value) << 8;
+        break;
+    case 29: // pcm right
+        regVal = regVal & ~0x001F | mapValue(set->MinValue, set->MaxValue, 31, 0, value);
+        break;
+    case 30: // pcm mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 31: // record select left
+        regVal = regVal & ~0x0700 | mapValue(set->MinValue, set->MaxValue, 7, 0, value) << 8;
+        break;
+    case 32: // record select right
+        regVal = regVal & ~0x0007 | mapValue(set->MinValue, set->MaxValue, 7, 0, value);
+        break;
+
+    case 33: // record gain left
+        regVal = regVal & ~0x0F00 | mapValue(set->MinValue, set->MaxValue, 15, 0, value) << 8;
+        break;
+    case 34: // record gain right
+        regVal = regVal & ~0x000F | mapValue(set->MinValue, set->MaxValue, 15, 0, value);
+        break;
+    case 35: // record gain mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    case 36: // record gain mic right
+        regVal = regVal & ~0x000F | mapValue(set->MinValue, set->MaxValue, 15, 0, value);
+        break;
+    case 37: // record gain mic mute
+        regVal = regVal & ~0x8000 | mapValue(set->MinValue, set->MaxValue, 0, 1, value) << 15;
+        break;
+
+    default:
+        return -EINVAL;
+        break;
+    }
+    return RegisterWrite(regMap[setting], regVal);
 }
 
 int AC97::GetMixerSetting(int setting)
 {
-    if(setting < 0 || setting > 52)
+    if(setting < 0 || setting >= (sizeof(mixerSettings) / sizeof(AudioDevice::MixerSetting)))
         return -EINVAL;
     AudioDevice::MixerSetting *set = mixerSettings + setting;
     int regVal = RegisterRead(regMap[setting]);

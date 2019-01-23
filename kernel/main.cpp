@@ -632,15 +632,29 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
             File *f = File::Open(args[1], O_RDONLY);
             if(f)
             {
-                f->Seek(44, SEEK_SET); // skip wave header
+                int sampleRate = 22050;
+                int channels = 1;
+                int bits = 0;
+
+                f->Seek(22, SEEK_SET);
+                f->Read(&channels, 2);
+                f->Read(&sampleRate, 4);
+                f->Seek(34, SEEK_SET);
+                f->Read(&bits, 2);
+                f->Seek(44, SEEK_SET);
+
                 AudioDevice *dev = AudioDevice::GetByID(0);
                 if(dev)
                 {
-                    int sampleRate = 22050;
                     int frameSamples = 4096;
+
+                    dev->SetMixerSetting(2, 0);
+                    dev->SetMixerSetting(30, 0);
+
                     float secsPerSample = 1.0f / (float)sampleRate;
                     float secsPerFrame = frameSamples * secsPerSample;
-                    dev->Open(sampleRate, 1, 8, frameSamples);
+
+                    dev->Open(sampleRate, channels, bits, frameSamples);
                     int frameSize = dev->GetFrameSize();
                     byte *buf = new byte[frameSize];
                     for(int i = 0;; ++i)

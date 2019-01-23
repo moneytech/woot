@@ -11,7 +11,7 @@ MOUNTPOINT = mnt
 
 DISTFILES = usertest/usertest logo.bmp libc/libc.so libwoot/libwoot.so zlib/lib/libz.so libpng/lib/libpng.so libpng/lib/libpng16.so
 DISTFILES += wallpaper.png alpha.png libfreetype/lib/libfreetype.so test.ttf directory.png file.png normal.cur clock/clock wpaper/wpaper
-DISTFILES += calc/calc title.ttf libgmp/lib/libgmp.so remove8bit.wav
+DISTFILES += calc/calc title.ttf libgmp/lib/libgmp.so remove8bit.wav bong.wav
 
 MODULES = ps2mouse/ps2mouse.ko simplefb/simplefb.ko cmi8738/cmi8738.ko es1371/es1371.ko
 

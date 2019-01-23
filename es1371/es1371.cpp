@@ -327,12 +327,6 @@ int ES1371::Open(int rate, int channels, int bits, int samples)
     int res = srcSetRate(SRC_REG_DAC2, rate);
     if(res) return res;
 
-    // set mixer levels
-    res = codecWrite(0x02, 0x0000); // master 0dB
-    if(res) return res;
-    res = codecWrite(0x18, 0x0808); // pcm 0dB
-    if(res) return res;
-
     // make sure that device is not busy
     if(testAndSet(&opened))
         return -EBUSY;
