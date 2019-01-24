@@ -74,6 +74,20 @@ void ObjectQueue::ForEach(ObjectQueue::ForEachCallback action)
         it = action(it) ? first : it->Next;
 }
 
+bool ObjectQueue::Contains(ObjectQueue::Item *item, ObjectQueue::ItemComparer comparer)
+{
+    if(!first) return false;
+    if(!comparer) comparer = defaultItemComparer;
+    if(comparer(first, item))
+        return true;
+    for(Item *it = first; it; it = it->Next)
+    {
+        if(comparer(it, item))
+            return true;
+    }
+    return false;
+}
+
 void ObjectQueue::Clear()
 {
     while(Get());

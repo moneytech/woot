@@ -22,6 +22,7 @@ public:
     Item *Get();
     bool Remove(Item *item, ItemComparer comparer);
     void ForEach(ForEachCallback action);
+    bool Contains(Item *item, ItemComparer comparer);
     void Clear();
 };
 

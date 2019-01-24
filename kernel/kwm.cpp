@@ -235,6 +235,18 @@ bool WindowManager::DestroyWindow_nolock(int id)
         desktop->Update_nolock();
     }
     delete wnd;
+
+    Window *prev = nullptr;
+    for(Window *wnd : WM->windows)
+    {
+        if(prev && wnd->ID == WM->mouseWndId)
+        {
+            WM->activeWindowId = prev->ID;
+            break;
+        }
+        prev = wnd;
+    }
+
     return true;
 }
 

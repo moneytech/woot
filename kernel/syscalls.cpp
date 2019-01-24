@@ -568,7 +568,7 @@ long SysCalls::sys_get_event(long *args) // 402
     WindowManager::Rectangle rect = WindowManager::GetWindowRectangle(args[1]);
     InputDevice::Event ev = WindowManager::GetEvent_nolock(args[1]); // may cause problems
     eventTowmEvent(event, &ev, &rect);
-    return 0;
+    return 1;
 }
 
 long SysCalls::sys_peek_event(long *args) // 403

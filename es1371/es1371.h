@@ -7,6 +7,7 @@
 #include <types.h>
 
 class Semaphore;
+class Thread;
 
 class ES1371 : public AudioDevice, public AC97
 {
@@ -17,6 +18,8 @@ class ES1371 : public AudioDevice, public AC97
 
     Ints::Handler interruptHandler;
     bool opened = false;
+    Thread *owner = nullptr;
+
 
     Semaphore *bufSem;
     int samples;

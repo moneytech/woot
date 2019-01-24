@@ -221,6 +221,19 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     StackPointer = initStackPointer;
 }
 
+bool Thread::Exists(Thread *thread)
+{
+    if(thread == GetCurrent())
+        return true;
+    if(readyThreads.Contains(thread, nullptr))
+        return true;
+    if(suspendedThreads.Contains(thread, nullptr))
+        return true;
+    if(sleepingThreads.Contains(thread, nullptr))
+        return true;
+    return false;
+}
+
 Thread *Thread::GetNext(bool doTick)
 {
     // handle sleeping threads

@@ -8,6 +8,7 @@
 #include <pci.h>
 #include <semaphore.h>
 #include <stdio.h>
+#include <thread.h>
 #include <time.h>
 
 #define REG_CONTROL             0x00
@@ -337,7 +338,10 @@ int ES1371::Open(int rate, int channels, int bits, int samples)
 
     // make sure that device is not busy
     if(testAndSet(&opened))
-        return -EBUSY;
+    {
+        if(Thread::Exists(owner))
+            return -EBUSY;
+    }
 
     bufferSize = BUFFERS * samples * (bits / 8) * channels;
     buffer = (byte *)Paging::AllocDMA(bufferSize);
@@ -380,7 +384,7 @@ int ES1371::Stop()
 {
     if(!opened) return -EBUSY;
     for(int i = 0; i < (BUFFERS - 2); ++i)
-        bufSem->Wait(1000, false, false);
+        bufSem->Wait(5000, false, false);
     cpuIOClrBitsL(base + REG_CONTROL, CONTROL_DAC2_EN);
 
     playedBuffer = 0;
@@ -409,6 +413,7 @@ int ES1371::Write(void *buffer)
 void ES1371::Close()
 {
     opened = false;
+    owner = nullptr;
 }
 
 int ES1371::RegisterWrite(uint8_t reg, uint16_t val)
