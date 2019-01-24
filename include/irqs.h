@@ -10,6 +10,8 @@
 class IRQs
 {
 public:
+    static uint64_t SpuriousIRQCount;
+
     static void Initialize();
     static void Enable(uint irq);
     static void Disable(uint irq);

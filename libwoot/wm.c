@@ -138,7 +138,11 @@ struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char 
             uiControlSetBackColor(wnd->TitleBar, pmColorBlue);
             titleRect.Width -= 24;
             struct uiLabel *label = uiLabelCreate(wnd->TitleBar, 0, 0, titleRect.Width, titleRect.Height, wnd->Name, titleFont, NULL);
-            if(label) uiControlSetTextColor((struct uiControl *)label, pmColorWhite);
+            if(label)
+            {
+                uiControlSetTextColor((struct uiControl *)label, pmColorWhite);
+                uiControlSetBackColor((struct uiControl *)label, pmColorBlue);
+            }
             struct uiButton *closeButton = uiButtonCreate(wnd->TitleBar, titleRect.X + titleRect.Width + 3, 4, 24 - 8, titleRect.Height - 8, "X", titleFont, NULL);
             uiControlSetBackColor((struct uiControl *)closeButton, pmColorGray);
         }
@@ -299,6 +303,11 @@ struct fntFont *wmGetDefaultFont()
     return defaultFont;
 }
 
+union pmColor wmGetDefaultBackColor()
+{
+    return pmColorGray;
+}
+
 int wmGetEvent(struct wmWindow *window, struct wmEvent *event)
 {
     if(!window || !event) return -EINVAL;
@@ -328,3 +337,4 @@ void wmCleanup()
 {
     fntDelete(titleFont);
 }
+

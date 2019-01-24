@@ -1,6 +1,8 @@
 #include <cpu.h>
 #include <irqs.h>
 
+uint64_t IRQs::SpuriousIRQCount = 0;
+
 void IRQs::Initialize()
 {
     bool ints = cpuDisableInterrupts();
@@ -91,6 +93,7 @@ bool IRQs::IsSpurious(uint irq)
 void IRQs::HandleSpurious(uint irq)
 {
     bool ints = cpuDisableInterrupts();
+    ++SpuriousIRQCount;
     if(irq != 7)
         SendEOI(2);
     cpuRestoreInterrupts(ints);

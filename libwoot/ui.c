@@ -43,6 +43,7 @@ struct uiLabel
 {
     struct uiControl Control;
     struct fntFont *Font;
+    int CenterHorizontal;
 };
 
 struct uiButton
@@ -93,7 +94,7 @@ struct uiControl *uiControlCreate(struct uiControl *parent, size_t structSize, s
     }
     control->Text = strdup(text ? text : "");
     control->TextColor = pmColorBlack;
-    control->BackColor = pmColorTransparent;
+    control->BackColor = wmGetDefaultBackColor();
     control->OnCreate = onCreate;
     if(control->OnCreate)
         control->OnCreate(control);
@@ -224,6 +225,12 @@ void uiControlSetBackColor(struct uiControl *control, union pmColor color)
     control->BackColor = color;
 }
 
+void uiControlSetOnPaint(struct uiControl *control, uiEventHandler handler)
+{
+    if(!control) return;
+    control->OnPaint = handler;
+}
+
 void uiControlSetOnMousePress(struct uiControl *control, uiWMEventHandler handler)
 {
     if(!control) return;
@@ -247,7 +254,13 @@ static void labelPaint(struct uiControl *sender)
     struct uiLabel *label = (struct uiLabel *)sender;
     struct wmRectangle rect = pmGetRectangle(label->Control.Content);
     float height = fntGetPixelHeight(label->Font);
-    fntDrawString(label->Font, label->Control.Content, 2, (rect.Height - height) / 2, label->Control.Text, label->Control.TextColor);
+    pmFillRectangle(sender->Content, 0, 0, rect.Width, rect.Height, sender->BackColor);
+    if(label->CenterHorizontal)
+    {
+        float width = fntMeasureString(label->Font, label->Control.Text);
+        fntDrawString(label->Font, label->Control.Content, (rect.Width - width) / 2, (rect.Height - height) / 2, label->Control.Text, label->Control.TextColor);
+    }
+    else fntDrawString(label->Font, label->Control.Content, 2, (rect.Height - height) / 2, label->Control.Text, label->Control.TextColor);
     pmInvalidateRect(label->Control.Content, rect);
 }
 
@@ -263,6 +276,14 @@ struct uiLabel *uiLabelCreate(struct uiControl *parent, int x, int y, int width,
     }
     control->Control.OnPaint = labelPaint;
     return control;
+}
+
+void uiLabelSetHorizontalCentering(struct uiLabel *control, int value)
+{
+    if(!control) return;
+    control->CenterHorizontal = value;
+    if(control->Control.OnPaint)
+        control->Control.OnPaint(&control->Control);
 }
 
 void uiLabelDelete(struct uiLabel *control)
@@ -332,8 +353,6 @@ void uiLineEditDelete(struct uiLineEdit *control)
     uiControlDelete((struct uiControl *)control);
 }
 
-#include <stdio.h>
-
 static void sliderPaint(struct uiControl *control)
 {
     if(!control) return;
@@ -344,9 +363,16 @@ static void sliderPaint(struct uiControl *control)
         int cy = rect.Height / 2;
         pmDrawFrame(slider->Control.Content, 4, cy - 1, rect.Width - 8, 2, 1);
         int x = mapValue(slider->MinValue, slider->MaxValue, 4, rect.Width - 4, slider->Value);
-        printf("%d %d %d %d %d\n", slider->MinValue, slider->MaxValue, x, slider->Value, rect.Width);
         pmFillRectangle(slider->Control.Content, x - 2, 5, 4, rect.Height - 10, pmColorGray);
         pmDrawFrame(slider->Control.Content, x - 3, 4, 6, rect.Height - 8, 0);
+    }
+    else
+    {
+        int cx = rect.Width / 2;
+        pmDrawFrame(slider->Control.Content, cx - 1, 4, 2, rect.Height - 8, 1);
+        int y = mapValue(slider->MaxValue, slider->MinValue, 4, rect.Height - 4, slider->Value);
+        pmFillRectangle(slider->Control.Content, 5, y - 2, rect.Width - 10, 4, pmColorGray);
+        pmDrawFrame(slider->Control.Content, 4, y - 3, rect.Width - 8, 6, 0);
     }
     pmInvalidateRect(slider->Control.Content, rect);
 }
@@ -419,3 +445,4 @@ void uiSliderDelete(struct uiSlider *control)
 {
     uiControlDelete((struct uiControl *)control);
 }
+

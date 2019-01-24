@@ -30,11 +30,13 @@ void uiControlSetText(struct uiControl *control, const char *text);
 int uiControlProcessEvent(struct uiControl *control, struct wmEvent event);
 void uiControlSetTextColor(struct uiControl *control, union pmColor color);
 void uiControlSetBackColor(struct uiControl *control, union pmColor color);
+void uiControlSetOnPaint(struct uiControl *control, uiEventHandler handler);
 void uiControlSetOnMousePress(struct uiControl *control, uiWMEventHandler handler);
 void uiControlSetOnMouseRelease(struct uiControl *control, uiWMEventHandler handler);
 void uiControlSetOnMouseMove(struct uiControl *control, uiWMEventHandler handler);
 
 struct uiLabel *uiLabelCreate(struct uiControl *parent, int x, int y, int width, int height, const char *text, struct fntFont *font, uiEventHandler onCreate);
+void uiLabelSetHorizontalCentering(struct uiLabel *control, int value);
 void uiLabelDelete(struct uiLabel *control);
 
 struct uiButton *uiButtonCreate(struct uiControl *parent, int x, int y, int width, int height, const char *text, struct fntFont *font, uiEventHandler onCreate);

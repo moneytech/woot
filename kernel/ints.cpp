@@ -73,7 +73,7 @@ void Ints::CommonHandler(Ints::State *state)
     for(handled = false; !handled && handler && handler->Callback; handler = handler->Next)
         handled = handler->Callback(state, handler->Context);
     if(!handled && isIrq)
-        printf("[ints] Unhandled IRQ %d (using VT-d without VT-x ?)\n", irq);
+        IRQs::HandleSpurious(irq);
     else if(!handled)
     {
         // print some info about what happened

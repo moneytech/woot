@@ -41,8 +41,8 @@
 #define VK_END            0x23
 #define VK_HOME           0x24
 #define VK_LEFT           0x25
-#define VK_RIGHT          0x26
-#define VK_UP             0x27
+#define VK_UP             0x26
+#define VK_RIGHT          0x27
 #define VK_DOWN           0x28
 #define VK_SELECT         0x29
 #define VK_PRINT          0x2A

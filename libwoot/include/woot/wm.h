@@ -90,6 +90,7 @@ int wmDecorateWindow(struct wmWindow *window);
 void wmDeleteWindow(struct wmWindow *window);
 int wmSetDragRectangle(struct wmWindow *window, struct wmRectangle *rect);
 struct fntFont *wmGetDefaultFont();
+union pmColor wmGetDefaultBackColor();
 int wmGetEvent(struct wmWindow *window, struct wmEvent *event);
 int wmPeekEvent(struct wmWindow *window, struct wmEvent *event, int remove);
 int wmProcessEvent(struct wmWindow *window, struct wmEvent *event);

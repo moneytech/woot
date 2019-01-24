@@ -329,7 +329,7 @@ int ES1371::GetBufferCount()
 
 int ES1371::Open(int rate, int channels, int bits, int samples)
 {
-    if(rate < 4000 || rate > 48000 || channels < 1 || channels > 2 || (bits != 8 && bits != 16) || samples < 0 || samples > 32768)
+    if(rate < 4000 || rate > 48000 || channels < 1 || channels > 2 || (bits != 8 && bits != 16) || samples < 32 || samples > 32768)
         return -EINVAL;
 
     // set playback rate
