@@ -57,9 +57,23 @@ struct uiLineEdit
     struct fntFont *Font;
 };
 
-struct uiControl *uiControlCreate(struct uiControl *parent, struct pmPixMap *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
+struct uiSlider
 {
-    struct uiControl *control = (struct uiControl *)calloc(1, sizeof(struct uiControl));
+    struct uiControl Control;
+    int Horizontal;
+    int MinValue;
+    int MaxValue;
+    int Value;
+};
+
+static int mapValue(int imin, int imax, int omin, int omax, int val)
+{
+    return (float)(val - imin) / (imax - imin) * (omax - omin) + omin;
+}
+
+struct uiControl *uiControlCreate(struct uiControl *parent, size_t structSize, struct pmPixMap *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
+{
+    struct uiControl *control = (struct uiControl *)calloc(1, structSize ? structSize : sizeof(struct uiControl));
     if(!control) return NULL;
     control->Parent = parent;
     if(control->Parent)
@@ -239,7 +253,7 @@ static void labelPaint(struct uiControl *sender)
 
 struct uiLabel *uiLabelCreate(struct uiControl *parent, int x, int y, int width, int height, const char *text, struct fntFont *font, uiEventHandler onCreate)
 {
-    struct uiLabel *control = (struct uiLabel *)uiControlCreate(parent, NULL, x, y, width, height, text, onCreate);
+    struct uiLabel *control = (struct uiLabel *)uiControlCreate(parent, sizeof(struct uiLabel), NULL, x, y, width, height, text, onCreate);
     if(!control) return NULL;
     control->Font = font ? font : wmGetDefaultFont();
     if(!control->Font)
@@ -269,7 +283,7 @@ static void buttonPaint(struct uiControl *sender)
 
 struct uiButton *uiButtonCreate(struct uiControl *parent, int x, int y, int width, int height, const char *text, struct fntFont *font, uiEventHandler onCreate)
 {
-    struct uiButton *control = (struct uiButton *)uiControlCreate(parent, NULL, x, y, width, height, text, onCreate);
+    struct uiButton *control = (struct uiButton *)uiControlCreate(parent, sizeof(struct uiButton), NULL, x, y, width, height, text, onCreate);
     if(!control) return NULL;
     control->Font = font ? font : wmGetDefaultFont();
     if(!control->Font)
@@ -300,7 +314,7 @@ static void lineEditPaint(struct uiControl *sender)
 
 struct uiLineEdit *uiLineEditCreate(struct uiControl *parent, int x, int y, int width, int height, const char *text, struct fntFont *font, uiEventHandler onCreate)
 {
-    struct uiLineEdit *control = (struct uiLineEdit *)uiControlCreate(parent, NULL, x, y, width, height, text, onCreate);
+    struct uiLineEdit *control = (struct uiLineEdit *)uiControlCreate(parent, sizeof(struct uiLineEdit), NULL, x, y, width, height, text, onCreate);
     if(!control) return NULL;
     control->Font = font ? font : wmGetDefaultFont();
     if(!control->Font)
@@ -318,3 +332,90 @@ void uiLineEditDelete(struct uiLineEdit *control)
     uiControlDelete((struct uiControl *)control);
 }
 
+#include <stdio.h>
+
+static void sliderPaint(struct uiControl *control)
+{
+    if(!control) return;
+    struct uiSlider *slider = (struct uiSlider *)control;
+    struct wmRectangle rect = pmGetRectangle(slider->Control.Content);
+    if(slider->Horizontal)
+    {
+        int cy = rect.Height / 2;
+        pmDrawFrame(slider->Control.Content, 4, cy - 1, rect.Width - 8, 2, 1);
+        int x = mapValue(slider->MinValue, slider->MaxValue, 4, rect.Width - 4, slider->Value);
+        printf("%d %d %d %d %d\n", slider->MinValue, slider->MaxValue, x, slider->Value, rect.Width);
+        pmFillRectangle(slider->Control.Content, x - 2, 5, 4, rect.Height - 10, pmColorGray);
+        pmDrawFrame(slider->Control.Content, x - 3, 4, 6, rect.Height - 8, 0);
+    }
+    pmInvalidateRect(slider->Control.Content, rect);
+}
+
+struct uiSlider *uiSliderCreate(struct uiControl *parent, int x, int y, int width, int height, int horizontal, int minVal, int maxVal, int val)
+{
+    struct uiSlider *control = (struct uiSlider *)uiControlCreate(parent, sizeof(struct uiSlider), NULL, x, y, width, height, NULL, NULL);
+    if(!control) return NULL;
+    control->Horizontal = horizontal;
+    if(maxVal < minVal)
+    {
+        int t = minVal;
+        minVal = maxVal;
+        maxVal = t;
+    }
+    control->MinValue = minVal;
+    control->MaxValue = maxVal;
+    if(val < minVal) val = minVal;
+    else if(val > maxVal) val = maxVal;
+    control->Value = val;
+    control->Control.OnPaint = sliderPaint;
+    return control;
+}
+
+void uiSliderSetValue(struct uiSlider *control, int value)
+{
+    if(!control) return;
+    if(value < control->MinValue) value = control->MinValue;
+    else if(value > control->MaxValue) value = control->MaxValue;
+    control->Value = value;
+    if(control->Control.OnPaint)
+        control->Control.OnPaint(&control->Control);
+}
+
+int uiSliderGetValue(struct uiSlider *control)
+{
+    if(!control) return 0;
+    return control->Value;
+}
+
+void uiSliderSetMinValue(struct uiSlider *control, int value)
+{
+    if(!control) return;
+    control->MinValue = value;
+    if(value > control->MaxValue) control->MaxValue = value;
+    uiSliderSetValue(control, control->Value);
+}
+
+int uiSliderGetMinValue(struct uiSlider *control)
+{
+    if(!control) return 0;
+    return control->MinValue;
+}
+
+void uiSliderSetMaxValue(struct uiSlider *control, int value)
+{
+    if(!control) return;
+    control->MaxValue = value;
+    if(value < control->MinValue) control->MinValue = value;
+    uiSliderSetValue(control, control->Value);
+}
+
+int uiSliderGetMaxValue(struct uiSlider *control)
+{
+    if(!control) return 0;
+    return control->MaxValue;
+}
+
+void uiSliderDelete(struct uiSlider *control)
+{
+    uiControlDelete((struct uiControl *)control);
+}

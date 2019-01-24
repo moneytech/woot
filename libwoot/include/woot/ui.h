@@ -14,11 +14,12 @@ struct uiControl;
 struct uiLabel;
 struct uiButton;
 struct uiLineEdit;
+struct uiSlider;
 
 typedef void (*uiEventHandler)(struct uiControl *sender);
 typedef void (*uiWMEventHandler)(struct uiControl *sender, struct wmEvent *event);
 
-struct uiControl *uiControlCreate(struct uiControl *parent, struct pmPixMap *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
+struct uiControl *uiControlCreate(struct uiControl *parent, size_t structSize, struct pmPixMap *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
 void uiControlDelete(struct uiControl *control);
 void uiControlRedraw(struct uiControl *control);
 struct pmPixMap *uiControlGetPixMap(struct uiControl *control);
@@ -41,6 +42,15 @@ void uiButtonDelete(struct uiButton *control);
 
 struct uiLineEdit *uiLineEditCreate(struct uiControl *parent, int x, int y, int width, int height, const char *text, struct fntFont *font, uiEventHandler onCreate);
 void uiLineEditDelete(struct uiLineEdit *control);
+
+struct uiSlider *uiSliderCreate(struct uiControl *parent, int x, int y, int width, int height, int horizontal, int minVal, int maxVal, int val);
+void uiSliderSetValue(struct uiSlider *control, int value);
+int uiSliderGetValue(struct uiSlider *control);
+void uiSliderSetMinValue(struct uiSlider *control, int value);
+int uiSliderGetMinValue(struct uiSlider *control);
+void uiSliderSetMaxValue(struct uiSlider *control, int value);
+int uiSliderGetMaxValue(struct uiSlider *control);
+void uiSliderDelete(struct uiSlider *control);
 
 #ifdef __cplusplus
 }

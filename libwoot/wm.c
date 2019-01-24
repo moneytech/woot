@@ -132,7 +132,7 @@ struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char 
     if(decorate)
     {
         struct wmRectangle titleRect = { 2, 2, width - 4, 24 };
-        wnd->TitleBar = uiControlCreate(NULL, wnd->Contents, titleRect.X, titleRect.Y, titleRect.Width, titleRect.Height, NULL, NULL);
+        wnd->TitleBar = uiControlCreate(NULL, 0, wnd->Contents, titleRect.X, titleRect.Y, titleRect.Width, titleRect.Height, NULL, NULL);
         if(wnd->TitleBar)
         {
             uiControlSetBackColor(wnd->TitleBar, pmColorBlue);
@@ -147,7 +147,7 @@ struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char 
     }
 
     struct wmRectangle rect = pmGetRectangle(wnd->ClientArea);
-    wnd->RootControl = uiControlCreate(NULL, wnd->ClientArea, 0, 0, rect.Width, rect.Height, NULL, NULL);
+    wnd->RootControl = uiControlCreate(NULL, 0, wnd->ClientArea, 0, 0, rect.Width, rect.Height, NULL, NULL);
     if(!wnd->RootControl)
     {
         errno = ENOMEM;
