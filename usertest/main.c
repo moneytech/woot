@@ -1,5 +1,4 @@
 #include <dirent.h>
-#include <malloc.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +22,7 @@
 
 int main(int argc, char *argv[])
 {
+    setbuf(stdout, NULL);
     int w = 400, h = 300;
 
     wmInitialize();
@@ -36,13 +36,14 @@ int main(int argc, char *argv[])
 
     struct pmPixMap *spm = wnd->ClientArea;
 
+
     char buf[128];
     char *_argv[64];
     for(; 1;)
     {
         getcwd(buf, sizeof(buf));
         printf("%s# ", buf);
-        int br = fread(buf, 1, sizeof(buf) - 1, stdin);
+        int br = read(0, buf, sizeof(buf) - 1);
         char *nl = strrchr(buf, '\n');
         if(nl) *nl = 0;
         buf[br] = 0;
@@ -59,8 +60,6 @@ int main(int argc, char *argv[])
             for(int i = 0; i < argc; ++i)
                 printf("%d: %s\n", i, argv[i]);
         }
-        else if(!strcmp(_argv[0], "mstat"))
-            malloc_stats();
         else if(!strcmp(_argv[0], "dir"))
         {
             char *name = _argc >= 2 ? _argv[1] : ".";

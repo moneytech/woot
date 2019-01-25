@@ -27,7 +27,9 @@ class SysCalls
     static long sys_readdir(long *args); // 89
     static long sys_munmap(long *args); // 91
     static long sys_stat(long *args); // 106
+    static long sys_fstat(long *args); // 108
     static long sys_fsync(long *args); // 118
+    static long sys_llseek(long *args); // 140
     static long sys_fdatasync(long *args); // 148
     static long sys_nanosleep(long *args); // 162
     static long sys_getcwd(long *args); // 183

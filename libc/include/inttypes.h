@@ -1,195 +1,257 @@
-#ifndef INTTYPES_H
-#define INTTYPES_H
+/* Format conversion of integer types <inttypes.h>
 
-#include <stdint.h>
+   This file is part of the Public Domain C Library (PDCLib).
+   Permission is granted to use, modify, and / or redistribute at will.
+*/
 
-#define PRId8       "hhd"
-#define PRId16      "hd"
-#define PRId32      "ld"
-#define PRId64      "lld"
-#define PRIdFAST8   "hhd"
-#define PRIdFAST16  "hd"
-#define PRIdFAST32  "ld"
-#define PRIdFAST64  "lld"
-#define PRIdLEAST8  "hhd"
-#define PRIdLEAST16 "hd"
-#define PRIdLEAST32 "ld"
-#define PRIdLEAST64 "lld"
-#define PRIdMAX     "lld"
-#define PRIdPTR     "lld"
-#define PRIi8       "hhi"
-#define PRIi16      "hi"
-#define PRIi32      "li"
-#define PRIi64      "lli"
-#define PRIiFAST8   "hhi"
-#define PRIiFAST16  "hi"
-#define PRIiFAST32  "li"
-#define PRIiFAST64  "lli"
-#define PRIiLEAST8  "hhi"
-#define PRIiLEAST16 "hi"
-#define PRIiLEAST32 "li"
-#define PRIiLEAST64 "lli"
-#define PRIiMAX     "lli"
-#define PRIiPTR     "lli"
-#define PRIo8       "hho"
-#define PRIo16      "ho"
-#define PRIo32      "lo"
-#define PRIo64      "llo"
-#define PRIoFAST8   "hho"
-#define PRIoFAST16  "ho"
-#define PRIoFAST32  "lo"
-#define PRIoFAST64  "llo"
-#define PRIoLEAST8  "hho"
-#define PRIoLEAST16 "ho"
-#define PRIoLEAST32 "lo"
-#define PRIoLEAST64 "llo"
-#define PRIoMAX     "llo"
-#define PRIoPTR     "llo"
-#define PRIu8       "hhu"
-#define PRIu16      "hu"
-#define PRIu32      "lu"
-#define PRIu64      "llu"
-#define PRIuFAST8   "hhu"
-#define PRIuFAST16  "hu"
-#define PRIuFAST32  "lu"
-#define PRIuFAST64  "llu"
-#define PRIuLEAST8  "hhu"
-#define PRIuLEAST16 "hu"
-#define PRIuLEAST32 "lu"
-#define PRIuLEAST64 "llu"
-#define PRIuMAX     "llu"
-#define PRIuPTR     "llu"
-#define PRIx8       "hhx"
-#define PRIx16      "hx"
-#define PRIx32      "lx"
-#define PRIx64      "llx"
-#define PRIxFAST8   "hhx"
-#define PRIxFAST16  "hx"
-#define PRIxFAST32  "lx"
-#define PRIxFAST64  "llx"
-#define PRIxLEAST8  "hhx"
-#define PRIxLEAST16 "hx"
-#define PRIxLEAST32 "lx"
-#define PRIxLEAST64 "llx"
-#define PRIxMAX     "llx"
-#define PRIxPTR     "llx"
-#define PRIX8       "hhX"
-#define PRIX16      "hX"
-#define PRIX32      "lX"
-#define PRIX64      "llX"
-#define PRIXFAST8   "hhX"
-#define PRIXFAST16  "hX"
-#define PRIXFAST32  "lX"
-#define PRIXFAST64  "llX"
-#define PRIXLEAST8  "hhX"
-#define PRIXLEAST16 "hX"
-#define PRIXLEAST32 "lX"
-#define PRIXLEAST64 "llX"
-#define PRIXMAX     "llX"
-#define PRIXPTR     "llX"
-
-#define SCNd8       "hhd"
-#define SCNd16      "hd"
-#define SCNd32      "ld"
-#define SCNd64      "lld"
-#define SCNdFAST8   "hhd"
-#define SCNdFAST16  "hd"
-#define SCNdFAST32  "ld"
-#define SCNdFAST64  "lld"
-#define SCNdLEAST8  "hhd"
-#define SCNdLEAST16 "hd"
-#define SCNdLEAST32 "ld"
-#define SCNdLEAST64 "lld"
-#define SCNdMAX     "lld"
-#define SCNdPTR     "lld"
-#define SCNi8       "hhi"
-#define SCNi16      "hi"
-#define SCNi32      "li"
-#define SCNi64      "lli"
-#define SCNiFAST8   "hhi"
-#define SCNiFAST16  "hi"
-#define SCNiFAST32  "li"
-#define SCNiFAST64  "lli"
-#define SCNiLEAST8  "hhi"
-#define SCNiLEAST16 "hi"
-#define SCNiLEAST32 "li"
-#define SCNiLEAST64 "lli"
-#define SCNiMAX     "lli"
-#define SCNiPTR     "lli"
-#define SCNo8       "hho"
-#define SCNo16      "ho"
-#define SCNo32      "lo"
-#define SCNo64      "llo"
-#define SCNoFAST8   "hho"
-#define SCNoFAST16  "ho"
-#define SCNoFAST32  "lo"
-#define SCNoFAST64  "llo"
-#define SCNoLEAST8  "hho"
-#define SCNoLEAST16 "ho"
-#define SCNoLEAST32 "lo"
-#define SCNoLEAST64 "llo"
-#define SCNoMAX     "llo"
-#define SCNoPTR     "llo"
-#define SCNu8       "hhu"
-#define SCNu16      "hu"
-#define SCNu32      "lu"
-#define SCNu64      "llu"
-#define SCNuFAST8   "hhu"
-#define SCNuFAST16  "hu"
-#define SCNuFAST32  "lu"
-#define SCNuFAST64  "llu"
-#define SCNuLEAST8  "hhu"
-#define SCNuLEAST16 "hu"
-#define SCNuLEAST32 "lu"
-#define SCNuLEAST64 "llu"
-#define SCNuMAX     "llu"
-#define SCNuPTR     "llu"
-#define SCNx8       "hhx"
-#define SCNx16      "hx"
-#define SCNx32      "lx"
-#define SCNx64      "llx"
-#define SCNxFAST8   "hhx"
-#define SCNxFAST16  "hx"
-#define SCNxFAST32  "lx"
-#define SCNxFAST64  "llx"
-#define SCNxLEAST8  "hhx"
-#define SCNxLEAST16 "hx"
-#define SCNxLEAST32 "lx"
-#define SCNxLEAST64 "llx"
-#define SCNxMAX     "llx"
-#define SCNxPTR     "llx"
-#define SCNX8       "hhX"
-#define SCNX16      "hX"
-#define SCNX32      "lX"
-#define SCNX64      "llX"
-#define SCNXFAST8   "hhX"
-#define SCNXFAST16  "hX"
-#define SCNXFAST32  "lX"
-#define SCNXFAST64  "llX"
-#define SCNXLEAST8  "hhX"
-#define SCNXLEAST16 "hX"
-#define SCNXLEAST32 "lX"
-#define SCNXLEAST64 "llX"
-#define SCNXMAX     "llX"
-#define SCNXPTR     "llX"
-
-typedef struct
-{
-    intmax_t quot, rem;
-} imaxdiv_t;
+#ifndef _PDCLIB_INTTYPES_H
+#define _PDCLIB_INTTYPES_H _PDCLIB_INTTYPES_H
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif
 
-intmax_t imaxabs(intmax_t n);
-imaxdiv_t imaxdiv(intmax_t n, intmax_t d);
+#include <stdint.h>
 
-intmax_t strtoimax(const char *str, char **endptr, int base);
-uintmax_t strtoumax(const char *str, char **endptr, int base);
+typedef struct _PDCLIB_imaxdiv_t imaxdiv_t;
+
+#define PRId8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, d ) )
+#define PRId16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, d ) )
+#define PRId32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, d ) )
+#define PRId64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, d ) )
+
+#define PRIdLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, d ) )
+#define PRIdLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, d ) )
+#define PRIdLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, d ) )
+#define PRIdLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, d ) )
+
+#define PRIdFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, d ) )
+#define PRIdFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, d ) )
+#define PRIdFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, d ) )
+#define PRIdFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, d ) )
+
+#define PRIdMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, d ) )
+#define PRIdPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, d ) )
+
+#define PRIi8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, i ) )
+#define PRIi16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, i ) )
+#define PRIi32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, i ) )
+#define PRIi64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, i ) )
+
+#define PRIiLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, i ) )
+#define PRIiLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, i ) )
+#define PRIiLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, i ) )
+#define PRIiLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, i ) )
+
+#define PRIiFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, i ) )
+#define PRIiFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, i ) )
+#define PRIiFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, i ) )
+#define PRIiFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, i ) )
+
+#define PRIiMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, i ) )
+#define PRIiPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, i ) )
+
+#define PRIo8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, o ) )
+#define PRIo16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, o ) )
+#define PRIo32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, o ) )
+#define PRIo64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, o ) )
+
+#define PRIoLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, o ) )
+#define PRIoLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, o ) )
+#define PRIoLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, o ) )
+#define PRIoLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, o ) )
+
+#define PRIoFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, o ) )
+#define PRIoFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, o ) )
+#define PRIoFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, o ) )
+#define PRIoFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, o ) )
+
+#define PRIoMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, o ) )
+#define PRIoPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, o ) )
+
+#define PRIu8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, u ) )
+#define PRIu16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, u ) )
+#define PRIu32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, u ) )
+#define PRIu64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, u ) )
+
+#define PRIuLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, u ) )
+#define PRIuLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, u ) )
+#define PRIuLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, u ) )
+#define PRIuLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, u ) )
+
+#define PRIuFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, u ) )
+#define PRIuFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, u ) )
+#define PRIuFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, u ) )
+#define PRIuFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, u ) )
+
+#define PRIuMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, u ) )
+#define PRIuPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, u ) )
+
+#define PRIx8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, x ) )
+#define PRIx16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, x ) )
+#define PRIx32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, x ) )
+#define PRIx64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, x ) )
+
+#define PRIxLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, x ) )
+#define PRIxLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, x ) )
+#define PRIxLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, x ) )
+#define PRIxLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, x ) )
+
+#define PRIxFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, x ) )
+#define PRIxFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, x ) )
+#define PRIxFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, x ) )
+#define PRIxFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, x ) )
+
+#define PRIxMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, x ) )
+#define PRIxPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, x ) )
+
+#define PRIX8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, X ) )
+#define PRIX16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, X ) )
+#define PRIX32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, X ) )
+#define PRIX64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, X ) )
+
+#define PRIXLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, X ) )
+#define PRIXLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, X ) )
+#define PRIXLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, X ) )
+#define PRIXLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, X ) )
+
+#define PRIXFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, X ) )
+#define PRIXFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, X ) )
+#define PRIXFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, X ) )
+#define PRIXFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, X ) )
+
+#define PRIXMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, X ) )
+#define PRIXPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, X ) )
+
+#define SCNd8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, d ) )
+#define SCNd16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, d ) )
+#define SCNd32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, d ) )
+#define SCNd64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, d ) )
+
+#define SCNdLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, d ) )
+#define SCNdLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, d ) )
+#define SCNdLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, d ) )
+#define SCNdLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, d ) )
+
+#define SCNdFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, d ) )
+#define SCNdFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, d ) )
+#define SCNdFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, d ) )
+#define SCNdFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, d ) )
+
+#define SCNdMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, d ) )
+#define SCNdPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, d ) )
+
+#define SCNi8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, i ) )
+#define SCNi16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, i ) )
+#define SCNi32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, i ) )
+#define SCNi64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, i ) )
+
+#define SCNiLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, i ) )
+#define SCNiLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, i ) )
+#define SCNiLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, i ) )
+#define SCNiLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, i ) )
+
+#define SCNiFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, i ) )
+#define SCNiFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, i ) )
+#define SCNiFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, i ) )
+#define SCNiFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, i ) )
+
+#define SCNiMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, i ) )
+#define SCNiPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, i ) )
+
+#define SCNo8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, o ) )
+#define SCNo16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, o ) )
+#define SCNo32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, o ) )
+#define SCNo64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, o ) )
+
+#define SCNoLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, o ) )
+#define SCNoLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, o ) )
+#define SCNoLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, o ) )
+#define SCNoLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, o ) )
+
+#define SCNoFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, o ) )
+#define SCNoFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, o ) )
+#define SCNoFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, o ) )
+#define SCNoFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, o ) )
+
+#define SCNoMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, o ) )
+#define SCNoPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, o ) )
+
+#define SCNu8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, u ) )
+#define SCNu16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, u ) )
+#define SCNu32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, u ) )
+#define SCNu64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, u ) )
+
+#define SCNuLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, u ) )
+#define SCNuLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, u ) )
+#define SCNuLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, u ) )
+#define SCNuLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, u ) )
+
+#define SCNuFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, u ) )
+#define SCNuFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, u ) )
+#define SCNuFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, u ) )
+#define SCNuFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, u ) )
+
+#define SCNuMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, u ) )
+#define SCNuPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, u ) )
+
+#define SCNx8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, x ) )
+#define SCNx16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, x ) )
+#define SCNx32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, x ) )
+#define SCNx64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, x ) )
+
+#define SCNxLEAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_8_CONV, x ) )
+#define SCNxLEAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_16_CONV, x ) )
+#define SCNxLEAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_32_CONV, x ) )
+#define SCNxLEAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_64_CONV, x ) )
+
+#define SCNxFAST8  _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST8_CONV, x ) )
+#define SCNxFAST16 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST16_CONV, x ) )
+#define SCNxFAST32 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST32_CONV, x ) )
+#define SCNxFAST64 _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_FAST64_CONV, x ) )
+
+#define SCNxMAX _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_MAX_CONV, x ) )
+#define SCNxPTR _PDCLIB_symbol2string( _PDCLIB_concat( _PDCLIB_PTR_CONV, x ) )
+
+/* 7.8.2 Functions for greatest-width integer types */
+
+/* Calculate the absolute value of j */
+intmax_t imaxabs( intmax_t j );
+
+/* Return quotient (quot) and remainder (rem) of an integer division in the
+   imaxdiv_t struct.
+*/
+imaxdiv_t imaxdiv( intmax_t numer, intmax_t denom );
+
+/* Seperate the character array nptr into three parts: A (possibly empty)
+   sequence of whitespace characters, a character representation of an integer
+   to the given base, and trailing invalid characters (including the terminating
+   null character). If base is 0, assume it to be 10, unless the integer
+   representation starts with 0x / 0X (setting base to 16) or 0 (setting base to
+   8). If given, base can be anything from 0 to 36, using the 26 letters of the
+   base alphabet (both lowercase and uppercase) as digits 10 through 35.
+   The integer representation is then converted into the return type of the
+   function. It can start with a '+' or '-' sign. If the sign is '-', the result
+   of the conversion is negated.
+   If the conversion is successful, the converted value is returned. If endptr
+   is not a NULL pointer, a pointer to the first trailing invalid character is
+   returned in *endptr.
+   If no conversion could be performed, zero is returned (and nptr in *endptr,
+   if endptr is not a NULL pointer). If the converted value does not fit into
+   the return type, the functions return INTMAX_MIN, INTMAX_MAX, or UINTMAX_MAX,
+   respectively, depending on the sign of the integer representation and the
+   return type, and errno is set to ERANGE.
+*/
+/* This function is equivalent to strtol() / strtoul() in <stdlib.h>, but on
+   the potentially larger type.
+*/
+intmax_t strtoimax( const char * _PDCLIB_restrict nptr, char * * _PDCLIB_restrict endptr, int base );
+uintmax_t strtoumax( const char * _PDCLIB_restrict nptr, char * * _PDCLIB_restrict endptr, int base );
+
+/* TODO: wcstoimax(), wcstoumax() */
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif
 
-#endif // INTTYPES_H
+#endif

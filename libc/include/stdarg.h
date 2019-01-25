@@ -1,10 +1,27 @@
-#ifndef STDARG_H
-#define STDARG_H
+/* Variable arguments <stdarg.h>
 
-#define va_start(ap, last) ap = ((char *)&(last)) + ((sizeof(last)+3)&~3)
-#define va_arg(ap, type) (ap += (sizeof(type)+3)&~3, *(type *)(ap - ((sizeof(type)+3)&~3)))
-#define va_copy(dest, src) (dest) = (src)
-#define va_end(ap)
-typedef char *va_list;
+   This file is part of the Public Domain C Library (PDCLib).
+   Permission is granted to use, modify, and / or redistribute at will.
+*/
 
-#endif // STDARG_H
+#ifndef _PDCLIB_STDARG_H
+#define _PDCLIB_STDARG_H _PDCLIB_STDARG_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "pdclib/_PDCLIB_config.h"
+
+typedef _PDCLIB_va_list va_list;
+
+#define va_arg( ap, type )    _PDCLIB_va_arg( ap, type )
+#define va_copy( dest, src )  _PDCLIB_va_copy( dest, src )
+#define va_end( ap )          _PDCLIB_va_end( ap )
+#define va_start( ap, parmN ) _PDCLIB_va_start( ap, parmN )
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

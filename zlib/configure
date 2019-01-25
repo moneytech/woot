@@ -4,9 +4,12 @@ mkdir -p build &&
 cd build &&
 rm -rf ./* &&
 DT_RUNPATH=`pwd`/libc \
-CC=clang \
+CC=woot-gcc \
 CFLAGS='-m32 -mno-sse -isystem ../../libc/include -nostdlib -L../../libc -lc' \
 LDFLAGS='-Wl,-nostdlib,-L../../libc,-rpath-link=../../libc,-soname=libz.so,-lc' \
 ../zlib-1.2.11/configure --prefix=$PWD/.. &&
 cd ..
+
+#CFLAGS='-m32 -mno-sse -isystem ../../libc/include -nostdlib -L../../libc -lc' \
+#LDFLAGS='-Wl,-nostdlib,-L../../libc,-rpath-link=../../libc,-soname=libz.so,-lc' \
 

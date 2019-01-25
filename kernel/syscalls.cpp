@@ -20,8 +20,11 @@
 #include <thread.h>
 #include <time.h>
 
-#undef TIME_H
-#include <../libc/include/time.h>
+struct timespec
+{
+    time_t tv_sec;
+    long tv_nsec;
+};
 
 #define NAME_MAX 255
 
@@ -90,9 +93,9 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 48 - 63
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 64 - 79
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_readdir, nullptr, sys_munmap, nullptr, nullptr, nullptr, nullptr, // 80 - 95
-    nullptr, nullptr, nullptr, nullptr, sys_stat, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 96 - 111
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_stat, nullptr, sys_fstat, nullptr, nullptr, nullptr, // 96 - 111
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_fsync, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 112 - 127
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 128 - 143
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_llseek, nullptr, nullptr, nullptr, // 128 - 143
     nullptr, nullptr, nullptr, nullptr, sys_fdatasync, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 144 - 159
     nullptr, nullptr, sys_nanosleep, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 160 - 175
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_getcwd, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 176 - 191
@@ -343,6 +346,35 @@ long SysCalls::sys_stat(long *args) // 106
     return 0;
 }
 
+long SysCalls::sys_fstat(long *args) // 108
+{
+    int fd = args[1];
+    stat *st = (stat *)args[2];
+    if(!st) return -EINVAL;
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    File *f = cp->GetFileDescriptor(fd);
+    if(!f) return -EBADF;
+    memset(st, 0, sizeof(stat));
+    if(!FileSystem::GlobalLock())
+        return -EBUSY;
+    DEntry *dentry = f->DEntry;
+    INode *inode = dentry->INode;
+    st->st_ino = inode->Number;
+    st->st_mode = inode->GetMode();
+    st->st_nlink = inode->GetLinkCount();
+    st->st_uid = inode->GetUID();
+    st->st_gid = inode->GetGID();
+    st->st_size = inode->GetSize();
+    st->st_blksize = 512;
+    st->st_blocks = align(st->st_size, st->st_blksize) / st->st_blksize;
+    st->st_atime = inode->GetAccessTime();
+    st->st_mtime = inode->GetModifyTime();
+    st->st_ctime = inode->GetCreateTime();
+    FileSystem::GlobalUnLock();
+    return 0;
+}
+
 long SysCalls::sys_fsync(long *args) // 118
 {
     Process *cp = Process::GetCurrent();
@@ -350,6 +382,24 @@ long SysCalls::sys_fsync(long *args) // 118
     File *f = cp->GetFileDescriptor(args[1]);
     if(!f) return -EBADF;
     //return f->Flush(); // Not implemented yet
+    return 0;
+}
+
+long SysCalls::sys_llseek(long *args) // 140
+{
+    int fd = args[1];
+    uint64_t offsH = args[2];
+    uint64_t offsL = args[3];
+    int64_t *result = (int64_t *)(uintptr_t)args[4];
+    int whence = args[5];
+
+    Process *cp = Process::GetCurrent();
+    if(!cp) return -ESRCH;
+    File *f = cp->GetFileDescriptor(fd);
+    if(!f) return -EBADF;
+    int64_t res = f->Seek(offsH << 32 | offsL, whence);
+    if(result) *result = res;
+    if(res < 0) return res;
     return 0;
 }
 

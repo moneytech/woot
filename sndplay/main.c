@@ -56,6 +56,9 @@ void ctrlDisplayOnPaint(struct uiControl *sender)
 
 int main(int argc, char *argv[])
 {
+    setbuf(stdin, NULL);
+    setbuf(stdout, NULL);
+    setbuf(stderr, NULL);
 
     if(argc < 2)
     {
@@ -86,6 +89,13 @@ int main(int argc, char *argv[])
         fclose(f);
         return -EINVAL;
     }
+
+    /*char b[1200];
+    fread(b, 1, 1000, f);
+    fread(b, 1, 1000, f);
+    fread(b, 1, 1000, f);
+    ungetc('m', f);
+    //ungetc('x', f);*/
 
     fseek(f, 4, SEEK_CUR);
     uint32_t wave = 0;
@@ -226,7 +236,12 @@ int main(int argc, char *argv[])
 
         if(context.Position != oldPos)
             fseek(f, 44 + context.Position * context.BytesPerSample, SEEK_SET);
-        res = fread(context.Buffer.Pointer, 1, frameSize, f);
+
+        int samplesToRead = context.TotalSamples - context.Position;
+        if(samplesToRead > context.BufferSamples) samplesToRead = context.BufferSamples;
+        int bytesToRead = context.BytesPerSample * samplesToRead;
+
+        res = fread(context.Buffer.Pointer, 1, bytesToRead, f);
         if(res < 0)
         {
             printf("Read error\n");

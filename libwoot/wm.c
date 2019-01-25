@@ -9,8 +9,6 @@
 #include <woot/ui.h>
 #include <woot/wm.h>
 
-#include <../internal/syscall.h>
-
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 

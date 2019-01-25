@@ -1,5 +1,7 @@
 ROOTDIR = $(shell pwd)
 
+THREADS = 8
+
 SUBDIRS = lib kernel libc libwoot ps2mouse simplefb cmi8738 es1371
 SUBDIRS += usertest calc clock wpaper sndplay
 
@@ -32,7 +34,7 @@ LD = ld
 AR = ar
 SED = sed
 
-COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -mno-sse -fpic -fshort-wchar
+COMMONFLAGS = -pipe -ggdb -m32 -fno-stack-protector -mno-sse -fpic -fshort-wchar -I libc/platform/woot/include
 COMMONFLAGS += -I. -I $(ROOTDIR)/include -nostdinc -ffreestanding -fno-builtin
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS) -fno-exceptions -fno-rtti -nostdinc++
@@ -55,7 +57,7 @@ all: $(CONFIGURE) add-exec subdirs
 
 subdirs:
 	for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir; \
+		$(MAKE) -j$(THREADS) -C $$dir; \
 	done
 
 clean:

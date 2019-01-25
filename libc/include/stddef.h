@@ -1,16 +1,36 @@
-#ifndef STDDEF_H
-#define STDDEF_H
+/* Common definitions <stddef.h>
 
-#include <sys/types.h>
+   This file is part of the Public Domain C Library (PDCLib).
+   Permission is granted to use, modify, and / or redistribute at will.
+*/
 
-#define NULL ((void *)0)
+#ifndef _PDCLIB_STDDEF_H
+#define _PDCLIB_STDDEF_H _PDCLIB_STDDEF_H
 
-#ifdef __GNUC__
-#define offsetof(st, m) __builtin_offsetof(st, m)
-#else
-#define offsetof(st, m) ((size_t)&(((st *)0)->m))
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-typedef long ptrdiff_t;
+#include "pdclib/_PDCLIB_int.h"
 
-#endif // STDDEF_H
+typedef _PDCLIB_ptrdiff_t ptrdiff_t;
+
+#ifndef _PDCLIB_SIZE_T_DEFINED
+#define _PDCLIB_SIZE_T_DEFINED _PDCLIB_SIZE_T_DEFINED
+typedef _PDCLIB_size_t size_t;
+#endif
+
+typedef _PDCLIB_wchar_t   wchar_t;
+
+#ifndef _PDCLIB_NULL_DEFINED
+#define _PDCLIB_NULL_DEFINED _PDCLIB_NULL_DEFINED
+#define NULL _PDCLIB_NULL
+#endif
+
+#define offsetof( type, member ) _PDCLIB_offsetof( type, member )
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

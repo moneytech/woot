@@ -4,8 +4,8 @@ mkdir -p build && \
 cd build && \
 rm -rf {,.[!.],..?}* && \
 CC='woot-gcc' \
-CFLAGS='-fno-stack-protector -nostdinc' \
-LDFLAGS='-Wl,-T../../user.ldscript' \
+CFLAGS='-fno-stack-protector -nostdinc -ggdb' \
+LDFLAGS='-Wl,-T../../user.ldscript,-Ttext=0x13450000' \
 ../freetype-2.9/configure \
 --prefix=`pwd`/.. \
 --host=i686-linux-gnu

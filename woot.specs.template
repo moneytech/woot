@@ -2,7 +2,7 @@
 --32
 
 *cc1_options:
--m32 -mno-sse -fPIC %{g*} -nostdinc -I<<ROOT_DIR>>/libc/include -I<<ROOT_DIR>>/libwoot/include -I<<ROOT_DIR>>/zlib/include -I<<ROOT_DIR>>/libpng/include -I<<ROOT_DIR>>/libfreetype/include/freetype2 -I<<ROOT_DIR>>/libgmp/include
+-m32 -mno-sse -fPIC %{g*} -nostdinc -I<<ROOT_DIR>>/libc/include -I<<ROOT_DIR>>/libc/platform/woot/include -I<<ROOT_DIR>>/libwoot/include -I<<ROOT_DIR>>/zlib/include -I<<ROOT_DIR>>/libpng/include -I<<ROOT_DIR>>/libfreetype/include/freetype2 -I<<ROOT_DIR>>/libgmp/include
 
 *startfile:
 %{!shared:<<ROOT_DIR>>/libc/crt0.o} %{static:<<ROOT_DIR>>/libc/crt0.o}

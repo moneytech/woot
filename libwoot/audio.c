@@ -1,8 +1,6 @@
 #include <woot/audio.h>
 #include <sys/syscall.h>
 
-#include <../internal/syscall.h>
-
 int auOpenDevice(int id, int rate, int channels, int bits, int samples)
 {
     return syscall5(SYS_audio_open, id, rate, channels, bits, samples);
