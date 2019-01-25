@@ -90,13 +90,6 @@ int main(int argc, char *argv[])
         return -EINVAL;
     }
 
-    /*char b[1200];
-    fread(b, 1, 1000, f);
-    fread(b, 1, 1000, f);
-    fread(b, 1, 1000, f);
-    ungetc('m', f);
-    //ungetc('x', f);*/
-
     fseek(f, 4, SEEK_CUR);
     uint32_t wave = 0;
     res = fread(&wave, 4, 1, f);

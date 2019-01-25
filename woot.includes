@@ -163,3 +163,228 @@ zlib/zlib-1.2.11/contrib/puff
 zlib/zlib-1.2.11/os400
 zlib/zlib-1.2.11/contrib/gcc_gvmat64
 zlib/zlib-1.2.11/old/os2
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Cocoa Application
+libsdl/SDL-1.2.15/src/video/directfb
+libsdl/SDL-1.2.15/docs/man3
+libsdl/SDL-1.2.15/src/loadso/mint
+libsdl/SDL-1.2.15/build-scripts
+libsdl/SDL-1.2.15/src/audio/esd
+libsdl/SDL-1.2.15/src/audio/baudio
+libsdl/SDL-1.2.15/src/audio/ums
+libsdl/SDL-1.2.15/src/joystick/bsd
+libsdl/SDL-1.2.15/src/video/wscons
+libsdl/SDL-1.2.15/VisualC/tests/testalpha
+libsdl/SDL-1.2.15/src/audio/dummy
+libsdl/SDL-1.2.15/VisualC
+libsdl/SDL-1.2.15/docs/images
+libsdl/SDL-1.2.15/src/video/ataricommon
+libsdl/SDL-1.2.15/src/cdrom/aix
+libsdl/SDL-1.2.15/include
+libsdl/SDL-1.2.15/VisualCE/testalpha
+libsdl/SDL-1.2.15/src/audio/nto
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Cocoa Application/SDLCocoaApp.xcodeproj
+libsdl/SDL-1.2.15/src/timer/symbian
+libsdl/SDL-1.2.15/docs/html
+libsdl/SDL-1.2.15/VisualCE/SDLMain
+libsdl/SDL-1.2.15/src/joystick
+libsdl/SDL-1.2.15/src/loadso/beos
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL OpenGL Application/English.lproj
+libsdl/SDL-1.2.15/src/audio/mint
+libsdl/SDL-1.2.15/src/audio/dsp
+libsdl/SDL-1.2.15/Xcode/XcodeDocSet
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL Cocoa Application/English.lproj
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL OpenGL Application/atlantis
+libsdl/SDL-1.2.15/src/hermes
+libsdl/SDL-1.2.15/src/main/dummy
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL Cocoa Application/___PROJECTNAME___.xcodeproj
+libsdl/SDL-1.2.15/src/audio/arts
+libsdl/SDL-1.2.15/src/cdrom/os2
+libsdl/SDL-1.2.15/src
+libsdl/SDL-1.2.15/src/video/gapi
+libsdl/SDL-1.2.15/VisualC/tests
+libsdl/SDL-1.2.15/src/video/ggi
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL OpenGL Application
+libsdl/SDL-1.2.15/src/thread
+libsdl/SDL-1.2.15/src/timer/riscos
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL OpenGL Application/___PROJECTNAME___.xcodeproj
+libsdl/SDL-1.2.15/src/thread/pthread
+libsdl/SDL-1.2.15/src/video/ps3
+libsdl/SDL-1.2.15/src/cdrom/qnx
+libsdl/SDL-1.2.15/src/cpuinfo
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL OpenGL Application/English.lproj
+libsdl/SDL-1.2.15/src/video/os2fslib
+libsdl/SDL-1.2.15/VisualC/tests/testjoystick
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL OpenGL Application/atlantis
+libsdl/SDL-1.2.15/VisualC/SDLmain
+libsdl/SDL-1.2.15/src/video/windib
+libsdl/SDL-1.2.15/Xcode/SDLTest
+libsdl/SDL-1.2.15/src/loadso/os2
+libsdl/SDL-1.2.15/src/cdrom/win32
+libsdl/SDL-1.2.15/src/main/symbian/EKA1
+libsdl/SDL-1.2.15/VisualC/tests/testwm
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Cocoa Application/English.lproj/SDLMain.nib
+libsdl/SDL-1.2.15/src/timer/beos
+libsdl/SDL-1.2.15/src/loadso/macos
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL OpenGL Application/atlantis
+libsdl/SDL-1.2.15/src/main/win32
+libsdl/SDL-1.2.15/src/thread/win32
+libsdl/SDL-1.2.15/src/joystick/darwin
+libsdl/SDL-1.2.15/src/video/caca
+libsdl/SDL-1.2.15/src/timer/macos
+libsdl/SDL-1.2.15/src/video/riscos
+libsdl/SDL-1.2.15/src/cdrom/beos
+libsdl/SDL-1.2.15/test
+libsdl/SDL-1.2.15/src/video/ps3/spulibs
+libsdl/SDL-1.2.15/src/video/dc
+libsdl/SDL-1.2.15/src/video/wincommon
+libsdl/SDL-1.2.15/src/video/Xext/Xinerama
+libsdl/SDL-1.2.15/src/video
+libsdl/SDL-1.2.15/src/audio/dmedia
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL OpenGL Application
+libsdl/SDL-1.2.15/src/video/dummy
+libsdl/SDL-1.2.15/Xcode/SDL/SDL.xcodeproj
+libsdl/SDL-1.2.15/src/thread/riscos
+libsdl/SDL-1.2.15/src/video/fbcon
+libsdl/SDL-1.2.15/VisualCE/SDL
+libsdl/SDL-1.2.15/src/audio/dart
+libsdl/SDL-1.2.15/src/cdrom
+libsdl/SDL-1.2.15/Xcode/SDL/pkg-support/resources
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL Application
+libsdl/SDL-1.2.15/src/joystick/mint
+libsdl/SDL-1.2.15/src/video/symbian/EKA1
+libsdl/SDL-1.2.15/src/video/symbian/EKA2
+libsdl/SDL-1.2.15/src/joystick/nds
+libsdl/SDL-1.2.15/src/video/quartz
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL Cocoa Application/English.lproj/SDLMain.nib
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL Application/English.lproj
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Application/English.lproj
+libsdl/SDL-1.2.15/src/joystick/dc
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL Cocoa Application
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL Application/___PROJECTNAME___.xcodeproj
+libsdl/SDL-1.2.15/src/video/svga
+libsdl/SDL-1.2.15/src/video/windx5
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL Cocoa Application/English.lproj/SDLMain.nib
+libsdl/SDL-1.2.15/src/timer/wince
+libsdl/SDL-1.2.15/src/video/dga
+libsdl/SDL-1.2.15/src/video/Xext/extensions
+libsdl/SDL-1.2.15/src/audio
+libsdl/SDL-1.2.15/src/thread/dc
+libsdl
+libsdl/SDL-1.2.15/src/audio/macrom
+libsdl/SDL-1.2.15/src/cdrom/osf
+libsdl/SDL-1.2.15/Xcode
+libsdl/SDL-1.2.15/src/video/gem
+libsdl/SDL-1.2.15/src/audio/sun
+libsdl/SDL-1.2.15/src/audio/dc
+libsdl/SDL-1.2.15/src/timer/mint
+libsdl/SDL-1.2.15/src/video/ipod
+libsdl/SDL-1.2.15/src/main/macosx
+libsdl/SDL-1.2.15/src/timer/dummy
+libsdl/SDL-1.2.15/src/audio/nas
+libsdl/SDL-1.2.15/src/audio/macosx
+libsdl/SDL-1.2.15/src/audio/nds
+libsdl/SDL-1.2.15/src/video/Xext/Xv
+libsdl/SDL-1.2.15/src/thread/pth
+libsdl/SDL-1.2.15/src/cdrom/bsdi
+libsdl/SDL-1.2.15/src/loadso/dummy
+libsdl/SDL-1.2.15/src/joystick/linux
+libsdl/SDL-1.2.15/src/audio/symbian
+libsdl/SDL-1.2.15/src/thread/generic
+libsdl/SDL-1.2.15/src/audio/bsd
+libsdl/SDL-1.2.15/src/video/macdsp
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL Application/English.lproj
+libsdl/SDL-1.2.15/src/timer/nds
+libsdl/SDL-1.2.15/src/joystick/beos
+libsdl/SDL-1.2.15/src/video/Xext
+libsdl/SDL-1.2.15/src/cdrom/dc
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL Cocoa Application/English.lproj
+libsdl/SDL-1.2.15/src/cdrom/macosx
+libsdl/SDL-1.2.15/VisualC/tests/loopwave
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL Application/___PROJECTNAME___.xcodeproj
+libsdl/SDL-1.2.15/src/main/qtopia
+libsdl/SDL-1.2.15/VisualC/SDL
+libsdl/SDL-1.2.15/src/thread/os2
+libsdl/SDL-1.2.15/src/main/macosx/SDLMain.nib
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL Cocoa Application
+libsdl/SDL-1.2.15/src/main/beos
+libsdl/SDL-1.2.15/src/loadso/win32
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL Cocoa Application/___PROJECTNAME___.xcodeproj
+libsdl/SDL-1.2.15/src/video/photon
+libsdl/SDL-1.2.15/src/file
+libsdl/SDL-1.2.15/src/audio/paudio
+libsdl/SDL-1.2.15/src/loadso/dlopen
+libsdl/SDL-1.2.15/src/video/nanox
+libsdl/SDL-1.2.15/src/video/vgl
+libsdl/SDL-1.2.15/VisualC/tests/graywin
+libsdl/SDL-1.2.15/Xcode/SDL
+libsdl/SDL-1.2.15/src/cdrom/linux
+libsdl/SDL-1.2.15/src/video/Xext/Xxf86dga
+libsdl/SDL-1.2.15/src/timer/unix
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL OpenGL Application/SDLOpenGLApp.xcodeproj
+libsdl/SDL-1.2.15/src/video/x11
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Application
+libsdl/SDL-1.2.15/src/thread/irix
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Application/SDLApp.xcodeproj
+libsdl/SDL-1.2.15/src/cdrom/openbsd
+libsdl/SDL-1.2.15/src/audio/windx5
+libsdl/SDL-1.2.15/src/main/macos
+libsdl/SDL-1.2.15/src/cdrom/freebsd
+libsdl/SDL-1.2.15/Xcode/SDLTest/SDLTest.xcodeproj
+libsdl/SDL-1.2.15/src/timer/os2
+libsdl/SDL-1.2.15/VisualC/tests/testgl
+libsdl/SDL-1.2.15/VisualCE/loopwave
+libsdl/SDL-1.2.15/src/video/xbios
+libsdl/SDL-1.2.15/VisualCE/testwin
+libsdl/SDL-1.2.15/src/cdrom/dummy
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL OpenGL Application
+libsdl/SDL-1.2.15/src/stdlib
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL OpenGL Application/English.lproj
+libsdl/SDL-1.2.15/src/video/symbian
+libsdl/SDL-1.2.15/src/video/picogui
+libsdl/SDL-1.2.15/src/audio/dma
+libsdl/SDL-1.2.15/src/joystick/win32
+libsdl/SDL-1.2.15/src/events
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL Application
+libsdl/SDL-1.2.15/src/video/bwindow
+libsdl/SDL-1.2.15/src/video/nds
+libsdl/SDL-1.2.15
+libsdl/SDL-1.2.15/src/joystick/riscos
+libsdl/SDL-1.2.15/VisualC/tests/testgamma
+libsdl/SDL-1.2.15/VisualC/tests/testplatform
+libsdl/SDL-1.2.15/src/timer/win32
+libsdl/SDL-1.2.15/VisualC/tests/testvidinfo
+libsdl/SDL-1.2.15/src/loadso/macosx
+libsdl/SDL-1.2.15/src/main/symbian/EKA2
+libsdl/SDL-1.2.15/src/audio/pulse
+libsdl/SDL-1.2.15/src/video/macrom
+libsdl/SDL-1.2.15/src/joystick/dummy
+libsdl/SDL-1.2.15/src/video/aalib
+libsdl/SDL-1.2.15/src/audio/windib
+libsdl/SDL-1.2.15/src/thread/beos
+libsdl/SDL-1.2.15/VisualC/tests/testfile
+libsdl/SDL-1.2.15/VisualCE
+libsdl/SDL-1.2.15/src/audio/mme
+libsdl/SDL-1.2.15/VisualC/tests/testwin
+libsdl/SDL-1.2.15/src/video/ps2gs
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Cocoa Application/English.lproj
+libsdl/SDL-1.2.15/src/audio/alsa
+libsdl/SDL-1.2.15/src/video/woot
+libsdl/SDL-1.2.15/acinclude
+libsdl/SDL-1.2.15/VisualC/tests/testpalette
+libsdl/SDL-1.2.15/docs
+libsdl/SDL-1.2.15/Xcode/SDL/pkg-support
+libsdl/SDL-1.2.15/src/video/Xext/XME
+libsdl/SDL-1.2.15/src/main/macos/exports
+libsdl/SDL-1.2.15/src/timer/dc
+libsdl/SDL-1.2.15/src/cdrom/macos
+libsdl/SDL-1.2.15/VisualCE/testtimer
+libsdl/SDL-1.2.15/src/video/qtopia
+libsdl/SDL-1.2.15/src/audio/disk
+libsdl/SDL-1.2.15/src/timer
+libsdl/SDL-1.2.15/src/cdrom/mint
+libsdl/SDL-1.2.15/src/thread/symbian
+libsdl/SDL-1.2.15/src/video/maccommon
+libsdl/SDL-1.2.15/Xcode/SDL/pkg-support/devel-resources
+libsdl/SDL-1.2.15/src/joystick/macos
+libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL OpenGL Application/___PROJECTNAME___.xcodeproj
+libsdl/SDL-1.2.15/src/video/Xext/Xxf86vm
