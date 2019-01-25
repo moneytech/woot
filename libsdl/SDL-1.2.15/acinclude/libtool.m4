@@ -1511,7 +1511,7 @@ AC_CACHE_VAL([lt_cv_sys_max_cmd_len], [dnl
     lt_cv_sys_max_cmd_len=12288;    # 12K is about right
     ;;
 
-  gnu*)
+  gnu* | woot*)
     # Under GNU Hurd, this test is not required because there is
     # no limit to the length of command line arguments.
     # Libtool will interpret -1 as no limit whatsoever
@@ -2344,7 +2344,7 @@ freebsd* | dragonfly*)
   esac
   ;;
 
-gnu*)
+gnu* | woot*)
   version_type=linux
   need_lib_prefix=no
   need_version=no
@@ -3046,7 +3046,7 @@ freebsd* | dragonfly*)
   fi
   ;;
 
-gnu*)
+gnu* | woot*)
   lt_cv_deplibs_check_method=pass_all
   ;;
 
@@ -4370,7 +4370,7 @@ _LT_EOF
       _LT_TAGVAR(archive_expsym_cmds, $1)='sed "s,^,_," $export_symbols >$output_objdir/$soname.expsym~$CC -shared $pic_flag $libobjs $deplibs $compiler_flags ${wl}-h,$soname ${wl}--retain-symbols-file,$output_objdir/$soname.expsym ${wl}--image-base,`expr ${RANDOM-$$} % 4096 / 2 \* 262144 + 1342177280` -o $lib'
       ;;
 
-    gnu* | linux* | tpf* | k*bsd*-gnu)
+    gnu* | woot* | linux* | tpf* | k*bsd*-gnu)
       tmp_diet=no
       if test "$host_os" = linux-dietlibc; then
 	case $cc_basename in
@@ -5694,7 +5694,7 @@ if test "$_lt_caught_CXX_error" != yes; then
         _LT_TAGVAR(ld_shlibs, $1)=yes
         ;;
 
-      gnu*)
+      gnu* | woot*)
         ;;
 
       hpux9*)
