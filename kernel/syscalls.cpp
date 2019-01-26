@@ -118,7 +118,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 448 - 463
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 464 - 479
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 480 - 495
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr  // 496 - 511
+    nullptr, nullptr, nullptr, nullptr, sys_redraw_screen, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr  // 496 - 511
 };
 
 bool SysCalls::isr(Ints::State *state, void *context)
@@ -806,6 +806,11 @@ long SysCalls::sys_audio_get_device_model(long *args) // 412
     AudioDevice::UnLock();
 
     return 0;
+}
+
+long SysCalls::sys_redraw_screen(long *args) // 500
+{
+    WindowManager::RedrawWindow(0);
 }
 
 void SysCalls::Initialize()

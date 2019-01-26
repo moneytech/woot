@@ -403,6 +403,7 @@
 #define SYS_set_drag_rect           401
 #define SYS_get_event               402
 #define SYS_peek_event              403
+
 #define SYS_audio_open              404
 #define SYS_audio_close             405
 #define SYS_audio_get_frame_size    406
@@ -412,6 +413,8 @@
 #define SYS_audio_get_buffer_count  410
 #define SYS_audio_get_device_vendor 411
 #define SYS_audio_get_device_model  412
+
+#define SYS_redraw_screen           500
 
 #ifdef __cplusplus
 extern "C" {

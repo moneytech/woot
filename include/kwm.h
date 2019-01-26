@@ -157,6 +157,7 @@ private:
     Rectangle desktopRect;
     bool drag;
     Point dragPoint;
+    bool switchModifier;
 
     static int inputThread(uintptr_t arg);
     WindowManager(FrameBuffer *fb);

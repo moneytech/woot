@@ -27,6 +27,7 @@ struct wmWindow
     struct pmPixMap *ClientArea;
     struct wmRectangle ClientRectangle;
     struct uiControl *TitleBar;
+    struct uiLabel *TitleLabel;
     struct uiControl *RootControl;
 };
 
@@ -34,6 +35,8 @@ struct wmWindow
 #define ET_OTHER    1
 #define ET_KEYBOARD 2
 #define ET_MOUSE    3
+
+#define ET_KB_RELEASED 1
 
 struct wmEvent
 {
@@ -68,8 +71,12 @@ int wmRectangleContainsPoint(struct wmRectangle *rect, int x, int y);
 // TODO: Cleanup this mess
 
 int wmInitialize();
+int wmRedrawScreen();
 void wmGetDesktopWindow(struct wmWindow *window);
+int wmGetDecoratedWidth(int clientWidth);
+int wmGetDecoratedHeight(int clientHeight);
 struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char *title, int decorate);
+int wmSetTitle(struct wmWindow *window, const char *title);
 int wmShowWindow(struct wmWindow *window);
 int wmHideWindow(int window);
 int wmDestroyWindow(int window);

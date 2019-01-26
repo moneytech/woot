@@ -76,6 +76,7 @@ iso: all
 	mkdir -p $(ISODIR)/system
 	cp $(MODULES) $(ISODIR)/system
 	cp $(DISTFILES) $(ISODIR)
+	cp libsdl/lib/libSDL-1.2.so.0 $(ISODIR)/libSDL-1.2.so
 	grub-mkrescue -o $(ISOFILE) $(ISODIR) -- --volid WOOT_OS 2>&1
 
 # recreates empty hdd image from archive (in case it gets borked)
@@ -110,6 +111,7 @@ hdd.img: all
 	-sudo mkdir -p $(MOUNTPOINT)/system
 	-sudo cp $(MODULES) $(MOUNTPOINT)/system
 	-sudo cp $(DISTFILES) $(MOUNTPOINT)
+	-sudo cp libsdl/lib/libSDL-1.2.so.0 $(MOUNTPOINT)/libSDL-1.2.so
 	sudo umount $(MOUNTPOINT)
 	sudo losetup -d /dev/loop1
 

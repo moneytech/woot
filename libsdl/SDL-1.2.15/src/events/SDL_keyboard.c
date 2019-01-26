@@ -396,7 +396,7 @@ char *SDL_GetKeyName(SDLKey key)
 }
 
 /* These are global for SDL_eventloop.c */
-int SDL_PrivateKeyboard(Uint8 state, SDL_keysym *keysym)
+int     SDL_PrivateKeyboard(Uint8 state, SDL_keysym *keysym)
 {
 	SDL_Event event;
 	int posted, repeatable;

@@ -2,7 +2,7 @@
 --32
 
 *cc1_options:
--m32 -D__WOOT__ -mno-sse -fPIC %{g*} -nostdinc -I<<ROOT_DIR>>/libc/include -I<<ROOT_DIR>>/libc/platform/woot/include -I<<ROOT_DIR>>/libwoot/include -I<<ROOT_DIR>>/zlib/include -I<<ROOT_DIR>>/libpng/include -I<<ROOT_DIR>>/libfreetype/include/freetype2 -I<<ROOT_DIR>>/libgmp/include
+-m32 -D__WOOT__ -mno-sse -fPIC %{g*} -nostdinc -I<<ROOT_DIR>>/libc/include -I<<ROOT_DIR>>/libc/platform/woot/include -I<<ROOT_DIR>>/libwoot/include -I<<ROOT_DIR>>/zlib/include -I<<ROOT_DIR>>/libpng/include -I<<ROOT_DIR>>/libfreetype/include/freetype2 -I<<ROOT_DIR>>/libgmp/include -I<<ROOT_DIR>>/libsdl/include
 
 *startfile:
 %{!shared:<<ROOT_DIR>>/libc/crt0.o} %{static:<<ROOT_DIR>>/libc/crt0.o}
@@ -17,7 +17,7 @@
 ld
 
 *link:
--melf_i386 %{shared:-shared -Bsymbolic} %{!shared:-lc} -L<<ROOT_DIR>>/libc -rpath-link=<<ROOT_DIR>>/libc -L<<ROOT_DIR>>/libwoot -rpath-link=<<ROOT_DIR>>/libwoot -L<<ROOT_DIR>>/zlib/lib -rpath-link=<<ROOT_DIR>>/zlib/lib -L<<ROOT_DIR>>/libpng/lib -rpath-link=<<ROOT_DIR>>/libpng/lib -L<<ROOT_DIR>>/libfreetype/lib -rpath-link=<<ROOT_DIR>>/libfreetype/lib -L<<ROOT_DIR>>/libgmp/lib -rpath-link=<<ROOT_DIR>>/libgmp/lib
+-melf_i386 %{shared:-shared -Bsymbolic} %{!shared:-lc} -L<<ROOT_DIR>>/libc -rpath-link=<<ROOT_DIR>>/libc -L<<ROOT_DIR>>/libwoot -rpath-link=<<ROOT_DIR>>/libwoot -L<<ROOT_DIR>>/zlib/lib -rpath-link=<<ROOT_DIR>>/zlib/lib -L<<ROOT_DIR>>/libpng/lib -rpath-link=<<ROOT_DIR>>/libpng/lib -L<<ROOT_DIR>>/libfreetype/lib -rpath-link=<<ROOT_DIR>>/libfreetype/lib -L<<ROOT_DIR>>/libgmp/lib -rpath-link=<<ROOT_DIR>>/libgmp/lib -L<<ROOT_DIR>>/libsdl/lib -rpath-link=<<ROOT_DIR>>/libsdl/lib
 
 *link_command:
 %{!c:%(linker) %(link) %o %{!nostdlib:%{!nostartfiles:%S}} %{o*}}

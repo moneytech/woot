@@ -6,7 +6,7 @@ COMMONFLAGS = -ggdb -fno-stack-protector
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS)
 LDFLAGS =
-LIBS = -lc -lwoot -lz -lpng -lfreetype
+LIBS = -lc -lwoot -lz -lpng -lfreetype -lSDL
 
 all: $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $(OUTFILE) $(LIBS)

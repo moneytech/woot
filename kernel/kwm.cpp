@@ -65,7 +65,7 @@ int WindowManager::inputThread(uintptr_t arg)
                         }
                     }
                     if(mWnd && mWnd->ID != WM->activeWindowId)
-                    {
+                    {   // move focus to another window
                         inhibitEvent = true;
                         WM->activeWindowId = mWnd->ID;
                         BringWindowToFront_nolock(mWnd->ID);
@@ -108,7 +108,33 @@ int WindowManager::inputThread(uintptr_t arg)
             }
         }
         else if(event.DeviceType == InputDevice::Type::Keyboard)
-            PutEvent(WM->activeWindowId, event);
+        {
+            bool inhibitEvent = false;
+
+            // simple alt+tab implementation
+            if(event.Keyboard.Key == VirtualKey::LMenu || event.Keyboard.Key == VirtualKey::RMenu)
+                WM->switchModifier = !event.Keyboard.Release;
+            if(WM->switchModifier && event.Keyboard.Key == VirtualKey::Tab && event.Keyboard.Release)
+            {
+                Window *prev = nullptr;
+                for(Window *wnd : WM->windows)
+                {
+                    if(wnd->ID == WM->activeWindowId || wnd->ID == WM->mouseWndId)
+                        break;
+                    prev = wnd;
+                }
+                if(prev && prev->ID)
+                {
+                    inhibitEvent = true;
+                    WM->activeWindowId = prev->ID;
+                    BringWindowToFront_nolock(prev->ID);
+                }
+            }
+
+            // pass event to the window
+            if(!inhibitEvent)
+                PutEvent(WM->activeWindowId, event);
+        }
     }
 }
 

@@ -424,6 +424,11 @@ void pmRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union pmCo
     pmVLine(pixMap, x2, y, y2, c);
 }
 
+void pmRectangleRect(struct pmPixMap *pixMap, struct wmRectangle rect, union pmColor c)
+{
+    pmRectangle(pixMap, rect.X, rect.Y, rect.Width, rect.Height, c);
+}
+
 void pmFillRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union pmColor c)
 {
     if(w <= 0 || h <= 0)
@@ -615,10 +620,21 @@ void pmInvalidateRect(struct pmPixMap *pixMap, struct wmRectangle rect)
     pixMap->Dirty = wmRectangleAdd(pixMap->Dirty, rect);
 }
 
+void pmInvalidateWhole(struct pmPixMap *pixMap)
+{
+    pixMap->Dirty = pixMap->Contents;
+}
+
 struct wmRectangle pmGetDirtyRectangle(struct pmPixMap *pixMap)
 {
     if(!pixMap) return wmRectangleEmpty;
     return pixMap->Dirty;
+}
+
+struct wmRectangle pmGetAndClearDirtyRectangle(struct pmPixMap *pixMap)
+{
+    struct wmRectangle dirty = pmGetDirtyRectangle(pixMap);
+    pmClearDirty(pixMap);
 }
 
 void pmClearDirty(struct pmPixMap *pixMap)

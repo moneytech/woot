@@ -63,6 +63,8 @@ class SysCalls
     static long sys_audio_get_buffer_count(long *args); // 410
     static long sys_audio_get_device_vendor(long *args); // 411
     static long sys_audio_get_device_model(long *args); // 412
+
+    static long sys_redraw_screen(long *args); // 500
 public:
     static void Initialize();
     static void Cleanup();

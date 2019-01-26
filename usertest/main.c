@@ -17,6 +17,8 @@
 #include <zlib.h>
 #include <png.h>
 
+#include <SDL/SDL.h>
+
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
@@ -59,6 +61,47 @@ int main(int argc, char *argv[])
         {
             for(int i = 0; i < argc; ++i)
                 printf("%d: %s\n", i, argv[i]);
+        }
+        else if(!strcmp(_argv[0], "sdl"))
+        {
+            SDL_Init(0);
+            SDL_Surface *surf = SDL_SetVideoMode(640, 480, 32, 0);
+            uint8_t *pixels = (uint8_t *)surf->pixels;
+            uint32_t color = 0;
+            if(surf)
+            {
+                SDL_Event event;
+                while(SDL_WaitEvent(&event) >= 0)
+                {
+                    int quit = 0;
+                    switch(event.type)
+                    {
+                    case SDL_QUIT:
+                        quit = 1;
+                        break;
+                    case SDL_KEYDOWN:
+                        switch(event.key.keysym.sym)
+                        {
+                        case SDLK_ESCAPE:
+                            quit = 1;
+                            break;
+                        case SDLK_SPACE:
+                            color = rand() ^ (rand() << 10) ^ (rand() << 20);
+                            for(int y = 0; y < surf->h; ++y)
+                            {
+                                uint32_t *line = (uint32_t *)(pixels + y * surf->pitch);
+                                for(int x = 0; x < surf->w; ++x)
+                                    line[x] = x ^ y + color;
+                            }
+                            break;
+                        }
+                        break;
+                    }
+                    if(quit) break;
+                    SDL_Flip(surf);
+                }
+            } else printf("error: %s\n", SDL_GetError());
+            SDL_Quit();
         }
         else if(!strcmp(_argv[0], "dir"))
         {

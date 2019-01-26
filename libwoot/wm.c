@@ -74,9 +74,24 @@ int wmInitialize()
     return 0;
 }
 
+int wmRedrawScreen()
+{
+    return syscall0(SYS_redraw_screen);
+}
+
 void wmGetDesktopWindow(struct wmWindow *window)
 {
     memset(window, 0, sizeof(struct wmWindow));
+}
+
+int wmGetDecoratedWidth(int clientWidth)
+{
+    return clientWidth + 4;
+}
+
+int wmGetDecoratedHeight(int clientHeight)
+{
+    return clientHeight + 28;
 }
 
 struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char *title, int decorate)
@@ -135,11 +150,11 @@ struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char 
         {
             uiControlSetBackColor(wnd->TitleBar, pmColorBlue);
             titleRect.Width -= 24;
-            struct uiLabel *label = uiLabelCreate(wnd->TitleBar, 0, 0, titleRect.Width, titleRect.Height, wnd->Name, titleFont, NULL);
-            if(label)
+            wnd->TitleLabel = uiLabelCreate(wnd->TitleBar, 0, 0, titleRect.Width, titleRect.Height, wnd->Name, titleFont, NULL);
+            if(wnd->TitleLabel)
             {
-                uiControlSetTextColor((struct uiControl *)label, pmColorWhite);
-                uiControlSetBackColor((struct uiControl *)label, pmColorBlue);
+                uiControlSetTextColor((struct uiControl *)wnd->TitleLabel, pmColorWhite);
+                uiControlSetBackColor((struct uiControl *)wnd->TitleLabel, pmColorBlue);
             }
             struct uiButton *closeButton = uiButtonCreate(wnd->TitleBar, titleRect.X + titleRect.Width + 3, 4, 24 - 8, titleRect.Height - 8, "X", titleFont, NULL);
             uiControlSetBackColor((struct uiControl *)closeButton, pmColorGray);
@@ -161,9 +176,20 @@ struct wmWindow *wmCreateWindow(int x, int y, int width, int height, const char 
     return wnd;
 }
 
+int wmSetTitle(struct wmWindow *window, const char *title)
+{
+    if(!window || !title || !window->TitleLabel)
+        return -EINVAL;
+    uiControlSetText((struct uiControl *)window->TitleLabel, title);
+    uiControlRedraw((struct uiControl *)window->TitleLabel);
+    wmUpdateWindow(window);
+    return 0;
+}
+
 int wmShowWindow(struct wmWindow *window)
 {
-    return syscall1(SYS_show_window, window->ID);
+    int res = syscall1(SYS_show_window, window->ID);
+    if(res < 0) return res;
 }
 
 int wmHideWindow(int window)
@@ -196,6 +222,7 @@ int wmUpdateWindow(struct wmWindow *window)
 
 int wmRedrawWindow(struct wmWindow *window)
 {
+    pmClearDirty(window->Contents);
     return syscall1(SYS_redraw_window, window->ID);
 }
 

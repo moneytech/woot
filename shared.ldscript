@@ -5,4 +5,5 @@ SECTIONS
     .rodata : { *(.rodata*) }
     .dynamic : { *(.dynamic*) }
     .bss : { *(.bss*) *(COMMON) }
+    end = .;
 }

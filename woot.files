@@ -1284,7 +1284,10 @@ libsdl/SDL-1.2.15/src/video/windx5/SDL_dx5video.h
 libsdl/SDL-1.2.15/src/video/windx5/SDL_dx5yuv.c
 libsdl/SDL-1.2.15/src/video/windx5/SDL_dx5yuv_c.h
 libsdl/SDL-1.2.15/src/video/windx5/directx.h
+libsdl/SDL-1.2.15/src/video/woot/SDL_wootEvents.c
+libsdl/SDL-1.2.15/src/video/woot/SDL_wootEvents.h
 libsdl/SDL-1.2.15/src/video/woot/SDL_wootVideo.c
+libsdl/SDL-1.2.15/src/video/woot/SDL_wootVideo.h
 libsdl/SDL-1.2.15/src/video/wscons/SDL_wsconsevents.c
 libsdl/SDL-1.2.15/src/video/wscons/SDL_wsconsevents_c.h
 libsdl/SDL-1.2.15/src/video/wscons/SDL_wsconsmouse.c

@@ -69,6 +69,7 @@ void pmVLine(struct pmPixMap *pixMap, int x, int y1, int y2, union pmColor c);
 void pmVFlip(struct pmPixMap *pixMap);
 void pmLine(struct pmPixMap *pixMap, int x1, int y1, int x2, int y2, union pmColor c);
 void pmRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union pmColor c);
+void pmRectangleRect(struct pmPixMap *pixMap, struct wmRectangle rect, union pmColor c);
 void pmFillRectangle(struct pmPixMap *pixMap, int x, int y, int w, int h, union pmColor c);
 void pmClear(struct pmPixMap *pixMap, union pmColor color);
 void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, int y, int w, int h);
@@ -76,7 +77,9 @@ void pmAlphaBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int
 void pmDrawFrame(struct pmPixMap *pixMap, int x, int y, int w, int h, int sunken);
 void pmInvalidate(struct pmPixMap *pixMap, int x, int y, int w, int h);
 void pmInvalidateRect(struct pmPixMap *pixMap, struct wmRectangle rect);
+void pmInvalidateWhole(struct pmPixMap *pixMap);
 struct wmRectangle pmGetDirtyRectangle(struct pmPixMap *pixMap);
+struct wmRectangle pmGetAndClearDirtyRectangle(struct pmPixMap *pixMap);
 void pmClearDirty(struct pmPixMap *pixMap);
 void pmDelete(struct pmPixMap *pixMap);
 
