@@ -677,3 +677,4 @@ libc/newlib-2.5.0/newlib/libc/machine/arm/machine
 libc/newlib-2.5.0/newlib/libc/machine/cr16
 libc/newlib-2.5.0/newlib/libc/machine/powerpc/machine
 libc/newlib-2.5.0/newlib/libc/locale
+libc/newlib-2.5.0/newlib/libc/sys/woot

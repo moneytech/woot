@@ -562,6 +562,9 @@ case "${host}" in
   w65-*-*)
 	sys_dir=w65
 	;;
+  woot*)
+    sys_dir=woot
+    ;;
   z8k-*-coff)
 	sys_dir=z8ksim
 	;;
