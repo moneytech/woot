@@ -1,0 +1,12 @@
+#!/bin/sh
+
+rm -rf build && \
+mkdir build && \
+CC='woot-gcc' \
+CFLAGS='-m32 -fno-stack-protector -nostartfiles -ggdb' \
+newlib-2.5.0/configure \
+--prefix=`pwd` \
+--with-newlib \
+--disable-nls \
+--without-multilib \
+--host=i686-woot
