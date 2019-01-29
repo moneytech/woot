@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rm -rf build && \
+rm -rf i686-woot build && \
 mkdir -p build && \
 cd build && \
 CC=woot-gcc \

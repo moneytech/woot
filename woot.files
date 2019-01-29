@@ -1,5 +1,11 @@
 libc/Makefile
 libc/configure
+libc/include/dirent.h
+libc/include/limits.h
+libc/include/stdarg.h
+libc/include/stddef.h
+libc/include/sys/mman.h
+libc/include/sys/syscall.h
 libc/newlib-2.5.0/COPYING
 libc/newlib-2.5.0/COPYING.LIB
 libc/newlib-2.5.0/COPYING.LIBGLOSS

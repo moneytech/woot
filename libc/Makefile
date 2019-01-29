@@ -8,7 +8,7 @@ install:
 
 clean:
 	rm -rf i686-woot
-	$(MAKE) -C build clean
+	#$(MAKE) -C build clean # commented out so that 'rebuild all' in qtcreator doesn't make newlib to rebuild
 
 .PHONY: all clean
 

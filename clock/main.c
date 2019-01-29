@@ -9,6 +9,8 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
+int nanosleep(const struct timespec  *rqtp, struct timespec *rmtp);
+
 int main(int argc, char *argv[])
 {
     wmInitialize();
