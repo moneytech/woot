@@ -6,7 +6,7 @@ cd build && \
 CC=woot-gcc \
 CFLAGS='-m32 -fno-stack-protector -nostartfiles -ggdb' \
 ../newlib-2.5.0/configure \
---prefix=`pwd` \
+--prefix=`pwd`/.. \
 --with-newlib \
 --disable-nls \
 --disable-multilib \

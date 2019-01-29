@@ -366,6 +366,11 @@ case "${host}" in
     oext=lo
     lpfx=
     aext=la ;;
+  i[3-7]86-*-woot*)
+    use_libtool=yes
+    oext=lo
+    lpfx=
+    aext=la ;;
   *) ;; #shared library not supported for ${host}
 esac
 
@@ -562,7 +567,7 @@ case "${host}" in
   w65-*-*)
 	sys_dir=w65
 	;;
-  woot*)
+  i[3-7]86-*-woot*)
     sys_dir=woot
     ;;
   z8k-*-coff)

@@ -26,4 +26,4 @@ clock_t times(struct tms *buf) {}
 int unlink(char *name) {}
 int wait(int *status) {}
 int write(int file, char *ptr, int len) {}
-int gettimeofday(struct timeval *p, struct timezone *z) {}
+int gettimeofday(struct timeval *p, void *z) {}
