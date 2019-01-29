@@ -7,7 +7,7 @@
 #define __gnuc_va_end(a) __builtin_va_end(a)
 
 #define va_start(a, p) __gnuc_va_start(a, p)
-#define va_arg(a, t) __gnuc_va_start(a, t)
+#define va_arg(a, t) __gnuc_va_arg(a, t)
 #define va_copy(d, s) __gnuc_va_copy(d, s)
 #define va_end(a) __gnuc_va_end(a)
 

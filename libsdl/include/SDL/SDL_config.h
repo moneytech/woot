@@ -60,21 +60,21 @@
 #if HAVE_LIBC
 
 /* Useful headers */
-/* #undef HAVE_ALLOCA_H */
+#define HAVE_ALLOCA_H 1
 #define HAVE_SYS_TYPES_H 1
 #define HAVE_STDIO_H 1
 #define STDC_HEADERS 1
 #define HAVE_STDLIB_H 1
 #define HAVE_STDARG_H 1
-/* #undef HAVE_MALLOC_H */
-/* #undef HAVE_MEMORY_H */
+#define HAVE_MALLOC_H 1
+#define HAVE_MEMORY_H 1
 #define HAVE_STRING_H 1
 #define HAVE_STRINGS_H 1
 #define HAVE_INTTYPES_H 1
 #define HAVE_STDINT_H 1
 #define HAVE_CTYPE_H 1
 #define HAVE_MATH_H 1
-/* #undef HAVE_ICONV_H */
+#define HAVE_ICONV_H 1
 #define HAVE_SIGNAL_H 1
 /* #undef HAVE_ALTIVEC_H */
 
@@ -86,8 +86,8 @@
 #define HAVE_ALLOCA 1
 #ifndef _WIN32 /* Don't use C runtime versions of these on Windows */
 #define HAVE_GETENV 1
-/* #undef HAVE_PUTENV */
-/* #undef HAVE_UNSETENV */
+#define HAVE_PUTENV 1
+#define HAVE_UNSETENV 1
 #endif
 #define HAVE_QSORT 1
 #define HAVE_ABS 1
@@ -97,8 +97,8 @@
 #define HAVE_MEMMOVE 1
 /* #undef HAVE_MEMCMP */
 #define HAVE_STRLEN 1
-/* #undef HAVE_STRLCPY */
-/* #undef HAVE_STRLCAT */
+#define HAVE_STRLCPY 1
+#define HAVE_STRLCAT 1
 #define HAVE_STRDUP 1
 /* #undef HAVE__STRREV */
 /* #undef HAVE__STRUPR */
@@ -108,7 +108,7 @@
 #define HAVE_STRCHR 1
 #define HAVE_STRRCHR 1
 #define HAVE_STRSTR 1
-/* #undef HAVE_ITOA */
+#define HAVE_ITOA 1
 /* #undef HAVE__LTOA */
 /* #undef HAVE__UITOA */
 /* #undef HAVE__ULTOA */
