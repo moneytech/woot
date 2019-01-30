@@ -594,6 +594,11 @@ DIR *opendir(const char *name)
 
 struct dirent *readdir(DIR *dirp)
 {
+    if(!dirp)
+    {
+        errno = EINVAL;
+        return NULL;
+    }
     int res = syscall3(SYS_readdir, dirp->fd, (long)&dirp->de, 1);
     if(res < 0)
     {

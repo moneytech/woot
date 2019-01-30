@@ -1,6 +1,7 @@
 extern int main(int argc, char *argv[], char *envp[]);
 extern void __init_libc(void);
 extern void _exit(int);
+extern int printf(const char *, ...);
 
 extern char **environ;
 
@@ -17,14 +18,10 @@ void __attribute__((noreturn)) _start(int argc)
 
 void _init(void)
 {
-    asm("cli\nhlt\n");
-//    for(void **init_func = &__init_array_start; init_func != &__init_array_end; ++init_func)
-//        ((init_fini_func)init_func)();
+    printf("%: %s not implemented\n", __FILE__, __FUNCTION__);
 }
 
 void _fini(void)
 {
-    asm("cli\nhlt\n");
-//    for(void **fini_func = &__fini_array_start; fini_func != &__fini_array_end; ++fini_func)
-//        ((init_fini_func)fini_func)();
+    printf("%: %s not implemented\n", __FILE__, __FUNCTION__);
 }
