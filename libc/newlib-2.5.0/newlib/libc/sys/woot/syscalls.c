@@ -177,32 +177,11 @@ asm(
 ".att_syntax\n"
 );
 
+
+
 void __init_libc(void)
 {
     __current_brk = (uintptr_t)syscall1(SYS_brk, 0);
-}
-
-int __swrite64(struct _reent *reent, void *what_is_that, const char *buf, int n)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    errno = ENOSYS;
-    return -1;
-}
-
-_fpos_t __sseek64(struct _reent *reent, void *what_is_that, _fpos_t offs, int n)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    errno = ENOSYS;
-    return -1;
-}
-
-int access(const char *pathname, int mode)
-{
-    struct stat st;
-    int res = stat(pathname, &st);
-    if(res < 0) return -1;
-    // add proper permission check here
-    return 0;
 }
 
 int getpagesize(void)
@@ -251,6 +230,11 @@ int fstat(int fd, struct stat *buf)
     return 0;
 }
 
+int fstat64(int fd, struct stat64 *buf)
+{
+    return fstat(fd, (struct stat *)buf);
+}
+
 int getpid()
 {
     long res = syscall0(SYS_getpid);
@@ -292,8 +276,36 @@ int lseek(int fd, int offset, int whence)
     return res;
 }
 
+_off64_t lseek64(int fd, _off64_t offset, int whence)
+{
+    _off64_t result;
+    long res = syscall5(SYS__llseek, fd, (offset >> 32) & 0xFFFFFFFF, offset & 0xFFFFFFFF, (long)&result, whence);
+    if(res < 0)
+    {
+        errno = -res;
+        return -1;
+    }
+    return result;
+}
+
 int open(const char *pathname, int flags, ...)
 {
+    va_list arg;
+    va_start(arg, flags);
+    mode_t mode = flags & O_CREAT ? va_arg(arg, int) : 0;
+    va_end(arg);
+    long res = syscall3(SYS_open, (long)pathname, flags, mode);
+    if(res < 0)
+    {
+        errno = -res;
+        return -1;
+    }
+    return res;
+}
+
+int open64(const char *pathname, int flags, ...)
+{
+    // the same thing as regular open
     va_list arg;
     va_start(arg, flags);
     mode_t mode = flags & O_CREAT ? va_arg(arg, int) : 0;
@@ -335,6 +347,15 @@ int stat(const char *path, struct stat *buf)
         errno = -res;
         return -1;
     }
+    return 0;
+}
+
+int access(const char *pathname, int mode)
+{
+    struct stat st;
+    int res = stat(pathname, &st);
+    if(res < 0) return -1;
+    // add proper permission check here
     return 0;
 }
 

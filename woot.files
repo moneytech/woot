@@ -5242,6 +5242,8 @@ libc/newlib-2.5.0/newlib/libc/sys/w65/trap.c
 libc/newlib-2.5.0/newlib/libc/sys/woot/Makefile.am
 libc/newlib-2.5.0/newlib/libc/sys/woot/configure.in
 libc/newlib-2.5.0/newlib/libc/sys/woot/crt0.c
+libc/newlib-2.5.0/newlib/libc/sys/woot/sys/dirent.h
+libc/newlib-2.5.0/newlib/libc/sys/woot/sys/stat.h
 libc/newlib-2.5.0/newlib/libc/sys/woot/syscalls.c
 libc/newlib-2.5.0/newlib/libc/sys/z8ksim/Makefile.am
 libc/newlib-2.5.0/newlib/libc/sys/z8ksim/Makefile.in

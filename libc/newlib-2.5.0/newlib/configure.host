@@ -368,6 +368,7 @@ case "${host}" in
     aext=la ;;
   i[3-7]86-*-woot*)
     use_libtool=yes
+    stdio64_dir=stdio64
     oext=lo
     lpfx=
     aext=la ;;

@@ -368,3 +368,4 @@ libsdl/SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL OpenGL Application/___P
 libsdl/SDL-1.2.15/src/video/Xext/Xxf86vm
 libsdl/include/SDL
 libsdl/lib
+libc/newlib-2.5.0/newlib/libc/sys/woot/sys

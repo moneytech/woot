@@ -3,8 +3,9 @@
 rm -rf i686-woot build && \
 mkdir -p build && \
 cd build && \
+BUILD_DIR=`pwd` \
 CC=woot-gcc \
-CFLAGS='-m32 -fno-stack-protector -nostartfiles -ggdb' \
+CFLAGS='-m32 -fno-stack-protector -nostartfiles -ggdb -Wl,-T'$BUILD_DIR/../../shared.ldscript',-Ttext=0x1E000000,-shared,--build-id=none -shared -DREENTRANT_SYSCALLS_PROVIDED=1 -DMISSING_SYSCALL_NAMES=1' \
 ../newlib-2.5.0/configure \
 --prefix=`pwd`/.. \
 --with-newlib \

@@ -1,29 +1,30 @@
-extern void exit(int code);
-extern int main ();
+extern int main(int argc, char *argv[], char *envp[]);
+extern void __init_libc(void);
+extern void _exit(int);
 
-/*extern void *__init_array_start;
-extern void *__init_array_end;
-extern void *__fini_array_start;
-extern void *__fini_array_end;
-typedef void (*init_fini_func)(void);*/
+extern char **environ;
 
-void __init_libc(void);
-
-void _start()
+void __attribute__((noreturn)) _start(int argc)
 {
     __init_libc();
-    int ex = main();
-    exit(ex);
+    unsigned char *args = (unsigned char *)&argc;
+    char **argv = (char **)(args + sizeof(argc));
+    char **envp = (char **)(args + sizeof(argc) + sizeof(void *) * (argc + 1));
+    environ = envp;
+    int result = main(argc, argv, envp);
+    for(;;) _exit(result);
 }
 
 void _init(void)
 {
-/*    for(void **init_func = &__init_array_start; init_func != &__init_array_end; ++init_func)
-        ((init_fini_func)init_func)();*/
+    asm("cli\nhlt\n");
+//    for(void **init_func = &__init_array_start; init_func != &__init_array_end; ++init_func)
+//        ((init_fini_func)init_func)();
 }
 
 void _fini(void)
 {
-/*    for(void **fini_func = &__fini_array_start; fini_func != &__fini_array_end; ++fini_func)
-        ((init_fini_func)fini_func)();*/
+    asm("cli\nhlt\n");
+//    for(void **fini_func = &__fini_array_start; fini_func != &__fini_array_end; ++fini_func)
+//        ((init_fini_func)fini_func)();
 }

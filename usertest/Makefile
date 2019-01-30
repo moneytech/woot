@@ -5,7 +5,7 @@ CC = woot-gcc
 COMMONFLAGS = -ggdb -fno-stack-protector
 CFLAGS = $(COMMONFLAGS)
 CXXFLAGS = $(COMMONFLAGS)
-LDFLAGS =
+LDFLAGS = -Wl,-T../user.ldscript
 LIBS = -lc -lwoot -lz -lpng -lfreetype -lSDL
 
 all: $(OBJS)

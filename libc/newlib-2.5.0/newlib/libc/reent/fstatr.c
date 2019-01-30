@@ -17,7 +17,7 @@
 
 #ifdef REENTRANT_SYSCALLS_PROVIDED
 
-int _dummy_fstat_syscalls = 1;
+//int _dummy_fstat_syscalls = 1;
 
 #else
 
