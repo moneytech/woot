@@ -16,6 +16,7 @@ struct pmPixMap
     struct wmRectangle Dirty;
     int Pitch;
     struct pmPixelFormat Format;
+    union pmColor *Palette;
     int ReleasePixels;
     union
     {
@@ -42,7 +43,13 @@ union pmColor pmColorYellow = { 0xFF, 0xFF, 0xFF, 0x55 };
 union pmColor pmColorWhite = { 0xFF, 0xFF, 0xFF, 0xFF };
 union pmColor pmColorTransparent = { 0x00, 0x00, 0x00, 0x00 };
 
+extern void wmemset(void *ptr, unsigned int value, unsigned long num);
 extern void lmemset(void *ptr, unsigned int value, unsigned long num);
+
+static int mapValue(int imin, int imax, int omin, int omax, int val)
+{
+    return (float)(val - imin) / (imax - imin) * (omax - omin) + omin;
+}
 
 static void *bltmove(void *dst, const void *src, size_t bpl, size_t dstride, size_t sstride, size_t lines)
 {
@@ -87,7 +94,7 @@ unsigned int pmFormatPixelsToBytes(struct pmPixelFormat format, unsigned int pix
 union pmColor pmColorFromRGB(unsigned char r, unsigned char g, unsigned char b)
 {
     union pmColor color;
-    color.A = 0;
+    color.A = 255;
     color.R = r;
     color.G = g;
     color.B = b;
@@ -122,9 +129,59 @@ union pmColor pmColorFromValue(struct pmPixelFormat format, unsigned int value)
     return pmColorFromARGB(A, R, G, B);
 }
 
+union pmColor pmColorFromIndex(struct pmPixMap *pixMap, unsigned int index)
+{
+    if(!pixMap || !pixMap->Palette || index >= (1 << pixMap->Format.BPP))
+        return pmColorBlack;
+    return pixMap->Palette[index];
+}
+
+unsigned int pmIndexFromColor(struct pmPixMap *pixMap, union pmColor color)
+{
+    if(!pixMap || !pixMap->Palette)
+        return 0;
+    int r = color.R;
+    int g = color.G;
+    int b = color.B;
+    int nColors = 1 << pixMap->Format.BPP;
+    int mine = INT_MAX;
+    int mini = 0;
+    for(int i = 0; i < nColors; ++i)
+    {
+        int dr = pixMap->Palette[i].R - r;
+        int dg = pixMap->Palette[i].G - g;
+        int db = pixMap->Palette[i].B - b;
+        int e = dr * dr + dg * dg + db * db;
+        if(e < mine)
+        {
+            mine = e;
+            mini = i;
+        }
+    }
+    return mini;
+}
+
+union pmColor *pmPaletteCreate(struct pmPixelFormat *format)
+{
+    if(format->BPP > 8) return NULL;
+    int nColors = 1 << format->BPP;
+    union pmColor *palette = (union pmColor *)malloc(sizeof(union pmColor) * nColors);
+    for(int i = 0; i < nColors; ++i)
+    {
+        int gray = mapValue(0, nColors, 0, 255, i);
+        palette[i] = pmColorFromRGB(gray, gray, gray);
+    }
+    return palette;
+}
+
+void pmPaletteDelete(union pmColor *palette)
+{
+    if(palette) free(palette);
+}
+
 struct pmPixMap *pmCreate(int width, int height, struct pmPixelFormat format)
 {
-    if(width < 1 || height < 1 || (format.BPP != 15 && format.BPP != 16 && format.BPP != 24 && format.BPP != 32))
+    if(width < 1 || height < 1 || (format.BPP != 8 && format.BPP != 15 && format.BPP != 16 && format.BPP != 24 && format.BPP != 32))
         return NULL;
     struct pmPixMap *pixMap = (struct pmPixMap *)calloc(1, sizeof(struct pmPixMap));
     if(!pixMap) return NULL;
@@ -132,6 +189,15 @@ struct pmPixMap *pmCreate(int width, int height, struct pmPixelFormat format)
     pixMap->Contents.Height = height;
     pixMap->Pitch = width * (format.BPP + 7) / 8;
     pixMap->Format = format;
+    if(format.BPP <= 8)
+    {
+        pixMap->Palette = pmPaletteCreate(&format);
+        if(!pixMap->Palette)
+        {
+            pmDelete(pixMap);
+            return NULL;
+        }
+    }
     pixMap->Pixels = calloc(height, pixMap->Pitch);
     pixMap->ReleasePixels = 1;
     if(!pixMap->Pixels)
@@ -144,7 +210,7 @@ struct pmPixMap *pmCreate(int width, int height, struct pmPixelFormat format)
 
 struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelFormat format, void *pixels, int releasePixels)
 {
-    if(width < 1 || height < 1 || (format.BPP != 15 && format.BPP != 16 && format.BPP != 24 && format.BPP != 32))
+    if(width < 1 || height < 1 || (format.BPP != 8 && format.BPP != 15 && format.BPP != 16 && format.BPP != 24 && format.BPP != 32))
         return NULL;
     struct pmPixMap *pixMap = (struct pmPixMap *)calloc(1, sizeof(struct pmPixMap));
     if(!pixMap) return NULL;
@@ -152,6 +218,15 @@ struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelForma
     pixMap->Contents.Height = height;
     pixMap->Pitch = pitch;
     pixMap->Format = format;
+    if(format.BPP <= 8)
+    {
+        pixMap->Palette = pmPaletteCreate(&format);
+        if(!pixMap->Palette)
+        {
+            pmDelete(pixMap);
+            return NULL;
+        }
+    }
     pixMap->Pixels = pixels;
     pixMap->ReleasePixels = releasePixels;
     return pixMap;
@@ -284,6 +359,11 @@ void pmSetPixel(struct pmPixMap *pixMap, int x, int y, union pmColor color)
 {
     if(x < 0 || x >= pixMap->Contents.Width || y < 0 || y >= pixMap->Contents.Height)
         return;
+    if(pixMap->Format.BPP == 8)
+    {
+        unsigned char *pixel = (unsigned char *)(pixMap->PixelBytes + pixMap->Pitch * y + x);
+        *pixel = pmIndexFromColor(pixMap, color);
+    }
     unsigned int col = pmColorToValue(color, pixMap->Format);
     if(pixMap->Format.BPP == 32)
     {
@@ -321,6 +401,11 @@ union pmColor pmGetPixel(struct pmPixMap *pixMap, int x, int y)
     {
         unsigned short *pixel = (unsigned short *)(pixMap->PixelBytes + pixMap->Pitch * y + x * 2);
         return pmColorFromValue(pixMap->Format, *pixel);
+    }
+    else if(pixMap->Format.BPP == 8)
+    {
+        unsigned char *pixel = (unsigned char *)(pixMap->PixelBytes + pixMap->Pitch * y + x);
+        return pmColorFromIndex(pixMap, *pixel);
     }
     return pmColorFromValue(pixMap->Format, 0);
 }
@@ -648,5 +733,7 @@ void pmDelete(struct pmPixMap *pixMap)
     if(!pixMap) return;
     if(pixMap->ReleasePixels && pixMap->Pixels)
         free(pixMap->Pixels);
+    if(pixMap->Palette)
+        pmPaletteDelete(pixMap->Palette);
     free(pixMap);
 }

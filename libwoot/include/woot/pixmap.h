@@ -52,6 +52,11 @@ union pmColor pmColorFromRGB(unsigned char r, unsigned char g, unsigned char b);
 union pmColor pmColorFromARGB(unsigned char a, unsigned char r, unsigned char g, unsigned char b);
 unsigned int pmColorToValue(union pmColor color, struct pmPixelFormat format);
 union pmColor pmColorFromValue(struct pmPixelFormat format, unsigned int value);
+union pmColor pmColorFromIndex(struct pmPixMap *pixMap, unsigned int index);
+unsigned int pmIndexFromColor(struct pmPixMap *pixMap, union pmColor color);
+
+union pmColor *pmPaletteCreate(struct pmPixelFormat *format);
+void pmPaletteDelete(union pmColor *palette);
 
 struct pmPixMap *pmCreate(int width, int height, struct pmPixelFormat format);
 struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelFormat format, void *pixels, int releasePixels);
