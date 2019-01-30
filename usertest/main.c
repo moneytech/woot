@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
                         break;
                     }
                     if(quit) break;
+                    printf(".");
                     SDL_Flip(surf);
                 }
             } else printf("error: %s\n", SDL_GetError());

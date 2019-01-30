@@ -3,7 +3,7 @@ ROOTDIR = $(shell pwd)
 THREADS = 8
 
 SUBDIRS = lib kernel libc libwoot ps2mouse simplefb cmi8738 es1371
-SUBDIRS += usertest calc clock wpaper sndplay
+SUBDIRS += libsdl usertest calc clock wpaper sndplay
 
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso

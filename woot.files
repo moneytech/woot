@@ -6325,6 +6325,7 @@ libc/platform/woot/functions/libgen.c
 libc/platform/woot/functions/nanosleep.c
 libc/platform/woot/functions/stat.c
 libc/platform/woot/include/libgen.h
+libsdl/Makefile
 libsdl/SDL-1.2.15/BUGS
 libsdl/SDL-1.2.15/Borland.html
 libsdl/SDL-1.2.15/Borland.zip
@@ -7284,6 +7285,7 @@ libsdl/SDL-1.2.15/src/timer/symbian/SDL_systimer.cpp
 libsdl/SDL-1.2.15/src/timer/unix/SDL_systimer.c
 libsdl/SDL-1.2.15/src/timer/win32/SDL_systimer.c
 libsdl/SDL-1.2.15/src/timer/wince/SDL_systimer.c
+libsdl/SDL-1.2.15/src/timer/woot/SDL_systimer.c
 libsdl/SDL-1.2.15/src/video/SDL_RLEaccel.c
 libsdl/SDL-1.2.15/src/video/SDL_RLEaccel_c.h
 libsdl/SDL-1.2.15/src/video/SDL_blit.c

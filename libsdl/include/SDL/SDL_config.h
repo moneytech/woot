@@ -154,7 +154,7 @@
 /* #undef SDL_JOYSTICK_DISABLED */
 #define SDL_LOADSO_DISABLED 1
 #define SDL_THREADS_DISABLED 1
-#define SDL_TIMERS_DISABLED 1
+/* #undef SDL_TIMERS_DISABLED */
 /* #undef SDL_VIDEO_DISABLED */
 
 /* Enable various audio drivers */
@@ -252,6 +252,7 @@
 /* #undef SDL_TIMER_UNIX */
 /* #undef SDL_TIMER_WIN32 */
 /* #undef SDL_TIMER_WINCE */
+#define SDL_TIMER_WOOT 1
 
 /* Enable various video drivers */
 /* #undef SDL_VIDEO_DRIVER_AALIB */

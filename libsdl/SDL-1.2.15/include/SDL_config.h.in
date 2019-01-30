@@ -251,6 +251,7 @@
 #undef SDL_TIMER_UNIX
 #undef SDL_TIMER_WIN32
 #undef SDL_TIMER_WINCE
+#undef SDL_TIMER_WOOT
 
 /* Enable various video drivers */
 #undef SDL_VIDEO_DRIVER_AALIB

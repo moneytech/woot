@@ -6,6 +6,7 @@
 struct SDL_PrivateVideoData
 {
     struct wmWindow *window;
+    struct pmPixMap *pm;
 };
 
 #endif // SDL_WOOTVIDEO_H

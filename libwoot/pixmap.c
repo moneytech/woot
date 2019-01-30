@@ -337,6 +337,13 @@ struct pmPixMap *pmLoadPNG(const char *filename)
     return pm;
 }
 
+void pmSetPaletteEntry(struct pmPixMap *pixMap, int idx, union pmColor color)
+{
+    if(!pixMap || !pixMap->Palette || idx >= (1 << pixMap->Format.BPP))
+        return;
+    pixMap->Palette[idx] = color;
+}
+
 struct wmRectangle pmGetRectangle(struct pmPixMap *pixMap)
 {
     if(!pixMap) return wmRectangleEmpty;

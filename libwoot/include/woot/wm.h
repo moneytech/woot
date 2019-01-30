@@ -63,6 +63,8 @@ struct wmEvent
     };
 };
 
+struct pmPixelFormat;
+
 extern struct wmRectangle wmRectangleEmpty;
 struct wmRectangle wmRectangleAdd(struct wmRectangle a, struct wmRectangle b);
 struct wmRectangle wmRectangleIntersection(struct wmRectangle a, struct wmRectangle b);

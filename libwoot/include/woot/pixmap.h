@@ -63,6 +63,7 @@ struct pmPixMap *pmCreate2(int width, int height, int pitch, struct pmPixelForma
 struct pmPixMap *pmFromPixMap(struct pmPixMap *src, struct pmPixelFormat format);
 struct pmPixMap *pmSubPixMap(struct pmPixMap *src, int x, int y, int w, int h);
 struct pmPixMap *pmLoadPNG(const char *filename);
+void pmSetPaletteEntry(struct pmPixMap *pixMap, int idx, union pmColor color);
 struct wmRectangle pmGetRectangle(struct pmPixMap *pixMap);
 int pmGetPitch(struct pmPixMap *pixMap);
 void *pmGetPixels(struct pmPixMap *pixMap);

@@ -17,6 +17,7 @@ static SDL_Surface *WOOT_SetVideoMode(_THIS, SDL_Surface *current, int width, in
 static SDL_Rect **WOOT_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flags);
 static void WOOT_UpdateRects(_THIS, int numrects, SDL_Rect *rects);
 static void WOOT_SetCaption(_THIS, const char *title, const char *icon);
+static int WOOT_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors);
 static void WOOT_DeleteDevice(_THIS);
 static void WOOT_VideoQuit(_THIS);
 
@@ -49,6 +50,7 @@ static SDL_VideoDevice *WOOT_CreateDevice(int devindex)
     this->UpdateRects = WOOT_UpdateRects;
     this->SetVideoMode = WOOT_SetVideoMode;
     this->SetCaption = WOOT_SetCaption;
+    this->SetColors = WOOT_SetColors;
     this->VideoQuit = WOOT_VideoQuit;
     this->PumpEvents = WOOT_PumpEvents;
     this->InitOSKeymap = WOOT_InitOSKeymap;
@@ -69,31 +71,118 @@ static SDL_Rect **WOOT_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flags)
 
 static SDL_Surface *WOOT_SetVideoMode(_THIS, SDL_Surface *current, int width, int height, int bpp, Uint32 flags)
 {
-    if(bpp != 32)
+    // destroy possibly existing previous structures
+    if(this->hidden->pm)
     {
-        SDL_SetError("SDL_SetVideoMode(%d, %d, %d, 0x%.8x) failed", width, height, bpp, flags);
-        return NULL;
+        pmDelete(this->hidden->pm);
+        this->hidden->pm = NULL;
     }
-
     if(this->hidden->window)
     {
         wmDeleteWindow(this->hidden->window);
         this->hidden->window = NULL;
     }
+    if(current && current->format && current->format->palette)
+    {
+        if(current->format->palette->colors)
+        {
+            free(current->format->palette->colors);
+            current->format->palette->colors = NULL;
+        }
+        free(current->format->palette);
+        current->format->palette = NULL;
+    }
 
+    // determine pixel format
+    struct pmPixelFormat pf;
+    memset(&pf, 0, sizeof(pf));
+    switch(bpp)
+    {
+    case 8:
+        pf.BPP = 8;
+        break;
+    case 15:
+        pf.BPP = 15;
+        pf.RedBits = 5;
+        pf.GreenBits = 5;
+        pf.BlueBits = 5;
+        pf.RedShift = 10;
+        pf.GreenShift = 5;
+        pf.BlueShift = 0;
+        break;
+    case 16:
+        pf.BPP = 15;
+        pf.RedBits = 5;
+        pf.GreenBits = 6;
+        pf.BlueBits = 5;
+        pf.RedShift = 11;
+        pf.GreenShift = 6;
+        pf.BlueShift = 0;
+        break;
+    case 24:
+    case 32:
+        pf.BPP = bpp;
+        pf.RedBits = 8;
+        pf.GreenBits = 8;
+        pf.BlueBits = 8;
+        pf.RedShift = 16;
+        pf.GreenShift = 8;
+        pf.BlueShift = 0;
+        break;
+    default:
+        SDL_SetError("SDL_SetVideoMode(%d, %d, %d, 0x%.8x): not supported bpp", width, height, bpp, flags);
+        return NULL;
+    }
+
+    // create main pixmap
+    this->hidden->pm = pmCreate(width, height, pf);
+    if(!this->hidden->pm)
+        return NULL;
+
+    // fill more pixel format structures
+    current->format->BitsPerPixel = bpp;
+    current->format->BytesPerPixel = (bpp + 7) / 8;
+    current->format->alpha = 255;
+    if(bpp > 8)
+    {
+        current->format->Amask = 0;
+        current->format->Ashift = 0;
+        current->format->Rshift = pf.GreenBits + pf.BlueBits;
+        current->format->Gshift = pf.BlueBits;
+        current->format->Bshift = 0;
+        current->format->Rmask = ((1 << pf.RedBits) - 1) << current->format->Rshift;
+        current->format->Gmask = ((1 << pf.GreenBits) - 1) << current->format->Gshift;
+        current->format->Bmask = ((1 << pf.BlueBits) - 1) << current->format->Bshift;
+    }
+    else
+    {
+        // create palette
+        current->format->palette = (SDL_Palette *)calloc(1, sizeof(SDL_Palette));
+        current->format->palette->ncolors = 1 << bpp;
+        current->format->palette->colors = (SDL_Color *)calloc(current->format->palette->ncolors, sizeof(SDL_Color));
+
+        current->format->Amask = 0;
+        current->format->Ashift = 0;
+        current->format->Rmask = 0;
+        current->format->Rshift = 0;
+        current->format->Gmask = 0;
+        current->format->Gshift = 0;
+        current->format->Bmask = 0;
+        current->format->Bshift = 0;
+    }
+
+    // create main window
     struct wmWindow *wnd = wmCreateWindow(100, 100, wmGetDecoratedWidth(width), wmGetDecoratedHeight(height), "SDL window", 1);
+    this->hidden->window = wnd;
     if(!wnd) return NULL;
     wmShowWindow(wnd);
 
-    this->hidden->window = wnd;
-    struct pmPixMap *pm = uiControlGetPixMap(wnd->RootControl);
-    uiControlSetBackColor(wnd->RootControl, pmColorTransparent);
     current->w = width;
     current->h = height;
-    current->pitch = pmGetPitch(pm);
-    current->pixels = pmGetPixels(pm);
+    current->pitch = pmGetPitch(this->hidden->pm);
+    current->pixels = pmGetPixels(this->hidden->pm);
 
-    pmFillRectangle(pm, 0, 0, width, height, pmColorBlack);
+    pmFillRectangle(this->hidden->pm, 0, 0, width, height, pmColorRed);
     wmRedrawWindow(wnd);
 
     return current;
@@ -102,18 +191,20 @@ static SDL_Surface *WOOT_SetVideoMode(_THIS, SDL_Surface *current, int width, in
 static void WOOT_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 {
     struct wmWindow *wnd = (struct wmWindow *)this->hidden->window;
-    if(!wnd || !wnd->RootControl)
+    if(!wnd || !this || !this->hidden || !this->hidden->pm)
         return;
 
-    struct pmPixMap *pm = uiControlGetPixMap(wnd->RootControl);
     for(int i = 0; i < numrects; ++i)
     {
         SDL_Rect *r = rects + i;
         struct wmRectangle rect = { r->x, r->y, r->w, r->h };
-        pmInvalidateRect(pm, rect);
+        pmBlit(wnd->ClientArea, this->hidden->pm, rect.X, rect.Y, rect.X, rect.Y, rect.Width, rect.Height);
+        pmInvalidateRect(wnd->ClientArea, rect);
     }
-    uiControlRedraw(wnd->RootControl);
-    wmUpdateWindow(wnd);
+
+    //uiControlRedraw(wnd->RootControl);
+    //wmUpdateWindow(wnd);
+    wmRedrawWindow(wnd);
 }
 
 static void WOOT_SetCaption(_THIS, const char *title, const char *icon)
@@ -121,6 +212,20 @@ static void WOOT_SetCaption(_THIS, const char *title, const char *icon)
     if(!this || !this->hidden || !this->hidden->window)
         return;
     wmSetTitle(this->hidden->window, title);
+}
+
+static int WOOT_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
+{
+    if(!this || !this->hidden || !this->hidden->pm || !colors)
+        return 0;
+    struct pmPixMap *pm = this->hidden->pm;
+    for(int i = 0; i < ncolors; ++i)
+    {
+        SDL_Color *c = colors + i;
+        union pmColor color = pmColorFromRGB(c->r, c->g, c->b);
+        pmSetPaletteEntry(pm, firstcolor + i, color);
+    }
+    return 1;
 }
 
 static void WOOT_DeleteDevice(_THIS)
@@ -131,9 +236,17 @@ static void WOOT_DeleteDevice(_THIS)
 
 static void WOOT_VideoQuit(_THIS)
 {
-    if(this->hidden)
+    if(this && this->hidden)
     {
         struct wmWindow *wnd = this->hidden->window;
         if(wnd) wmDeleteWindow(wnd);
+        struct pmPixMap *pm = this->hidden->pm;
+        if(pm) pmDelete(pm);
+        if(this->screen && this->screen->format && this->screen->format->palette)
+        {
+            if(this->screen->format->palette->colors)
+                free(this->screen->format->palette->colors);
+            free(this->screen->format->palette);
+        }
     }
 }
