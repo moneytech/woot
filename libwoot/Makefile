@@ -6,7 +6,7 @@ LIB_STATIC = $(LIB).a
 LIB_SHARED = $(LIB).so
 
 CC = woot-gcc
-CFLAGS = -ggdb -fno-stack-protector
+CFLAGS = -ggdb -fno-stack-protector -O2
 ASMFLAGS = -f elf -gdwarf2
 LDFLAGS = -Wl,-lpng16,-lfreetype
 SHLDFLAGS = -shared -Wl,-T../shared.ldscript,-soname,$(LIB_SHARED),-Ttext=0x00300000

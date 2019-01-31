@@ -194,12 +194,16 @@ static void WOOT_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
     if(!wnd || !this || !this->hidden || !this->hidden->pm)
         return;
 
+    // SDL_HWPALETTE doesn't want to cooperate so we do this
+    if(this->screen && this->screen->format && this->screen->format->BitsPerPixel == 8 && this->screen->format->palette && this->screen->format->palette->colors)
+        WOOT_SetColors(this, 0, 256, this->screen->format->palette->colors);
+
     for(int i = 0; i < numrects; ++i)
     {
         SDL_Rect *r = rects + i;
         struct wmRectangle rect = { r->x, r->y, r->w, r->h };
         pmBlit(wnd->ClientArea, this->hidden->pm, rect.X, rect.Y, rect.X, rect.Y, rect.Width, rect.Height);
-        pmInvalidateRect(wnd->ClientArea, rect);
+        //pmInvalidateRect(wnd->ClientArea, rect);
     }
 
     //uiControlRedraw(wnd->RootControl);

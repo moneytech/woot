@@ -412,9 +412,9 @@ union pmColor pmGetPixel(struct pmPixMap *pixMap, int x, int y)
     else if(pixMap->Format.BPP == 8)
     {
         unsigned char *pixel = (unsigned char *)(pixMap->PixelBytes + pixMap->Pitch * y + x);
-        return pmColorFromIndex(pixMap, *pixel);
+        return pixMap->Palette[*pixel];
     }
-    return pmColorFromValue(pixMap->Format, 0);
+    return pmColorBlack;
 }
 
 union pmColor pmBlendPixel(union pmColor a, union pmColor b)
@@ -598,20 +598,62 @@ void pmBlit(struct pmPixMap *dst, struct pmPixMap *src, int sx, int sy, int x, i
         return; // nothing to do
     else if(s > d)
     {   // forward
-        for(int Y = y, sY = sy; Y < y2 && sY < sy2; ++Y, ++sY)
+        if(src->Format.BPP == 8 && dst->Format.BPP == 32 && src->Palette)
+        {   // try to make 8 bit to 32 bit blit a little bit faster by skipping pmColor conversions and some checks
+            int as = dst->Format.AlphaShift;
+            int a = dst->Format.AlphaBits ? 0xFF : 0x00;
+            int rs = dst->Format.RedShift;
+            int gs = dst->Format.GreenShift;
+            int bs = dst->Format.BlueShift;
+            for(int Y = y, sY = sy; Y < y2 && sY < sy2; ++Y, ++sY)
+            {
+                for(int X = x, sX = sx; X < x2 && sX < sx2; ++X, ++sX)
+                {
+                    unsigned char srcPix = *(src->PixelBytes + src->Pitch * Y + X);
+                    union pmColor col = src->Palette[srcPix];
+                    *(unsigned int *)(dst->PixelBytes + dst->Pitch * Y + 4 * X) = col.R << rs | col.G << gs | col.B << bs | a << as;
+                }
+            }
+        }
+        else
         {
-            for(int X = x, sX = sx; X < x2 && sX < sx2; ++X, ++sX)
-                pmSetPixel(dst, X, Y, pmGetPixel(src, sX, sY));
+            for(int Y = y, sY = sy; Y < y2 && sY < sy2; ++Y, ++sY)
+            {
+                for(int X = x, sX = sx; X < x2 && sX < sx2; ++X, ++sX)
+                    pmSetPixel(dst, X, Y, pmGetPixel(src, sX, sY));
+            }
         }
     }
     else
     {   // backward
-        int sx2b = sx + w + (x2 - (x + w));
-        int sy2b = sy + h + (y2 - (y + h));
-        for(int Y = y2 - 1, sY = sy2b - 1; Y >= y && sY >= sy; --Y, --sY)
+        if(src->Format.BPP == 8 && dst->Format.BPP == 32 && src->Palette)
+        {   // try to make 8 bit to 32 bit blit a little bit faster by skipping pmColor conversions and some checks
+            int sx2b = sx + w + (x2 - (x + w));
+            int sy2b = sy + h + (y2 - (y + h));
+            int as = dst->Format.AlphaShift;
+            int a = dst->Format.AlphaBits ? 0xFF : 0x00;
+            int rs = dst->Format.RedShift;
+            int gs = dst->Format.GreenShift;
+            int bs = dst->Format.BlueShift;
+            for(int Y = y2 - 1, sY = sy2b - 1; Y >= y && sY >= sy; --Y, --sY)
+            {
+                for(int X = x2 - 1, sX = sx2b - 1; X >= x && sX >= sx; --X, --sX)
+                {
+                    unsigned char srcPix = *(src->PixelBytes + src->Pitch * Y + X);
+                    union pmColor col = src->Palette[srcPix];
+                    *(unsigned int *)(dst->PixelBytes + dst->Pitch * Y + 4 * X) = col.R << rs | col.G << gs | col.B << bs | a << as;
+                }
+            }
+        }
+        else
         {
-            for(int X = x2 - 1, sX = sx2b - 1; X >= x && sX >= sx; --X, --sX)
-                pmSetPixel(dst, X, Y, pmGetPixel(src, sX, sY));
+            int sx2b = sx + w + (x2 - (x + w));
+            int sy2b = sy + h + (y2 - (y + h));
+            for(int Y = y2 - 1, sY = sy2b - 1; Y >= y && sY >= sy; --Y, --sY)
+            {
+                for(int X = x2 - 1, sX = sx2b - 1; X >= x && sX >= sx; --X, --sX)
+                    pmSetPixel(dst, X, Y, pmGetPixel(src, sX, sY));
+            }
         }
     }
 }

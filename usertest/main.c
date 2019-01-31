@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
         else if(!strcmp(_argv[0], "sdl"))
         {
             SDL_Init(0);
-            SDL_Surface *surf = SDL_SetVideoMode(640, 480, 32, 0);
+            SDL_Surface *surf = SDL_SetVideoMode(640, 480, 8, 0);
             uint8_t *pixels = (uint8_t *)surf->pixels;
             uint32_t color = 0;
             if(surf)
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
                             color = rand() ^ (rand() << 10) ^ (rand() << 20);
                             for(int y = 0; y < surf->h; ++y)
                             {
-                                uint32_t *line = (uint32_t *)(pixels + y * surf->pitch);
+                                uint8_t *line = (uint8_t *)(pixels + y * surf->pitch);
                                 for(int x = 0; x < surf->w; ++x)
                                     line[x] = x ^ y + color;
                             }
