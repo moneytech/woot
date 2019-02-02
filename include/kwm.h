@@ -58,6 +58,7 @@ public:
         struct wmRectangle Dirty;
         int Pitch;
         struct pmPixelFormat Format;
+        union pmColor *Palette;
         int ReleasePixels;
         union
         {

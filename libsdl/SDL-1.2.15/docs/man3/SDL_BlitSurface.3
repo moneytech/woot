@@ -47,7 +47,7 @@ If either of the surfaces were in video memory, and the blit returns \fB-2\fR, t
 .nf
 \f(CW        while ( SDL_BlitSurface(image, imgrect, screen, dstrect) == -2 ) {
                 while ( SDL_LockSurface(image)) < 0 )
-                        Sleep(10);
+                        tmSleep(10);
                 -- Write image pixels to image->pixels --
                 SDL_UnlockSurface(image);
         }\fR

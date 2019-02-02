@@ -415,6 +415,9 @@
 #define SYS_audio_get_device_model  412
 
 #define SYS_redraw_screen           500
+#define SYS_sleep_ms                501
+#define SYS_get_ticks               502
+#define SYS_get_tick_freq           503
 
 #ifdef __cplusplus
 extern "C" {

@@ -5,22 +5,25 @@
 #include "SDL_timer.h"
 #include "../SDL_timer_c.h"
 
-static int ticks = 0;
-static int startticks = 0;
+#include <woot/time.h>
+
+static unsigned long long tickFreq = 0;
+static unsigned long long startTicks = 0;
 
 void SDL_StartTicks(void)
 {
-    startticks = ticks;
+    startTicks = tmGetTicks();
 }
 
-Uint32 SDL_GetTicks (void)
+Uint32 SDL_GetTicks(void)
 {
-    ticks += 7;
-    return ticks - startticks;
+    if(!tickFreq) tickFreq = tmGetTickFreq();
+    return 1000 * (tmGetTicks() - startTicks) / tickFreq;
 }
 
-void SDL_Delay (Uint32 ms)
+void SDL_Delay(Uint32 ms)
 {
+    tmSleep(ms);
 }
 
 static int RunTimer(void *unused)

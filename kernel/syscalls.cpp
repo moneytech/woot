@@ -118,7 +118,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 448 - 463
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 464 - 479
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 480 - 495
-    nullptr, nullptr, nullptr, nullptr, sys_redraw_screen, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr  // 496 - 511
+    nullptr, nullptr, nullptr, nullptr, sys_redraw_screen, sys_sleep_ms, sys_get_ticks, sys_get_tick_freq, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr  // 496 - 511
 };
 
 bool SysCalls::isr(Ints::State *state, void *context)
@@ -811,6 +811,29 @@ long SysCalls::sys_audio_get_device_model(long *args) // 412
 long SysCalls::sys_redraw_screen(long *args) // 500
 {
     WindowManager::RedrawWindow(0);
+}
+
+long SysCalls::sys_sleep_ms(long *args) // 501
+{
+    int ms = args[1];
+    if(ms < 0) return -EINVAL;
+    return Time::Sleep(ms, false);
+}
+
+long SysCalls::sys_get_ticks(long *args) // 501
+{
+    uint64_t *r = (uint64_t *)args[1];
+    if(!r) return -EINVAL;
+    *r = Time::GetTickCount();
+    return 0;
+}
+
+long SysCalls::sys_get_tick_freq(long *args) // 503
+{
+    uint64_t *r = (uint64_t *)args[1];
+    if(!r) return -EINVAL;
+    *r = Time::GetTickFrequency();
+    return 0;
 }
 
 void SysCalls::Initialize()

@@ -65,6 +65,9 @@ class SysCalls
     static long sys_audio_get_device_model(long *args); // 412
 
     static long sys_redraw_screen(long *args); // 500
+    static long sys_sleep_ms(long *args); // 501
+    static long sys_get_ticks(long *args); // 502
+    static long sys_get_tick_freq(long *args); // 503
 public:
     static void Initialize();
     static void Cleanup();

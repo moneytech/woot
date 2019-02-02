@@ -7741,6 +7741,8 @@ libsdl/lib/libSDL-1.2.so.0.11.4
 libsdl/lib/libSDL.a
 libsdl/lib/libSDL.so
 libsdl/lib/libSDLmain.a
+libwoot/include/woot/time.h
+libwoot/time.c
 zlib/zlib-1.2.11/zutil.h
 zlib/zlib-1.2.11/zutil.c
 zlib/zlib-1.2.11/zlib2ansi
