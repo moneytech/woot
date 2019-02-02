@@ -7743,6 +7743,7 @@ libsdl/lib/libSDL.so
 libsdl/lib/libSDLmain.a
 libwoot/include/woot/time.h
 libwoot/time.c
+screen-0.2-2019-02-02.png
 zlib/zlib-1.2.11/zutil.h
 zlib/zlib-1.2.11/zutil.c
 zlib/zlib-1.2.11/zlib2ansi
