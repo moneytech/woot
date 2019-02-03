@@ -240,6 +240,7 @@
 #undef SDL_THREAD_PTHREAD_RECURSIVE_MUTEX_NP
 #undef SDL_THREAD_SPROC
 #undef SDL_THREAD_WIN32
+#undef SDL_THREAD_WOOT
 
 /* Enable various timer systems */
 #undef SDL_TIMER_BEOS

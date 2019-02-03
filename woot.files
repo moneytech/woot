@@ -7267,6 +7267,12 @@ libsdl/SDL-1.2.15/src/thread/win32/SDL_systhread.c
 libsdl/SDL-1.2.15/src/thread/win32/SDL_systhread_c.h
 libsdl/SDL-1.2.15/src/thread/win32/win_ce_semaphore.c
 libsdl/SDL-1.2.15/src/thread/win32/win_ce_semaphore.h
+libsdl/SDL-1.2.15/src/thread/woot/SDL_sysmutex.c
+libsdl/SDL-1.2.15/src/thread/woot/SDL_sysmutex_c.h
+libsdl/SDL-1.2.15/src/thread/woot/SDL_syssem.c
+libsdl/SDL-1.2.15/src/thread/woot/SDL_syssem_c.h
+libsdl/SDL-1.2.15/src/thread/woot/SDL_systhread.c
+libsdl/SDL-1.2.15/src/thread/woot/SDL_systhread_c.h
 libsdl/SDL-1.2.15/src/timer/SDL_systimer.h
 libsdl/SDL-1.2.15/src/timer/SDL_timer.c
 libsdl/SDL-1.2.15/src/timer/SDL_timer_c.h

@@ -31,5 +31,6 @@ int thrSemaphoreWait(int id, int timeout, int tryWait); // wait for specified se
 int thrSemaphoreSignal(int id); // signal to other threads that semaphore is ready
 int thrSemaphoreReset(int id, int value); // reset count of specified semaphore to specific value
 int thrSemaphoreCancel(int id, int threadId); // fail pending thrSemaphoreWait in other threads
+int thrSemaphoreGetCount(int id); // get current semaphore count value
 
 #endif // THREAD_H

@@ -153,7 +153,7 @@
 /* #undef SDL_FILE_DISABLED */
 /* #undef SDL_JOYSTICK_DISABLED */
 #define SDL_LOADSO_DISABLED 1
-#define SDL_THREADS_DISABLED 1
+/* #undef SDL_THREADS_DISABLED */
 /* #undef SDL_TIMERS_DISABLED */
 /* #undef SDL_VIDEO_DISABLED */
 
@@ -241,6 +241,7 @@
 /* #undef SDL_THREAD_PTHREAD_RECURSIVE_MUTEX_NP */
 /* #undef SDL_THREAD_SPROC */
 /* #undef SDL_THREAD_WIN32 */
+#define SDL_THREAD_WOOT 1
 
 /* Enable various timer systems */
 /* #undef SDL_TIMER_BEOS */

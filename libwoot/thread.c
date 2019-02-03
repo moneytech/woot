@@ -96,3 +96,8 @@ int thrSemaphoreCancel(int id, int threadId)
 {
     return syscall2(SYS_semaphore_cancel, id, threadId);
 }
+
+int thrSemaphoreGetCount(int id)
+{
+    return syscall1(SYS_semaphore_get_count, id);
+}

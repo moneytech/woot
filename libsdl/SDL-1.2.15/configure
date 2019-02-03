@@ -22069,6 +22069,13 @@ case "$host" in
             SOURCES="$SOURCES $srcdir/src/audio/woot/*.c"
             have_audio=yes
         fi
+        if test x$enable_threads = xyes; then
+            $as_echo "#define SDL_THREAD_WOOT 1" >>confdefs.h
+
+            SOURCES="$SOURCES $srcdir/src/thread/woot/*.c"
+            SOURCES="$SOURCES $srcdir/src/thread/generic/SDL_syscond.c"
+            have_threads=yes
+        fi
         if test x$enable_timers = xyes; then
             $as_echo "#define SDL_TIMER_WOOT 1" >>confdefs.h
 

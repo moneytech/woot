@@ -434,5 +434,6 @@
 #define SYS_semaphore_signal        517
 #define SYS_semaphore_reset         518
 #define SYS_semaphore_cancel        519
+#define SYS_semaphore_get_count     520
 
 #endif // SYS_SYSCALL_H

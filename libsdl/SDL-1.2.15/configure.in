@@ -2842,6 +2842,12 @@ case "$host" in
             SOURCES="$SOURCES $srcdir/src/audio/woot/*.c"
             have_audio=yes
         fi
+        if test x$enable_threads = xyes; then
+            AC_DEFINE(SDL_THREAD_WOOT)
+            SOURCES="$SOURCES $srcdir/src/thread/woot/*.c"
+            SOURCES="$SOURCES $srcdir/src/thread/generic/SDL_syscond.c"
+            have_threads=yes
+        fi
         if test x$enable_timers = xyes; then
             AC_DEFINE(SDL_TIMER_WOOT)
             SOURCES="$SOURCES $srcdir/src/timer/woot/*.c"

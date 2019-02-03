@@ -84,6 +84,7 @@ class SysCalls
     static long sys_semaphore_signal(long *args); // 517
     static long sys_semaphore_reset(long *args); // 518
     static long sys_semaphore_cancel(long *args); // 519
+    static long sys_semaphore_get_count(long *args); // 520
 
 public:
     static void Initialize();

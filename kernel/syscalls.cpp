@@ -120,7 +120,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 480 - 495
     nullptr, nullptr, nullptr, nullptr, sys_redraw_screen, sys_sleep_ms, sys_get_ticks, sys_get_tick_freq, sys_thread_create, sys_thread_delete, sys_thread_suspend, sys_thread_resume, sys_thread_sleep, sys_mutex_create, sys_mutex_delete, sys_mutex_acquire,  // 496 - 511
 
-    sys_mutex_release, sys_mutex_cancel, sys_semaphore_create, sys_semaphore_delete, sys_semaphore_wait, sys_semaphore_signal, sys_semaphore_reset, sys_semaphore_cancel, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 512 - 527
+    sys_mutex_release, sys_mutex_cancel, sys_semaphore_create, sys_semaphore_delete, sys_semaphore_wait, sys_semaphore_signal, sys_semaphore_reset, sys_semaphore_cancel, sys_semaphore_get_count, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 512 - 527
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 528 - 543
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 544 - 559
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 560 - 575
@@ -1026,6 +1026,15 @@ long SysCalls::sys_semaphore_cancel(long *args) // 519
     if(!thread) return -EINVAL;
     sem->Cancel(thread);
     return 0;
+}
+
+long SysCalls::sys_semaphore_get_count(long *args) // 520
+{
+    int id = args[1];
+    Process *cp = Process::GetCurrent();
+    Semaphore *sem = cp->GetSemaphore(id);
+    if(!sem) return -EINVAL;
+    return sem->GetCount();
 }
 
 void SysCalls::Initialize()
