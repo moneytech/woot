@@ -68,6 +68,11 @@ class SysCalls
     static long sys_sleep_ms(long *args); // 501
     static long sys_get_ticks(long *args); // 502
     static long sys_get_tick_freq(long *args); // 503
+    static long sys_thread_create(long *args); // 504
+    static long sys_thread_delete(long *args); // 505
+    static long sys_thread_suspend(long *args); // 506
+    static long sys_thread_resume(long *args); // 507
+    static long sys_thread_sleep(long *args); // 508
 public:
     static void Initialize();
     static void Cleanup();

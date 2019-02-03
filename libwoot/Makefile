@@ -1,6 +1,6 @@
 LIB = libwoot
 OBJS = asm/lmemset.o
-OBJS += audio.o font.o pixmap.o time.o ui.o wm.o
+OBJS += audio.o font.o pixmap.o thread.o time.o ui.o wm.o
 
 LIB_STATIC = $(LIB).a
 LIB_SHARED = $(LIB).so

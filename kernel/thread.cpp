@@ -221,6 +221,45 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     StackPointer = initStackPointer;
 }
 
+Thread *Thread::GetByID(pid_t id)
+{
+    bool ints = cpuDisableInterrupts();
+    Thread *res = nullptr;
+    if(currentThread->ID == id)
+    {
+        res = currentThread;
+        cpuRestoreInterrupts(ints);
+        return res;
+    }
+
+    for(Thread *t = (Thread *)readyThreads.First(); t; t = (Thread *)t->Next)
+    {
+        if(t->ID == id)
+        {
+            cpuRestoreInterrupts(ints);
+            return t;
+        }
+    }
+    for(Thread *t = (Thread *)suspendedThreads.First(); t; t = (Thread *)t->Next)
+    {
+        if(t->ID == id)
+        {
+            cpuRestoreInterrupts(ints);
+            return t;
+        }
+    }
+    for(Thread *t = (Thread *)sleepingThreads.First(); t; t = (Thread *)t->Next)
+    {
+        if(t->ID == id)
+        {
+            cpuRestoreInterrupts(ints);
+            return t;
+        }
+    }
+
+    return nullptr;
+}
+
 bool Thread::Exists(Thread *thread)
 {
     if(thread == GetCurrent())
@@ -358,8 +397,8 @@ void Thread::Suspend()
         cpuRestoreInterrupts(ints);
         return;
     }
-    if(!readyThreads.Remove(this, nullptr))
-    {
+    if(!readyThreads.Remove(this, nullptr) && !sleepingThreads.Remove(this, nullptr))
+    {        
         cpuRestoreInterrupts(ints);
         return;
     }
@@ -372,24 +411,19 @@ bool Thread::Resume(bool prepend)
 {
     bool ints = cpuDisableInterrupts();
     ++WakeCount;
-    if(suspendedThreads.Remove(this, nullptr))
+    if(suspendedThreads.Remove(this, nullptr) || sleepingThreads.Remove(this, sleepingThreadComparer))
     {
-        State = State::Ready;
-        readyThreads.Add(this, prepend);
-        cpuRestoreInterrupts(ints);
-        return true;
-    }
-    if(sleepingThreads.Remove(this, sleepingThreadComparer))
-    {
-        if(CanChangeState)
+        if(State == State::Sleeping)
         {
-            uintptr_t *stack = (uintptr_t *)StackPointer;
-            stack[0] = SleepTicks;
+            if(CanChangeState)
+            {
+                uintptr_t *stack = (uintptr_t *)StackPointer;
+                stack[0] = SleepTicks;
+            }
+            InterruptibleSleep = false;
+            CanChangeState = false;
+            SleepTicks = 0;
         }
-
-        InterruptibleSleep = false;
-        CanChangeState = false;
-        SleepTicks = 0;
         State = State::Ready;
         readyThreads.Add(this, prepend);
         cpuRestoreInterrupts(ints);

@@ -118,7 +118,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 448 - 463
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 464 - 479
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 480 - 495
-    nullptr, nullptr, nullptr, nullptr, sys_redraw_screen, sys_sleep_ms, sys_get_ticks, sys_get_tick_freq, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr  // 496 - 511
+    nullptr, nullptr, nullptr, nullptr, sys_redraw_screen, sys_sleep_ms, sys_get_ticks, sys_get_tick_freq, sys_thread_create, sys_thread_delete, sys_thread_suspend, sys_thread_resume, sys_thread_sleep, nullptr, nullptr, nullptr  // 496 - 511
 };
 
 bool SysCalls::isr(Ints::State *state, void *context)
@@ -444,9 +444,9 @@ long SysCalls::sys_getcwd(long *args) // 183
 
 long SysCalls::sys_gettid(long *args) // 224
 {
-    Process *cp = Process::GetCurrent();
-    if(!cp) return -ESRCH;
-    return cp->ID;
+    Thread *ct = Thread::GetCurrent();
+    if(!ct) return -ESRCH;
+    return ct->ID;
 }
 
 long SysCalls::sys_create_window(long *args) // 386
@@ -834,6 +834,69 @@ long SysCalls::sys_get_tick_freq(long *args) // 503
     if(!r) return -EINVAL;
     *r = Time::GetTickFrequency();
     return 0;
+}
+
+long SysCalls::sys_thread_create(long *args) // 504
+{
+    void *entry = (void *)args[1];
+    if(!entry) return -EINVAL;
+    Thread *thread = new Thread("Thread", nullptr, entry, 0, DEFAULT_STACK_SIZE, DEFAULT_STACK_SIZE, nullptr, nullptr, true);
+    thread->Enable();
+    return thread->ID;
+}
+
+long SysCalls::sys_thread_delete(long *args) // 505
+{
+    int id = args[1];
+    Thread *ct = Thread::GetCurrent();
+    Thread *thread = Thread::GetByID(id);
+    if(!thread) return -ESRCH;
+    if(thread->Process != ct->Process)
+        return -EINVAL;
+    Thread::Finalize(thread, 0);
+    return 0;
+}
+
+long SysCalls::sys_thread_suspend(long *args) // 506
+{
+    int id = args[1];
+    Thread *ct = Thread::GetCurrent();
+    Thread *thread = Thread::GetByID(id);
+    if(!thread) return -ESRCH;
+    if(thread->Process != ct->Process)
+        return -EINVAL;
+    thread->Suspend();
+    return 0;
+}
+
+long SysCalls::sys_thread_resume(long *args) // 507
+{
+    int id = args[1];
+    Thread *ct = Thread::GetCurrent();
+    Thread *thread = Thread::GetByID(id);
+    if(!thread) return -ESRCH;
+    if(thread->Process != ct->Process)
+        return -EINVAL;
+    thread->Resume(false);
+    return 0;
+}
+
+long SysCalls::sys_thread_sleep(long *args) // 508
+{
+    int id = args[1];
+    int ms = args[2];
+    bool interruptible = false;
+    if(ms < 0)
+    {
+        interruptible = true;
+        ms = -ms;
+    }
+    Thread *ct = Thread::GetCurrent();
+    Thread *thread = Thread::GetByID(id);
+    if(!thread) return -ESRCH;
+    if(thread->Process != ct->Process)
+        return -EINVAL;
+    return thread->Sleep(ms, interruptible);
 }
 
 void SysCalls::Initialize()

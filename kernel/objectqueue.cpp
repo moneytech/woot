@@ -40,6 +40,11 @@ ObjectQueue::Item *ObjectQueue::Get()
     return it;
 }
 
+ObjectQueue::Item *ObjectQueue::First()
+{
+    return first;
+}
+
 bool ObjectQueue::Remove(ObjectQueue::Item *item, ObjectQueue::ItemComparer comparer)
 {
     if(!first) return false;

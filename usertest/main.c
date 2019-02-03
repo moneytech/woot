@@ -13,6 +13,8 @@
 
 #include <woot/font.h>
 #include <woot/pixmap.h>
+#include <woot/thread.h>
+#include <woot/time.h>
 #include <woot/wm.h>
 #include <zlib.h>
 #include <png.h>
@@ -21,6 +23,16 @@
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
+
+void testThread()
+{
+    int tid = thrGetCurrentID();
+    for(int i = 0;; ++i)
+    {
+        printf("t%d: %d\n", tid, i);
+        tmSleep(1000);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -61,6 +73,44 @@ int main(int argc, char *argv[])
         {
             for(int i = 0; i < argc; ++i)
                 printf("%d: %s\n", i, argv[i]);
+        }
+        else if(!strcmp(_argv[0], "gettid"))
+            printf("current thread id: %d\n", thrGetCurrentID());
+        else if(!strcmp(_argv[0], "cthread"))
+        {
+            int id = thrCreate(testThread);
+            printf("%d\n", id);
+            if(id >= 0)
+                thrResume(id);
+        }
+        else if(!strcmp(_argv[0], "tsusp"))
+        {
+            if(!_argv[1]) printf("missing thread id\n");
+            else
+            {
+                int id = atoi(_argv[1]);
+                thrSuspend(id);
+            }
+        }
+        else if(!strcmp(_argv[0], "tresm"))
+        {
+            if(!_argv[1]) printf("missing thread id\n");
+            else
+            {
+                int id = atoi(_argv[1]);
+                thrResume(id);
+            }
+        }
+        else if(!strcmp(_argv[0], "tsleep"))
+        {
+            if(!_argv[1]) printf("missing thread id\n");
+            else if(!_argv[2]) printf("missing milliseconds\n");
+            else
+            {
+                int id = atoi(_argv[1]);
+                int ms = atoi(_argv[2]);
+                thrSleep(id, ms);
+            }
         }
         else if(!strcmp(_argv[0], "sdl"))
         {

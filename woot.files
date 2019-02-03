@@ -7743,7 +7743,9 @@ libsdl/lib/libSDL-1.2.so.0.11.4
 libsdl/lib/libSDL.a
 libsdl/lib/libSDL.so
 libsdl/lib/libSDLmain.a
+libwoot/include/woot/thread.h
 libwoot/include/woot/time.h
+libwoot/thread.c
 libwoot/time.c
 screen-0.2-2019-02-02.png
 zlib/zlib-1.2.11/zutil.h

@@ -418,6 +418,11 @@
 #define SYS_sleep_ms                501
 #define SYS_get_ticks               502
 #define SYS_get_tick_freq           503
+#define SYS_thread_create           504
+#define SYS_thread_delete           505
+#define SYS_thread_suspend          506
+#define SYS_thread_resume           507
+#define SYS_thread_sleep            508
 
 #ifdef __cplusplus
 extern "C" {
