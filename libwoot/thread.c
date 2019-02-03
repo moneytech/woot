@@ -6,14 +6,14 @@ int thrGetCurrentID()
     return syscall0(SYS_gettid);
 }
 
-int thrCreate(void *entry)
+int thrCreate(void *entry, int finishedSemaphore, int *retVal, void *arg)
 {
-    return syscall1(SYS_thread_create, (long)entry);
+    return syscall4(SYS_thread_create, (long)entry, finishedSemaphore, (long)retVal, (long)arg);
 }
 
-int thrDelete(int id)
+int thrDelete(int id, int retVal)
 {
-    return syscall1(SYS_thread_delete, id);
+    return syscall2(SYS_thread_delete, id, retVal);
 }
 
 int thrSuspend(int id)

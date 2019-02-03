@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
             printf("current thread id: %d\n", thrGetCurrentID());
         else if(!strcmp(_argv[0], "cthread"))
         {
-            int id = thrCreate(testThread);
+            int id = thrCreate(testThread, SEM_ID_NONE, NULL, NULL);
             printf("%d\n", id);
             if(id >= 0)
                 thrResume(id);

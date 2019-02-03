@@ -1,10 +1,13 @@
 #ifndef THREAD_H
 #define THREAD_H
 
+#define MTX_ID_NONE (-1)
+#define SEM_ID_NONE (-1)
+
 // thread routines
 int thrGetCurrentID(); // get current thread id
-int thrCreate(void *entry); // create new thread
-int thrDelete(int id); // stop and delete (abort) specified thread
+int thrCreate(void *entry, int finishedSemaphore, int *retVal, void *arg); // create new thread; if finishedSemaphore >= 0 then it is signalled on thread exit; if retVal != NULL then it's filled with thread return value on exit
+int thrDelete(int id, int retVal); // stop and delete (abort) specified thread
 int thrSuspend(int id); // suspend specified thread
 int thrResume(int id); // resume specified thread (if suspended or at interruptible sleep)
 int thrSleep(int id, int ms); // make thread go to sleep for ms milliseconds (negative value means interruptible sleep)

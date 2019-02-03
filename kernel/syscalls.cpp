@@ -856,8 +856,13 @@ long SysCalls::sys_get_tick_freq(long *args) // 503
 long SysCalls::sys_thread_create(long *args) // 504
 {
     void *entry = (void *)args[1];
+    int semId = args[2];
+    int *retVal = (int *)args[3];
+    void *arg = (void *)args[4];
     if(!entry) return -EINVAL;
-    Thread *thread = new Thread("Thread", nullptr, entry, 0, DEFAULT_STACK_SIZE, DEFAULT_STACK_SIZE, nullptr, nullptr, true);
+    Process *cp = Process::GetCurrent();
+    Semaphore *finished = cp->GetSemaphore(semId);
+    Thread *thread = new Thread("Thread", nullptr, entry, (uintptr_t)arg, DEFAULT_STACK_SIZE, DEFAULT_STACK_SIZE, retVal, finished, true);
     thread->Enable();
     return thread->ID;
 }
@@ -865,12 +870,13 @@ long SysCalls::sys_thread_create(long *args) // 504
 long SysCalls::sys_thread_delete(long *args) // 505
 {
     int id = args[1];
+    int retVal = args[2];
     Thread *ct = Thread::GetCurrent();
     Thread *thread = Thread::GetByID(id);
     if(!thread) return -ESRCH;
     if(thread->Process != ct->Process)
         return -EINVAL;
-    Thread::Finalize(thread, 0);
+    Thread::Finalize(thread, retVal);
     return 0;
 }
 
