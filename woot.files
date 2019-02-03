@@ -7108,6 +7108,8 @@ libsdl/SDL-1.2.15/src/audio/windib/SDL_dibaudio.h
 libsdl/SDL-1.2.15/src/audio/windx5/SDL_dx5audio.c
 libsdl/SDL-1.2.15/src/audio/windx5/SDL_dx5audio.h
 libsdl/SDL-1.2.15/src/audio/windx5/directx.h
+libsdl/SDL-1.2.15/src/audio/woot/SDL_wootaudio.c
+libsdl/SDL-1.2.15/src/audio/woot/SDL_wootaudio.h
 libsdl/SDL-1.2.15/src/cdrom/SDL_cdrom.c
 libsdl/SDL-1.2.15/src/cdrom/SDL_syscdrom.h
 libsdl/SDL-1.2.15/src/cdrom/aix/SDL_syscdrom.c

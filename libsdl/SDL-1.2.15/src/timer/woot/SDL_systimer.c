@@ -28,25 +28,30 @@ void SDL_Delay(Uint32 ms)
 
 static int RunTimer(void *unused)
 {
+    fprintf(stderr, "%s: %s not implemented\n", __FILE__, __FUNCTION__);
     return -1;
 }
 
 int SDL_SYS_TimerInit(void)
 {
+    fprintf(stderr, "%s: %s not implemented\n", __FILE__, __FUNCTION__);
     return -1;
 }
 
 void SDL_SYS_TimerQuit(void)
 {
+    fprintf(stderr, "%s: %s not implemented\n", __FILE__, __FUNCTION__);
 }
 
 int SDL_SYS_StartTimer(void)
 {
+    fprintf(stderr, "%s: %s not implemented\n", __FILE__, __FUNCTION__);
     return -1;
 }
 
 void SDL_SYS_StopTimer(void)
 {
+    fprintf(stderr, "%s: %s not implemented\n", __FILE__, __FUNCTION__);
     return;
 }
 

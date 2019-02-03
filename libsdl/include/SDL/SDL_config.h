@@ -186,6 +186,7 @@
 /* #undef SDL_AUDIO_DRIVER_SNDMGR */
 /* #undef SDL_AUDIO_DRIVER_SUNAUDIO */
 /* #undef SDL_AUDIO_DRIVER_WAVEOUT */
+#define SDL_AUDIO_DRIVER_WOOT 1
 
 /* Enable various cdrom drivers */
 /* #undef SDL_CDROM_AIX */

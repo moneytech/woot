@@ -95,8 +95,11 @@ static AudioBootStrap *bootstrap[] = {
 #if SDL_AUDIO_DRIVER_DISK
 	&DISKAUD_bootstrap,
 #endif
+#if SDL_AUDIO_DRIVER_WOOT
+    &WOOTAUD_bootstrap,
+#endif
 #if SDL_AUDIO_DRIVER_DUMMY
-	&DUMMYAUD_bootstrap,
+    &DUMMYAUD_bootstrap,
 #endif
 #if SDL_AUDIO_DRIVER_DC
 	&DCAUD_bootstrap,

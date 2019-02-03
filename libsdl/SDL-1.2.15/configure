@@ -22063,17 +22063,23 @@ case "$host" in
         CheckDiskAudio
         CheckDummyAudio
         CheckNASM
-        if test x$enable_video = xyes; then
-		  $as_echo "#define SDL_VIDEO_DRIVER_WOOT 1" >>confdefs.h
+        if test x$enable_audio = xyes; then
+            $as_echo "#define SDL_AUDIO_DRIVER_WOOT 1" >>confdefs.h
 
-		  SOURCES="$SOURCES $srcdir/src/video/woot/*.c"
-		  have_video=yes
-		fi
+            SOURCES="$SOURCES $srcdir/src/audio/woot/*.c"
+            have_audio=yes
+        fi
         if test x$enable_timers = xyes; then
             $as_echo "#define SDL_TIMER_WOOT 1" >>confdefs.h
 
             SOURCES="$SOURCES $srcdir/src/timer/woot/*.c"
             have_timers=yes
+        fi
+        if test x$enable_video = xyes; then
+          $as_echo "#define SDL_VIDEO_DRIVER_WOOT 1" >>confdefs.h
+
+          SOURCES="$SOURCES $srcdir/src/video/woot/*.c"
+          have_video=yes
         fi
         ;;
     *)

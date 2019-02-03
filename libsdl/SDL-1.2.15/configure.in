@@ -2837,15 +2837,20 @@ case "$host" in
         CheckDiskAudio
         CheckDummyAudio
         CheckNASM
-        if test x$enable_video = xyes; then
-		  AC_DEFINE(SDL_VIDEO_DRIVER_WOOT)
-		  SOURCES="$SOURCES $srcdir/src/video/woot/*.c"
-		  have_video=yes
-		fi
+        if test x$enable_audio = xyes; then
+            AC_DEFINE(SDL_AUDIO_DRIVER_WOOT)
+            SOURCES="$SOURCES $srcdir/src/audio/woot/*.c"
+            have_audio=yes
+        fi
         if test x$enable_timers = xyes; then
             AC_DEFINE(SDL_TIMER_WOOT)
             SOURCES="$SOURCES $srcdir/src/timer/woot/*.c"
             have_timers=yes
+        fi
+        if test x$enable_video = xyes; then
+          AC_DEFINE(SDL_VIDEO_DRIVER_WOOT)
+          SOURCES="$SOURCES $srcdir/src/video/woot/*.c"
+          have_video=yes
         fi
         ;;
     *)
