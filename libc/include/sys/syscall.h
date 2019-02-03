@@ -423,6 +423,18 @@
 #define SYS_thread_suspend          506
 #define SYS_thread_resume           507
 #define SYS_thread_sleep            508
+#define SYS_mutex_create            509
+#define SYS_mutex_delete            510
+#define SYS_mutex_acquire           511
+#define SYS_mutex_release           512
+#define SYS_mutex_cancel            513
+#define SYS_semaphore_create        514
+#define SYS_semaphore_delete        515
+#define SYS_semaphore_wait          516
+#define SYS_semaphore_signal        517
+#define SYS_semaphore_reset         518
+#define SYS_semaphore_cancel        519
+
 
 #ifdef __cplusplus
 extern "C" {

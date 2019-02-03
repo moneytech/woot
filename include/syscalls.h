@@ -4,7 +4,7 @@
 #include <ints.h>
 #include <types.h>
 
-#define MAX_SYSCALLS 512
+#define MAX_SYSCALLS 768
 
 class SysCalls
 {
@@ -73,6 +73,18 @@ class SysCalls
     static long sys_thread_suspend(long *args); // 506
     static long sys_thread_resume(long *args); // 507
     static long sys_thread_sleep(long *args); // 508
+    static long sys_mutex_create(long *args); // 509
+    static long sys_mutex_delete(long *args); // 510
+    static long sys_mutex_acquire(long *args); // 511
+    static long sys_mutex_release(long *args); // 512
+    static long sys_mutex_cancel(long *args); // 513
+    static long sys_semaphore_create(long *args); // 514
+    static long sys_semaphore_delete(long *args); // 515
+    static long sys_semaphore_wait(long *args); // 516
+    static long sys_semaphore_signal(long *args); // 517
+    static long sys_semaphore_reset(long *args); // 518
+    static long sys_semaphore_cancel(long *args); // 519
+
 public:
     static void Initialize();
     static void Cleanup();

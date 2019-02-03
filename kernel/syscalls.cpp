@@ -118,7 +118,24 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 448 - 463
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 464 - 479
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 480 - 495
-    nullptr, nullptr, nullptr, nullptr, sys_redraw_screen, sys_sleep_ms, sys_get_ticks, sys_get_tick_freq, sys_thread_create, sys_thread_delete, sys_thread_suspend, sys_thread_resume, sys_thread_sleep, nullptr, nullptr, nullptr  // 496 - 511
+    nullptr, nullptr, nullptr, nullptr, sys_redraw_screen, sys_sleep_ms, sys_get_ticks, sys_get_tick_freq, sys_thread_create, sys_thread_delete, sys_thread_suspend, sys_thread_resume, sys_thread_sleep, sys_mutex_create, sys_mutex_delete, sys_mutex_acquire,  // 496 - 511
+
+    sys_mutex_release, sys_mutex_cancel, sys_semaphore_create, sys_semaphore_delete, sys_semaphore_wait, sys_semaphore_signal, sys_semaphore_reset, sys_semaphore_cancel, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 512 - 527
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 528 - 543
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 544 - 559
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 560 - 575
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 576 - 591
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 592 - 607
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 608 - 623
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 624 - 639
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 640 - 655
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 656 - 671
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 672 - 687
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 688 - 703
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 704 - 719
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 720 - 735
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 736 - 751
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr  // 752 - 767
 };
 
 bool SysCalls::isr(Ints::State *state, void *context)
@@ -897,6 +914,112 @@ long SysCalls::sys_thread_sleep(long *args) // 508
     if(thread->Process != ct->Process)
         return -EINVAL;
     return thread->Sleep(ms, interruptible);
+}
+
+long SysCalls::sys_mutex_create(long *args) // 509
+{
+    Process *cp = Process::GetCurrent();
+    return cp->NewMutex();
+}
+
+long SysCalls::sys_mutex_delete(long *args) // 510
+{
+    int id = args[1];
+    Process *cp = Process::GetCurrent();
+    return cp->DeleteMutex(id);
+}
+
+long SysCalls::sys_mutex_acquire(long *args) // 511
+{
+    int id = args[1];
+    int timeout = args[2];
+    bool tryAcquire = args[3] != 0;
+    Process *cp = Process::GetCurrent();
+    Mutex *mtx = cp->GetMutex(id);
+    if(!mtx) return -EINVAL;
+    return mtx->Acquire(timeout, tryAcquire) ? 0 : -EBUSY;
+}
+
+long SysCalls::sys_mutex_release(long *args) // 512
+{
+    int id = args[1];
+    Process *cp = Process::GetCurrent();
+    Mutex *mtx = cp->GetMutex(id);
+    if(!mtx) return -EINVAL;
+    mtx->Release();
+    return 0;
+}
+
+long SysCalls::sys_mutex_cancel(long *args) // 513
+{
+    int id = args[1];
+    pid_t threadId = args[2];
+    Process *cp = Process::GetCurrent();
+    Mutex *mtx = cp->GetMutex(id);
+    if(!mtx) return -EINVAL;
+    Thread *thread = Thread::GetByID(threadId);
+    if(!thread) return -EINVAL;
+    mtx->Cancel(thread);
+    return 0;
+}
+
+long SysCalls::sys_semaphore_create(long *args) // 514
+{
+    int initVal = args[1];
+    Process *cp = Process::GetCurrent();
+    return cp->NewSemaphore(initVal);
+}
+
+long SysCalls::sys_semaphore_delete(long *args) // 515
+{
+    int id = args[1];
+    Process *cp = Process::GetCurrent();
+    return cp->DeleteSemaphore(id);
+}
+
+long SysCalls::sys_semaphore_wait(long *args) // 516
+{
+    int id = args[1];
+    int timeout = args[2];
+    bool tryWait = args[3] != 0;
+    Process *cp = Process::GetCurrent();
+    Semaphore *sem = cp->GetSemaphore(id);
+    if(!sem) return -EINVAL;
+    return sem->Wait(timeout, tryWait, false) ? 0 : -EBUSY;
+}
+
+long SysCalls::sys_semaphore_signal(long *args) // 517
+{
+    int id = args[1];
+    Process *cp = Process::GetCurrent();
+    Semaphore *sem = cp->GetSemaphore(id);
+    if(!sem) return -EINVAL;
+    sem->Signal(nullptr);
+    return 0;
+}
+
+long SysCalls::sys_semaphore_reset(long *args) // 518
+{
+    int id = args[1];
+    int value = args[2];
+    Process *cp = Process::GetCurrent();
+    Semaphore *sem = cp->GetSemaphore(id);
+    if(!sem) return -EINVAL;
+    sem->Reset(value);
+    return 0;
+}
+
+long SysCalls::sys_semaphore_cancel(long *args) // 519
+{
+    int id = args[1];
+    pid_t threadId = args[2];
+    Process *cp = Process::GetCurrent();
+    Semaphore *sem = cp->GetSemaphore(id);
+    if(!sem) return -EINVAL;
+    Thread *thread = Thread::GetByID(threadId);
+    if(!thread) return -EINVAL;
+    sem->Cancel(thread);
+    return 0;
 }
 
 void SysCalls::Initialize()

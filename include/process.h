@@ -13,7 +13,9 @@ class File;
 class Semaphore;
 class Thread;
 
-#define MAX_FILE_DESCRIPTORS 128
+#define MAX_FILE_DESCRIPTORS    128
+#define MAX_MUTEXES             64
+#define MAX_SEMAPHORES          64
 
 class Process
 {
@@ -35,6 +37,8 @@ public:
     DEntry *CurrentDirectory;
     uintptr_t UserStackPtr;
     File *FileDescriptors[MAX_FILE_DESCRIPTORS];
+    Mutex *Mutexes[MAX_MUTEXES];
+    Semaphore *Semaphores[MAX_SEMAPHORES];
 
     // used for brk() syscall
     Mutex MemoryLock;
@@ -68,6 +72,12 @@ public:
     int Open(const char *filename, int flags);
     int Close(int fd);
     File *GetFileDescriptor(int fd);
+    int NewMutex();
+    Mutex *GetMutex(int idx);
+    int DeleteMutex(int idx);
+    int NewSemaphore(int initVal);
+    Semaphore *GetSemaphore(int idx);
+    int DeleteSemaphore(int idx);
     ~Process();
 };
 
