@@ -1,0 +1,14 @@
+#!/bin/sh
+
+ROOT_DIR=`pwd` && \
+echo ROOT_DIR=$ROOT_DIR && \
+rm -rf install build && \
+mkdir -p build && \
+mkdir -p install && \
+cd build && \
+CC=woot-gcc \
+CFLAGS="-fno-stack-protector" \
+LDFLAGS="-Wl,-T$ROOT_DIR/../user.ldscript" \
+../binutils-2.30/configure \
+--prefix=$ROOT_DIR/install \
+--host=i686-woot

@@ -202,6 +202,48 @@ int getpagesize(void)
     return 4096;
 }
 
+long sysconf(int name)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return -1;
+}
+
+mode_t __umask = 0777;
+
+mode_t umask(mode_t mask)
+{
+    return (__umask = mask);
+}
+
+int chmod(const char *pathname, mode_t mode)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return 0;
+}
+
+int chown(const char *path, uid_t owner, gid_t group)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return 0;
+}
+
+struct utimbuf {
+    time_t actime;       /* access time */
+    time_t modtime;      /* modification time */
+};
+
+int utime(const char *filename, const struct utimbuf *times)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return 0;
+}
+
+int rmdir(const char *pathname)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return -1;
+}
+
 void _exit(int status)
 {
     for(;;) syscall1(SYS_exit, status);
@@ -361,6 +403,11 @@ int stat(const char *path, struct stat *buf)
         return -1;
     }
     return 0;
+}
+
+int lstat(const char *path, struct stat *buf)
+{
+    return stat(path, buf);
 }
 
 int access(const char *pathname, int mode)

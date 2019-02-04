@@ -18,6 +18,7 @@ int SDL_SYS_CreateThread(SDL_Thread *thread, void *args)
     if(!thread) return -1;
     thread->handle.finished = thrSemaphoreCreate(0);
     thread->handle.id = thrCreate(threadEntry, thread->handle.finished, &thread->status, args);
+    thrResume(thread->handle.id);
 }
 
 void SDL_SYS_SetupThread(void)

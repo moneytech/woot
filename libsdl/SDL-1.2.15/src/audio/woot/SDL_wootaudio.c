@@ -70,7 +70,7 @@ static void WOOTAUD_WaitAudio(_THIS)
 static void WOOTAUD_PlayAudio(_THIS)
 {
     auStartPlayback(this->hidden->deviceId);
-    //printf("%s: %s not implemented\n", __FILE__, __FUNCTION__);
+    printf("%s: %s not implemented\n", __FILE__, __FUNCTION__);
 }
 
 static Uint8 *WOOTAUD_GetAudioBuf(_THIS)
