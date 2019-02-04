@@ -1,6 +1,7 @@
 libc/Makefile
 libc/configure
 libc/include/dirent.h
+libc/include/errno.h
 libc/include/float.h
 libc/include/limits.h
 libc/include/stdarg.h
