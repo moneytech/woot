@@ -2377,6 +2377,7 @@ libc/newlib-2.5.0/newlib/libc/include/sys/_timeval.h
 libc/newlib-2.5.0/newlib/libc/include/sys/_types.h
 libc/newlib-2.5.0/newlib/libc/include/sys/cdefs.h
 libc/newlib-2.5.0/newlib/libc/include/sys/config.h
+libc/newlib-2.5.0/newlib/libc/include/sys/config.h
 libc/newlib-2.5.0/newlib/libc/include/sys/custom_file.h
 libc/newlib-2.5.0/newlib/libc/include/sys/dir.h
 libc/newlib-2.5.0/newlib/libc/include/sys/dirent.h
