@@ -184,6 +184,12 @@ void __init_libc(void)
     __current_brk = (uintptr_t)syscall1(SYS_brk, 0);
 }
 
+int *_get_errno_ptr()
+{
+    static int __errno = 0;
+    return &__errno;
+}
+
 int getpagesize(void)
 {
     return 4096;
@@ -560,12 +566,12 @@ int settimeofday(const struct timeval *tv, const struct timezone *tz)
 #define NAME_MAX 255
 #define O_DIRECTORY 0200000
 
-struct dirent
+/*struct dirent
 {
     ino_t d_ino;
     unsigned char d_type;
     char d_name[NAME_MAX + 1];
-};
+};*/
 
 typedef struct DIR
 {

@@ -18,10 +18,10 @@ void __attribute__((noreturn)) _start(int argc)
 
 void _init(void)
 {
-    printf("%: %s not implemented\n", __FILE__, __FUNCTION__);
+    printf("%s: %s not implemented\n", __FILE__, __FUNCTION__);
 }
 
 void _fini(void)
 {
-    printf("%: %s not implemented\n", __FILE__, __FUNCTION__);
+    printf("%s: %s not implemented\n", __FILE__, __FUNCTION__);
 }

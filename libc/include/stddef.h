@@ -4,5 +4,5 @@
 
 typedef signed long ptrdiff_t;
 typedef unsigned long size_t;
-typedef unsigned int wint_t;
-typedef unsigned int wchar_t;
+typedef int wint_t;
+typedef __WCHAR_TYPE__ wchar_t;

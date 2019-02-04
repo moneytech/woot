@@ -1,3 +1,4 @@
+alpha.png
 libc/Makefile
 libc/configure
 libc/include/dirent.h
@@ -5247,7 +5248,6 @@ libc/newlib-2.5.0/newlib/libc/sys/woot/configure.in
 libc/newlib-2.5.0/newlib/libc/sys/woot/crt0.c
 libc/newlib-2.5.0/newlib/libc/sys/woot/sys/dirent.h
 libc/newlib-2.5.0/newlib/libc/sys/woot/sys/stat.h
-libc/newlib-2.5.0/newlib/libc/sys/woot/sys/types.h
 libc/newlib-2.5.0/newlib/libc/sys/woot/syscalls.c
 libc/newlib-2.5.0/newlib/libc/sys/z8ksim/Makefile.am
 libc/newlib-2.5.0/newlib/libc/sys/z8ksim/Makefile.in
@@ -7756,6 +7756,7 @@ libwoot/include/woot/thread.h
 libwoot/include/woot/time.h
 libwoot/thread.c
 libwoot/time.c
+normal.cur
 screen-0.2-2019-02-02.png
 zlib/zlib-1.2.11/zutil.h
 zlib/zlib-1.2.11/zutil.c

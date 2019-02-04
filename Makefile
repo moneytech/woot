@@ -54,7 +54,7 @@ export CXXFLAGS
 export ASMFLAGS
 export LDFLAGS
 
-all: $(CONFIGURE) add-exec subdirs
+all: configure subdirs
 
 subdirs:
 	for dir in $(SUBDIRS); do \

@@ -1,6 +1,8 @@
 #ifndef STAT_H
 #define STAT_H
 
+#include <sys/types.h>
+
 // make sure this stuff matches to kernel
 
 #define S_IFTYPE 0xF000     // type mask
@@ -59,5 +61,17 @@ struct stat
 };
 
 #define stat64 stat
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+int stat(const char *path, struct stat *buf);
+int fstat(int fd, struct stat *buf);
+int mkdir(const char *pathname, mode_t mode);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // STAT_H
