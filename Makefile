@@ -3,7 +3,7 @@ ROOTDIR = $(shell pwd)
 THREADS = 8
 
 SUBDIRS = lib kernel libc libwoot ps2mouse simplefb cmi8738 es1371
-SUBDIRS += libsdl usertest calc clock wpaper sndplay
+SUBDIRS += libsdl usertest calc clock wpaper sndplay doom
 
 KERNELFILE = woot
 ISODIR = $(ROOTDIR)/iso
@@ -14,7 +14,7 @@ MOUNTPOINT = mnt
 DISTFILES = libc/i686-woot/lib/libc.so libc/i686-woot/lib/libm.so
 DISTFILES += usertest/usertest logo.bmp libwoot/libwoot.so zlib/lib/libz.so libpng/lib/libpng.so libpng/lib/libpng16.so
 DISTFILES += wallpaper.png alpha.png libfreetype/lib/libfreetype.so test.ttf directory.png file.png normal.cur clock/clock wpaper/wpaper
-DISTFILES += calc/calc title.ttf libgmp/lib/libgmp.so remove8bit.wav bong.wav sndplay/sndplay
+DISTFILES += calc/calc title.ttf libgmp/lib/libgmp.so remove8bit.wav bong.wav sndplay/sndplay doom/build/doom doom/doom1.wad
 
 MODULES = ps2mouse/ps2mouse.ko simplefb/simplefb.ko cmi8738/cmi8738.ko es1371/es1371.ko
 

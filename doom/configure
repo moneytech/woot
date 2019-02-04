@@ -1,0 +1,14 @@
+#!/bin/sh
+
+ROOT_DIR=`pwd` && \
+rm -rf build && \
+mkdir -p build && \
+cd build && \
+CC=woot-gcc \
+CFLAGS="-fno-stack-protector -ggdb -Ulinux" \
+LDFLAGS="-Wl,-T$ROOT_DIR/../user.ldscript,-lwoot" \
+../sdldoom-1.10/configure \
+--with-sdl-prefix=$ROOT_DIR/../libsdl \
+--prefix=`pwd`/.. && \
+cd ..
+

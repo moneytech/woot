@@ -374,3 +374,5 @@ libsdl/SDL-1.2.15/src/audio/woot
 libsdl/SDL-1.2.15/src/thread/woot
 libc/newlib-2.5.0/newlib/libc/include/sys
 libc/newlib-2.5.0/newlib/libc/sys/woot
+doom/sdldoom-1.10
+doom

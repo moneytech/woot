@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*char *_environ[] =
 {
@@ -188,6 +189,12 @@ int *_get_errno_ptr()
 {
     static int __errno = 0;
     return &__errno;
+}
+
+int gethostname(char *name, size_t len)
+{
+    strncpy(name, "woot-devel", len);
+    return 0;
 }
 
 int getpagesize(void)
