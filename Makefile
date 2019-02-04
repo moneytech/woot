@@ -130,10 +130,12 @@ try-unmount:
 # alias for try-unmount
 try-umount: try-unmount
 
+configure: $(CONFIGURE) add-exec
+
 $(CONFIGURE): % : %.template
 	$(SED) 's?<<ROOT_DIR>>?'`pwd`'?g' $< > $@
 
 add-exec: $(ADD_EXEC)
 	chmod +x $<
 
-.PHONY: subdirs clean distclean iso clean-img setup-grub try-mount try-unmount add-exec
+.PHONY: subdirs clean distclean iso clean-img setup-grub try-mount try-unmount add-exec configure

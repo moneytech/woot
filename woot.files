@@ -5241,6 +5241,7 @@ libc/newlib-2.5.0/newlib/libc/sys/w65/sys/syscall.h
 libc/newlib-2.5.0/newlib/libc/sys/w65/syscalls.c
 libc/newlib-2.5.0/newlib/libc/sys/w65/trap.c
 libc/newlib-2.5.0/newlib/libc/sys/woot/Makefile.am
+libc/newlib-2.5.0/newlib/libc/sys/woot/configure
 libc/newlib-2.5.0/newlib/libc/sys/woot/configure.in
 libc/newlib-2.5.0/newlib/libc/sys/woot/crt0.c
 libc/newlib-2.5.0/newlib/libc/sys/woot/sys/dirent.h
