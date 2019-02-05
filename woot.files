@@ -23865,8 +23865,9 @@ doom/sdldoom-1.10/wi_stuff.h
 doom/sdldoom-1.10/z_zone.c
 doom/sdldoom-1.10/z_zone.h
 i686-woot-ar
-i686-woot-gcc
+i686-woot-gcc.template
 i686-woot-ld.template
+i686-woot-strip
 libc/Makefile
 libc/configure
 libc/include/arpa/inet.h

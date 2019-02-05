@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo Running i686-woot-gcc
+COMMAND=woot-gcc
+ARGS="-nostdlib -m32"
+echo $COMMAND $ARGS "$@"
+$COMMAND $ARGS "$@"

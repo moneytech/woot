@@ -1,4 +1,5 @@
 #!/bin/sh
 
+echo Running i686-woot-ar
 ar "$@"
 

@@ -269,6 +269,13 @@ struct passwd *getpwnam(const char *name)
     return NULL;
 }
 
+struct passwd *getpwuid(uid_t uid)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return NULL;
+}
+
 int listen(int sockfd, int backlog)
 {
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
@@ -281,6 +288,41 @@ int ioctl(int fd, unsigned long request, ...)
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
     errno = ENOSYS;
     return -1;
+}
+
+unsigned int major(dev_t dev)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+unsigned int minor(dev_t dev)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int strverscmp(const char *s1, const char *s2)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+struct group *getgrnam(const char *name)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return NULL;
+}
+
+struct group *getgrgid(gid_t gid)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return NULL;
 }
 
 int seteuid(uid_t euid)
@@ -461,7 +503,70 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const struct 
     return -1;
 }
 
+char *dirname(char *path)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return NULL;
+}
+
+char *basename(char *path)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return NULL;
+}
+
+int execvp(const char *file, char *const argv[])
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int mknod(const char *pathname, mode_t mode, dev_t dev)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int utimes(const char *filename, const struct timeval times[2])
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int clearenv(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int lchown(const char *path, uid_t owner, gid_t group)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int lutimes(const char *filename, const struct timeval tv[2])
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
 pid_t vfork(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int execv(const char *path, char *const argv[])
 {
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
     errno = ENOSYS;

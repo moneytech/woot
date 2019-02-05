@@ -35,6 +35,7 @@
 
 #define S_ISDIR(mode)	(((mode) & S_IFTYPE) == S_IFDIR)
 #define S_ISLINK(mode)	(((mode) & S_IFTYPE) == S_IFLNK)
+#define S_ISLNK(mode)   S_ISLINK(mode)
 #define S_ISBLK(mode)	(((mode) & S_IFTYPE) == S_IFBLK)
 #define S_ISSOCK(mode)	(((mode) & S_IFTYPE) == S_IFSOCK)
 #define S_ISREG(mode)	(((mode) & S_IFTYPE) == S_IFREG)
