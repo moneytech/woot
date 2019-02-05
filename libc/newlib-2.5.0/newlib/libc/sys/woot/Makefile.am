@@ -2,10 +2,10 @@ AUTOMAKE_OPTIONS = cygnus
 INCLUDES = $(NEWLIB_CFLAGS) $(CROSS_CFLAGS) $(TARGET_CFLAGS)
 AM_CCASFLAGS = $(INCLUDES)
 
-GENERAL_SOURCES = syscalls.c crt0.c
+GENERAL_SOURCES = syscalls.c unistd.c crt0.c
 
 if USE_LIBTOOL
-ADD_OBJS = syscalls.lo
+ADD_OBJS = syscalls.lo unistd.lo
 noinst_LTLIBRARIES = libwoot.la
 libwoot_la_SOURCES = $(GENERAL_SOURCES)
 libwoot_la_LIBADD = $(ADD_OBJS)
@@ -14,7 +14,7 @@ LIBC_COMPILE = $(LTCOMPILE)
 noinst_DATA = objectlist.awk.in
 else
 noinst_LIBRARIES = lib.a
-ADD_OBJS = syscalls.o
+ADD_OBJS = syscalls.o unistd.o
 lib_a_SOURCES = $(GENERAL_SOURCES)
 lib_a_LIBADD = $(ADD_OBJS)
 lib_a_DEPENDENCIES = $(ADD_OBJS) crt0.o

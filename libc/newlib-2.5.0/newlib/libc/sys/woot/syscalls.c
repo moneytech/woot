@@ -13,14 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*char *_environ[] =
-{
-    "NOT_IMPLEMENTED=1",
-    NULL
-};
-
-char **environ = _environ;*/
-
 extern void *end;
 uintptr_t __current_brk = (uintptr_t)&end;
 
@@ -332,12 +324,6 @@ int seteuid(uid_t euid)
     return -1;
 }
 
-int geteuid(void)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    return 0;
-}
-
 int setegid(gid_t egid)
 {
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
@@ -356,12 +342,6 @@ int setgid(gid_t gid)
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
     errno = ENOSYS;
     return -1;
-}
-
-gid_t getegid(void)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    return 0;
 }
 
 int WCOREDUMP(int status)

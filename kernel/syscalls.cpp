@@ -90,7 +90,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, sys_exit, nullptr, sys_read, sys_write, sys_open, sys_close, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_time, nullptr, nullptr, // 0 - 15
     nullptr, nullptr, nullptr, sys_lseek, sys_getpid, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 16 - 31
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_mkdir, nullptr, nullptr, nullptr, nullptr, nullptr, sys_brk, nullptr, nullptr, // 32 - 47
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 48 - 63
+    nullptr, sys_geteuid, sys_getegid, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 48 - 63
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 64 - 79
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_readdir, nullptr, sys_munmap, nullptr, nullptr, nullptr, nullptr, // 80 - 95
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_stat, nullptr, sys_fstat, nullptr, nullptr, nullptr, // 96 - 111
@@ -298,6 +298,18 @@ long SysCalls::sys_brk(long *args) // 45
     cp->CurrentBrk = brk;
     cp->MemoryLock.Release();
     return brk;
+}
+
+long SysCalls::sys_geteuid(long *args) // 49
+{
+    Process *cp = Process::GetCurrent();
+    return cp->EUID;
+}
+
+long SysCalls::sys_getegid(long *args) // 50
+{
+    Process *cp = Process::GetCurrent();
+    return cp->EGID;
 }
 
 long SysCalls::sys_readdir(long *args) // 89

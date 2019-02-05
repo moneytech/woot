@@ -29138,6 +29138,7 @@ libc/newlib-2.5.0/newlib/libc/sys/woot/sys/dirent.h
 libc/newlib-2.5.0/newlib/libc/sys/woot/sys/resource.h
 libc/newlib-2.5.0/newlib/libc/sys/woot/sys/stat.h
 libc/newlib-2.5.0/newlib/libc/sys/woot/syscalls.c
+libc/newlib-2.5.0/newlib/libc/sys/woot/unistd.c
 libc/newlib-2.5.0/newlib/libc/sys/z8ksim/Makefile.am
 libc/newlib-2.5.0/newlib/libc/sys/z8ksim/Makefile.in
 libc/newlib-2.5.0/newlib/libc/sys/z8ksim/aclocal.m4

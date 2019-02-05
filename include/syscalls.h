@@ -24,6 +24,8 @@ class SysCalls
     static long sys_getpid(long *args); // 20
     static long sys_mkdir(long *args); // 39
     static long sys_brk(long *args); // 45
+    static long sys_geteuid(long *args); // 49
+    static long sys_getegid(long *args); // 50
     static long sys_readdir(long *args); // 89
     static long sys_munmap(long *args); // 91
     static long sys_stat(long *args); // 106
