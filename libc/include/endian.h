@@ -1,3 +1,5 @@
+#if 0
+
 #ifndef _ENDIAN_H
 #define _ENDIAN_H
 
@@ -80,3 +82,9 @@ static __inline uint64_t __bswap64(uint64_t __x)
 #endif
 
 #endif // _ENDIAN_H
+
+#else
+
+#include <machine/endian.h>
+
+#endif // 0

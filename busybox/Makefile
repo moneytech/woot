@@ -3,6 +3,10 @@ BUILD_DIR = build
 KMAKEFILE = $(BUILD_DIR)/Makefile
 ROOT_DIR = $(shell pwd)
 
+CROSS_COMPILE = woot-
+
+export CROSS_COMPILE
+
 all: config
 	$(MAKE) -C $(BUILD_DIR)
 
@@ -15,8 +19,11 @@ config: $(KMAKEFILE)
 dist-clean:
 	rm -rf $(BUILD_DIR)
 
+menuconfig:
+	$(MAKE) -C $(BUILD_DIR) menuconfig
+
 clean:
 	$(MAKE) -C $(BUILD_DIR) clean
 
-.PHONY: all clean dist-clean
+.PHONY: all clean dist-clean menuconfig
 

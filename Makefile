@@ -20,8 +20,8 @@ BINUTILS_FILES = binutils/install/bin/*
 
 MODULES = ps2mouse/ps2mouse.ko simplefb/simplefb.ko cmi8738/cmi8738.ko es1371/es1371.ko
 
-CONFIGURE = woot.specs woot-gcc
-ADD_EXEC = woot-gcc
+CONFIGURE = woot.specs woot-gcc i686-woot-ld
+ADD_EXEC = woot-gcc i686-woot-ld
 
 ARCH = i386
 export ARCH
