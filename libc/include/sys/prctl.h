@@ -1,4 +1,4 @@
-#ifndef SYS_PRCTL_H
-#define SYS_PRCTL_H
+#ifndef PRCTL_H
+#define PRCTL_H
 
-#endif // SYS_PRCTL_H
+#endif // PRCTL_H

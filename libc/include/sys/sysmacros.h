@@ -1,0 +1,4 @@
+#ifndef SYS_SYSMACROS_H
+#define SYS_SYSMACROS_H
+
+#endif // SYS_SYSMACROS_H

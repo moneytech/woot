@@ -24,6 +24,10 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
+#include <setjmp.h>
+
+jmp_buf a;
+
 void testThread()
 {
     int tid = thrGetCurrentID();

@@ -16,6 +16,8 @@ DISTFILES += usertest/usertest logo.bmp libwoot/libwoot.so zlib/lib/libz.so libp
 DISTFILES += wallpaper.png alpha.png libfreetype/lib/libfreetype.so test.ttf directory.png file.png normal.cur clock/clock wpaper/wpaper
 DISTFILES += calc/calc title.ttf libgmp/lib/libgmp.so remove8bit.wav bong.wav sndplay/sndplay doom/build/doom doom/doom1.wad
 
+BINUTILS_FILES = binutils/install/bin/*
+
 MODULES = ps2mouse/ps2mouse.ko simplefb/simplefb.ko cmi8738/cmi8738.ko es1371/es1371.ko
 
 CONFIGURE = woot.specs woot-gcc
@@ -137,5 +139,16 @@ $(CONFIGURE): % : %.template
 
 add-exec: $(ADD_EXEC)
 	chmod +x $<
+
+hdd.img-binutils:
+	sudo losetup -P /dev/loop1 hdd.img
+	sudo mount /dev/loop1p1 $(MOUNTPOINT)
+	-sudo cp $(BINUTILS_FILES) $(MOUNTPOINT)
+	sudo umount $(MOUNTPOINT)
+	sudo losetup -d /dev/loop1
+
+iso-binutils:
+	cp $(BINUTILS_FILES) $(ISODIR)
+	grub-mkrescue -o $(ISOFILE) $(ISODIR) -- --volid WOOT_OS 2>&1
 
 .PHONY: subdirs clean distclean iso clean-img setup-grub try-mount try-unmount add-exec configure

@@ -29,6 +29,10 @@
 #define S_IWOTH  0x0002     // others write
 #define S_IXOTH  0x0001     // others execute
 
+#define S_IRWXU (S_IRUSR | S_IWUSR | S_IXUSR)
+#define S_IRWXG (S_IRGRP | S_IWGRP | S_IXGRP)
+#define S_IRWXO (S_IROTH | S_IWOTH | S_IXOTH)
+
 #define S_ISDIR(mode)	(((mode) & S_IFTYPE) == S_IFDIR)
 #define S_ISLINK(mode)	(((mode) & S_IFTYPE) == S_IFLNK)
 #define S_ISBLK(mode)	(((mode) & S_IFTYPE) == S_IFBLK)
@@ -68,6 +72,7 @@ extern "C" {
 
 int stat(const char *path, struct stat *buf);
 int fstat(int fd, struct stat *buf);
+int lstat(const char *path, struct stat *buf);
 int mkdir(const char *pathname, mode_t mode);
 
 #ifdef __cplusplus

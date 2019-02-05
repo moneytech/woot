@@ -191,6 +191,14 @@ int *_get_errno_ptr()
     return &__errno;
 }
 
+int setuid(uid_t uid)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return 0;
+}
+
+int h_errno = 0;
+
 int gethostname(char *name, size_t len)
 {
     strncpy(name, "woot-devel", len);
@@ -205,6 +213,258 @@ int getpagesize(void)
 long sysconf(int name)
 {
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return -1;
+}
+
+int sigsuspend(const sigset_t *mask)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int socket(int domain, int type, int protocol)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+#include <termios.h>
+
+int tcsetattr(int fd, int optional_actions, const struct termios *termios_p)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+#include <sys/socket.h>
+
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int fnmatch(const char *pattern, const char *string, int flags)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+pid_t getppid(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+struct passwd *getpwnam(const char *name)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return NULL;
+}
+
+int listen(int sockfd, int backlog)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int ioctl(int fd, unsigned long request, ...)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int seteuid(uid_t euid)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int geteuid(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return 0;
+}
+
+int setegid(gid_t egid)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+gid_t getgid(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return 0;
+}
+
+int setgid(gid_t gid)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+gid_t getegid(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return 0;
+}
+
+int WCOREDUMP(int status)
+{
+    return status;
+}
+
+ssize_t readlink(const char *path, char *buf, size_t bufsiz)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+char *realpath(const char *path, char *resolved_path)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return NULL;
+}
+
+int symlink(const char *target, const char *linkpath)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+#include <sys/utsname.h>
+
+int uname(struct utsname *buf)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+#include <signal.h>
+
+int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+#include <sys/resource.h>
+
+int getrlimit(int resource, struct rlimit *rlim)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int setrlimit(int resource, const struct rlimit *rlim)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int dup(int oldfd)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int dup2(int oldfd, int newfd)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+pid_t wait(int *status)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+pid_t waitpid(pid_t pid, int *status, int options)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+#include <poll.h>
+
+int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int chdir(const char *path)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int fchdir(int fd)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int pipe(int pipefd[2])
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int ttyname_r(int fildes, char *name, size_t namesize)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int tcgetattr(int fd, struct termios *termios_p)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+pid_t vfork(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
     return -1;
 }
 
@@ -225,6 +485,12 @@ int chown(const char *path, uid_t owner, gid_t group)
 {
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
     return 0;
+}
+
+int chroot(const char *path)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return -1;
 }
 
 struct utimbuf {
@@ -435,14 +701,6 @@ int unlink(char *pathname)
         return -1;
     }
     return 0;
-}
-
-int wait(int *status)
-{
-    fprintf(stderr, "wait not implemented\n");
-    errno = ENOSYS;
-    return -1;
-
 }
 
 int write(int fd, char *buf, int count)
