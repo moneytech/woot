@@ -14,6 +14,8 @@ struct hostent
     char **h_addr_list;       /* list of addresses */
 };
 
+#define h_addr h_addr_list[0] /* for backward compatibility */
+
 struct servent
 {
     char  *s_name;       /* official service name */

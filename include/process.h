@@ -29,6 +29,7 @@ class Process
     static int processEntryPoint(const char *cmdline);
 public:
     pid_t ID;
+    Process *Parent;
     char *Name;
     uintptr_t AddressSpace;
     List<ELF *> Images;

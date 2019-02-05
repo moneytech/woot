@@ -148,7 +148,7 @@ Process *Process::Create(const char *filename, Semaphore *finished)
 {
     if(!filename) return nullptr;
     Thread *thread = new Thread("main", nullptr, (void *)processEntryPoint, (uintptr_t)filename,
-                                DEFAULT_STACK_SIZE, DEFAULT_STACK_SIZE,
+                                DEFAULT_STACK_SIZE, 1 << 20,
                                 nullptr, finished, !finished);
     Process *proc = new Process(filename, thread, 0, finished);
     return proc;
@@ -268,6 +268,7 @@ void Process::Dump()
 Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, bool selfDestruct) :
     UserStackPtr(KERNEL_BASE),
     ID(id.GetNext()),
+    Parent(Process::GetCurrent()),
     Name(strdup(name)),
     AddressSpace(addressSpace ? addressSpace : NewAddressSpace()),
     SelfDestruct(selfDestruct)

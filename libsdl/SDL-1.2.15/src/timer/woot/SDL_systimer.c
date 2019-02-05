@@ -18,7 +18,8 @@ void SDL_StartTicks(void)
 Uint32 SDL_GetTicks(void)
 {
     if(!tickFreq) tickFreq = tmGetTickFreq();
-    return 1000 * (tmGetTicks() - startTicks) / tickFreq;
+    Uint32 res = 1000 * (tmGetTicks() - startTicks) / tickFreq;
+    return res;
 }
 
 void SDL_Delay(Uint32 ms)

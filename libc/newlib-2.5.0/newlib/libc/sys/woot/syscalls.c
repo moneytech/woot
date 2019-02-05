@@ -183,12 +183,6 @@ int *_get_errno_ptr()
     return &__errno;
 }
 
-int setuid(uid_t uid)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    return 0;
-}
-
 int h_errno = 0;
 
 int gethostname(char *name, size_t len)
@@ -222,6 +216,13 @@ int socket(int domain, int type, int protocol)
     return -1;
 }
 
+int mprotect(void *addr, size_t len, int prot)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return 0;
+}
+
 #include <termios.h>
 
 int tcsetattr(int fd, int optional_actions, const struct termios *termios_p)
@@ -247,18 +248,30 @@ int fnmatch(const char *pattern, const char *string, int flags)
     return -1;
 }
 
-pid_t getppid(void)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    errno = ENOSYS;
-    return -1;
-}
-
 struct passwd *getpwnam(const char *name)
 {
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
     errno = ENOSYS;
     return NULL;
+}
+
+struct passwd *getpwent(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return NULL;
+}
+
+void setpwent(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+}
+
+void endpwent(void)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
 }
 
 struct passwd *getpwuid(uid_t uid)
@@ -315,33 +328,6 @@ struct group *getgrgid(gid_t gid)
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
     errno = ENOSYS;
     return NULL;
-}
-
-int seteuid(uid_t euid)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    errno = ENOSYS;
-    return -1;
-}
-
-int setegid(gid_t egid)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    errno = ENOSYS;
-    return -1;
-}
-
-gid_t getgid(void)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    return 0;
-}
-
-int setgid(gid_t gid)
-{
-    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
-    errno = ENOSYS;
-    return -1;
 }
 
 int WCOREDUMP(int status)
@@ -639,17 +625,6 @@ int fstat(int fd, struct stat *buf)
 int fstat64(int fd, struct stat64 *buf)
 {
     return fstat(fd, (struct stat *)buf);
-}
-
-int getpid()
-{
-    long res = syscall0(SYS_getpid);
-    if(res < 0)
-    {
-        errno = EINVAL;
-        return -1;
-    }
-    return res;
 }
 
 int isatty(int fd)
@@ -1138,4 +1113,82 @@ size_t regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_si
 void regfree(regex_t *preg)
 {
     fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+}
+
+// network stuff
+
+in_addr_t inet_addr(const char *cp)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return 0;
+}
+
+char *inet_ntoa(struct in_addr in)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return NULL;
+}
+
+#include <netdb.h>
+
+struct hostent *gethostbyname(const char *name)
+{
+    static char *h_aliases[] = { NULL };
+    static char addr[] = { 127, 0, 0, 1 };
+    static char *h_addr_list[] = { addr };
+    static struct hostent he =
+    {
+        "invalidhost",
+        h_aliases,
+        AF_INET,
+        4,
+        h_addr_list
+    };
+
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return &he;
+}
+
+struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return NULL;
+}
+
+ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return -1;
+}
+
+int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return -1;
+}
+
+int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    return -1;
+}
+
+uint32_t htonl(uint32_t hostlong)
+{
+    return __bswap32(hostlong);
+}
+
+uint16_t htons(uint16_t hostshort)
+{
+    return __bswap16(hostshort);
+}
+
+uint32_t ntohl(uint32_t netlong)
+{
+    return __bswap32(netlong);
+}
+
+uint16_t ntohs(uint16_t netshort)
+{
+    return __bswap16(netshort);
 }

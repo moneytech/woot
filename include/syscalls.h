@@ -22,10 +22,15 @@ class SysCalls
     static long sys_time(long * args); // 13
     static long sys_lseek(long *args); // 19
     static long sys_getpid(long *args); // 20
+    static long sys_setuid(long *args); // 23
+    static long sys_getuid(long *args); // 24
     static long sys_mkdir(long *args); // 39
     static long sys_brk(long *args); // 45
+    static long sys_setgid(long *args); // 46
+    static long sys_getgid(long *args); // 47
     static long sys_geteuid(long *args); // 49
     static long sys_getegid(long *args); // 50
+    static long sys_getppid(long *args); // 64
     static long sys_readdir(long *args); // 89
     static long sys_munmap(long *args); // 91
     static long sys_stat(long *args); // 106
@@ -35,6 +40,10 @@ class SysCalls
     static long sys_fdatasync(long *args); // 148
     static long sys_nanosleep(long *args); // 162
     static long sys_getcwd(long *args); // 183
+    static long sys_getuid32(long *args); // 199
+    static long sys_getgid32(long *args); // 200
+    static long sys_geteuid32(long *args); // 201
+    static long sys_getegid32(long *args); // 202
     static long sys_gettid(long *args); // 224
 
     static long sys_create_window(long *args); // 386

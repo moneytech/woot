@@ -88,10 +88,10 @@ Ints::Handler SysCalls::handler = { nullptr, SysCalls::isr, nullptr };
 SysCalls::Callback SysCalls::callbacks[] =
 {
     nullptr, sys_exit, nullptr, sys_read, sys_write, sys_open, sys_close, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_time, nullptr, nullptr, // 0 - 15
-    nullptr, nullptr, nullptr, sys_lseek, sys_getpid, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 16 - 31
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_mkdir, nullptr, nullptr, nullptr, nullptr, nullptr, sys_brk, nullptr, nullptr, // 32 - 47
+    nullptr, nullptr, nullptr, sys_lseek, sys_getpid, nullptr, nullptr, sys_setuid, sys_getuid, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 16 - 31
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_mkdir, nullptr, nullptr, nullptr, nullptr, nullptr, sys_brk, sys_setgid, sys_getgid, // 32 - 47
     nullptr, sys_geteuid, sys_getegid, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 48 - 63
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 64 - 79
+    sys_getppid, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 64 - 79
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_readdir, nullptr, sys_munmap, nullptr, nullptr, nullptr, nullptr, // 80 - 95
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_stat, nullptr, sys_fstat, nullptr, nullptr, nullptr, // 96 - 111
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_fsync, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 112 - 127
@@ -99,7 +99,7 @@ SysCalls::Callback SysCalls::callbacks[] =
     nullptr, nullptr, nullptr, nullptr, sys_fdatasync, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 144 - 159
     nullptr, nullptr, sys_nanosleep, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 160 - 175
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_getcwd, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 176 - 191
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 192 - 207
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, sys_getuid32, sys_getgid32, sys_geteuid32, sys_getegid32, nullptr, nullptr, nullptr, nullptr, nullptr, // 192 - 207
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 208 - 223
     sys_gettid, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 224 - 239
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, // 240 - 255
@@ -198,7 +198,6 @@ long SysCalls::sys_open(long *args) // 5
 long SysCalls::sys_close(long *args) // 6
 {
     Process *cp = Process::GetCurrent();
-    if(!cp) return -ESRCH;
     return cp->Close(args[1]);
 }
 
@@ -210,7 +209,6 @@ long SysCalls::sys_time(long *args) // 13
 long SysCalls::sys_lseek(long *args) // 19
 {
     Process *cp = Process::GetCurrent();
-    if(!cp) return -ESRCH;
     File *f = cp->GetFileDescriptor(args[1]);
     if(!f) return -EBADF;
     return f->Seek(args[2], args[3]);
@@ -219,6 +217,20 @@ long SysCalls::sys_lseek(long *args) // 19
 long SysCalls::sys_getpid(long *args) // 20
 {
     return Process::GetCurrent()->ID;
+}
+
+long SysCalls::sys_setuid(long *args) // 23
+{
+    Process *cp = Process::GetCurrent();
+    // TODO: add permission checking here
+    cp->EUID = args[1];
+    return 0;
+}
+
+long SysCalls::sys_getuid(long *args)
+{
+    Process *cp = Process::GetCurrent();
+    return cp->UID;
 }
 
 long SysCalls::sys_mkdir(long *args) // 39
@@ -300,6 +312,20 @@ long SysCalls::sys_brk(long *args) // 45
     return brk;
 }
 
+long SysCalls::sys_setgid(long *args) // 46
+{
+    Process *cp = Process::GetCurrent();
+    // TODO: add permission checking here
+    cp->EGID = args[1];
+    return 0;
+}
+
+long SysCalls::sys_getgid(long *args) // 47
+{
+    Process *cp = Process::GetCurrent();
+    return cp->GID;
+}
+
 long SysCalls::sys_geteuid(long *args) // 49
 {
     Process *cp = Process::GetCurrent();
@@ -310,6 +336,13 @@ long SysCalls::sys_getegid(long *args) // 50
 {
     Process *cp = Process::GetCurrent();
     return cp->EGID;
+}
+
+long SysCalls::sys_getppid(long *args) // 64
+{
+    Process *cp = Process::GetCurrent();
+    Process *pp = cp->Parent;
+    return pp ? pp->ID : -ESRCH;
 }
 
 long SysCalls::sys_readdir(long *args) // 89
@@ -469,6 +502,26 @@ long SysCalls::sys_getcwd(long *args) // 183
     if(res >= (size - 1))
         return -ERANGE;
     return 0;
+}
+
+long SysCalls::sys_getuid32(long *args) // 199
+{
+    return sys_getuid(args);
+}
+
+long SysCalls::sys_getgid32(long *args) // 200
+{
+    return sys_getgid(args);
+}
+
+long SysCalls::sys_geteuid32(long *args) // 201
+{
+    return sys_geteuid(args);
+}
+
+long SysCalls::sys_getegid32(long *args) // 202
+{
+    return sys_getegid(args);
 }
 
 long SysCalls::sys_gettid(long *args) // 224

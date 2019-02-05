@@ -45,7 +45,6 @@ void WOOT_PumpEvents(_THIS)
     while(wmPeekEvent(wnd, &event, 0) > 0)
     {
         memset(&sdlEvent, 0, sizeof(SDL_Event));
-
         wmProcessEvent(wnd, &event);
         if(event.Type == ET_KEYBOARD)
         {
