@@ -134,7 +134,7 @@ size64_t CDFS::FSINode::GetSize()
 
 mode_t CDFS::FSINode::GetMode()
 {
-    return SUSPMode ? SUSPMode : (0755 | (DirEntry.Flags & CDFS_FLAG_DIRECTORY ? S_IFDIR : 0));
+    return SUSPMode ? SUSPMode : (0755 | (DirEntry.Flags & CDFS_FLAG_DIRECTORY ? S_IFDIR : S_IFREG));
 }
 
 time_t CDFS::FSINode::GetCreateTime()
