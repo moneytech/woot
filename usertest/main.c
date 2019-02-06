@@ -148,11 +148,20 @@ int main(int argc, char *argv[])
                                     line[x] = x ^ y + color;
                             }
                             break;
+                        case SDLK_RSHIFT:
+                        {
+                            int nk = 0;
+                            Uint8 *ks = SDL_GetKeyState(&nk);
+                            for(int i = SDLK_a, j = 0; i <= SDLK_z; ++i, ++j)
+                                printf("%c", ks[i] ? 'A' + j : 'a' + j);
+                            printf("\n");
+                            break;
+                        }
                         }
                         break;
                     }
                     if(quit) break;
-                    printf(".");
+                    //printf(".");
                     SDL_Flip(surf);
                 }
             } else printf("error: %s\n", SDL_GetError());

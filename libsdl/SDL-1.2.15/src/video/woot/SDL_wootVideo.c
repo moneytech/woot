@@ -231,7 +231,6 @@ static int WOOT_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
     }
     return 1;
 }
-
 static void WOOT_DeleteDevice(_THIS)
 {
     SDL_free(this->hidden);

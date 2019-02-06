@@ -1,6 +1,7 @@
 #include "SDL_video.h"
 #include "../SDL_sysvideo.h"
 #include "SDL_events.h"
+#include "../../events/SDL_events_c.h"
 
 #include "SDL_wootEvents.h"
 
@@ -48,9 +49,12 @@ void WOOT_PumpEvents(_THIS)
         wmProcessEvent(wnd, &event);
         if(event.Type == ET_KEYBOARD)
         {
-            sdlEvent.type = event.Keyboard.Flags & ET_KB_RELEASED ? SDL_KEYUP : SDL_KEYDOWN;
-            sdlEvent.key.keysym.sym = vkToKeySym[event.Keyboard.Key];
-            SDL_PushEvent(&sdlEvent);
+            Uint8 state = event.Keyboard.Flags & ET_KB_RELEASED ? SDL_RELEASED : SDL_PRESSED;
+            SDL_keysym key;
+            key.sym = vkToKeySym[event.Keyboard.Key];
+            sdlEvent.type = state == SDL_PRESSED ? SDL_KEYDOWN : SDL_KEYUP;
+            sdlEvent.key.keysym.sym = key.sym;
+            SDL_PrivateKeyboard(state, &key);
         }
     }
 }
