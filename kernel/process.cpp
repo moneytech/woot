@@ -148,7 +148,7 @@ Process *Process::Create(const char *filename, Semaphore *finished)
 {
     if(!filename) return nullptr;
     Thread *thread = new Thread("main", nullptr, (void *)processEntryPoint, (uintptr_t)filename,
-                                DEFAULT_STACK_SIZE, 1 << 20,
+                                DEFAULT_STACK_SIZE, DEFAULT_USER_STACK_SIZE,
                                 nullptr, finished, !finished);
     Process *proc = new Process(filename, thread, 0, finished);
     return proc;
