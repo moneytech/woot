@@ -1,16 +1,22 @@
-OUTFILE = a.out
-OBJS = main.o
+CONFIG_STATUS = build/config.status
 
-CFLAGS =
-CXXFLAGS =
-LDFLAGS =
-ASFLAGS =
+all: config
+	@$(MAKE) -C build
+	@$(MAKE) -C build install
 
-all: $(OBJS)
-	$(LD) $(LDFLAGS) $(OBJS) -o $(OUTFILE)
+$(CONFIG_STATUS): ./configure
+	@./configure
+
+config: $(CONFIG_STATUS)
+
+reconfig: dist-clean config
+
+dist-clean:
+	@rm -rf build
 
 clean:
-	rm -rf $(OBJS) $(OUTFILE)
+	@$(MAKE) -C build clean
 
-.PHONY: clean
+.PHONY: all reconfig dist-clean clean
+
 
