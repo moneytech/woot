@@ -1684,7 +1684,7 @@ AC_CACHE_VAL([lt_cv_sys_max_cmd_len], [dnl
     lt_cv_sys_max_cmd_len=12288;    # 12K is about right
     ;;
 
-  gnu*)
+  gnu* | woot*)
     # Under GNU Hurd, this test is not required because there is
     # no limit to the length of command line arguments.
     # Libtool will interpret -1 as no limit whatsoever
@@ -2835,6 +2835,16 @@ linux*android*)
   _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
   ;;
 
+woot*)
+  version_type=none
+  need_lib_prefix=no
+  need_version=no
+  library_names_spec='$libname$shared_ext'
+  soname_spec='$libname$shared_ext'
+  shlibpath_var=LD_LIBRARY_PATH
+  hardcode_into_libs=yes
+  ;;
+
 # This must be glibc/ELF.
 linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
   version_type=linux # correct to gnu/linux during the next big refactor
@@ -3553,7 +3563,7 @@ irix5* | irix6* | nonstopux*)
   ;;
 
 # This must be glibc/ELF.
-linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu* | woot*)
   lt_cv_deplibs_check_method=pass_all
   ;;
 
@@ -4372,7 +4382,7 @@ m4_if([$1], [CXX], [
 	    ;;
 	esac
 	;;
-      linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+      linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu* | woot*)
 	case $cc_basename in
 	  KCC*)
 	    # KAI C++ Compiler
@@ -4696,7 +4706,7 @@ m4_if([$1], [CXX], [
       _LT_TAGVAR(lt_prog_compiler_static, $1)='-non_shared'
       ;;
 
-    linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+    linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu* | woot*)
       case $cc_basename in
       # old Intel for x86_64, which still supported -KPIC.
       ecc*)
@@ -4948,7 +4958,7 @@ m4_if([$1], [CXX], [
       ;;
     esac
     ;;
-  linux* | k*bsd*-gnu | gnu*)
+  linux* | k*bsd*-gnu | gnu* | woot*)
     _LT_TAGVAR(link_all_deplibs, $1)=no
     ;;
   *)
@@ -5013,7 +5023,7 @@ dnl Note also adjust exclude_expsyms for C++ above.
   openbsd* | bitrig*)
     with_gnu_ld=no
     ;;
-  linux* | k*bsd*-gnu | gnu*)
+  linux* | k*bsd*-gnu | gnu* | woot*)
     _LT_TAGVAR(link_all_deplibs, $1)=no
     ;;
   esac
@@ -5191,7 +5201,7 @@ _LT_EOF
       _LT_TAGVAR(archive_expsym_cmds, $1)='sed "s|^|_|" $export_symbols >$output_objdir/$soname.expsym~$CC -shared $pic_flag $libobjs $deplibs $compiler_flags $wl-h,$soname $wl--retain-symbols-file,$output_objdir/$soname.expsym $wl--image-base,`expr ${RANDOM-$$} % 4096 / 2 \* 262144 + 1342177280` -o $lib'
       ;;
 
-    gnu* | linux* | tpf* | k*bsd*-gnu | kopensolaris*-gnu)
+    gnu* | linux* | tpf* | k*bsd*-gnu | kopensolaris*-gnu | woot*)
       tmp_diet=no
       if test linux-dietlibc = "$host_os"; then
 	case $cc_basename in
@@ -6948,7 +6958,7 @@ if test yes != "$_lt_caught_CXX_error"; then
         _LT_TAGVAR(inherit_rpath, $1)=yes
         ;;
 
-      linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
+      linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu* | woot*)
         case $cc_basename in
           KCC*)
 	    # Kuck and Associates, Inc. (KAI) C++ Compiler

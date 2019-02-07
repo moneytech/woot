@@ -1,6 +1,8 @@
+aclocal
 alpha.png
 autoconf
 automake
+autoreconf
 binutils/Makefile
 binutils/binutils-2.30/COPYING
 binutils/binutils-2.30/COPYING.LIB
