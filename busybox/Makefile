@@ -3,7 +3,6 @@ BUILD_DIR = build
 KMAKEFILE = $(BUILD_DIR)/Makefile
 ROOT_DIR = $(shell pwd)
 
-LDFLAGS = -Wl,-T$(ROOT_DIR)/../user.ldscript,$(ROOT_DIR)/../libc/i686-woot/lib/crt0.o
 CROSS_COMPILE = i686-woot-
 
 export CROSS_COMPILE LDFLAGS
@@ -14,7 +13,7 @@ all: config
 $(KMAKEFILE):
 	mkdir -p $(BUILD_DIR)
 	$(MAKE) -C $(BUILD_DIR) allnoconfig KBUILD_SRC=$(ROOT_DIR)/$(BB_DIR) -f $(ROOT_DIR)/$(BB_DIR)/Makefile
-	
+
 config: $(KMAKEFILE)
 
 dist-clean:

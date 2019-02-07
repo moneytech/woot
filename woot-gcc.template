@@ -1,2 +1,2 @@
 #!/bin/sh
-exec "${REALGCC:-gcc}" "$@" -specs="<<ROOT_DIR>>/woot.specs"
+exec "${REALGCC:-gcc}" -fno-stack-protector "$@" -specs="<<ROOT_DIR>>/woot.specs"

@@ -189,10 +189,18 @@ long SysCalls::sys_write(long *args) // 4
 long SysCalls::sys_open(long *args) // 5
 {
     //printf("sys_open('%s', %d)\n", (char *)args[1], args[2]);
-    if(!args[1]) return -EINVAL;
+    const char *path = (const char *)args[1];
+    if(!path)
+        return -EINVAL;
+    else if(!strcmp("dev:/stdin", path))
+        return 0;
+    else if(!strcmp("dev:/stdout", path))
+        return 1;
+    else if(!strcmp("dev:/stderr", path))
+        return 2;
     Process *cp = Process::GetCurrent();
     if(!cp) return -ESRCH;
-    return cp->Open((const char *)args[1], args[2]);
+    return cp->Open(path, args[2]);
 }
 
 long SysCalls::sys_close(long *args) // 6

@@ -82,6 +82,7 @@ iso: all
 	cp $(MODULES) $(ISODIR)/system
 	cp $(DISTFILES) $(ISODIR)
 	cp libsdl/lib/libSDL-1.2.so.0 $(ISODIR)/libSDL-1.2.so
+	cp busybox/build/busybox_unstripped $(ISODIR)/busybox
 	grub-mkrescue -o $(ISOFILE) $(ISODIR) -- --volid WOOT_OS 2>&1
 
 # recreates empty hdd image from archive (in case it gets borked)
@@ -117,6 +118,7 @@ hdd.img: all
 	-sudo cp $(MODULES) $(MOUNTPOINT)/system
 	-sudo cp $(DISTFILES) $(MOUNTPOINT)
 	-sudo cp libsdl/lib/libSDL-1.2.so.0 $(MOUNTPOINT)/libSDL-1.2.so
+	-sudo cp busybox/build/busybox_unstripped $(MOUNTPOINT)/busybox
 	sudo umount $(MOUNTPOINT)
 	sudo losetup -d /dev/loop1
 
@@ -137,7 +139,7 @@ try-umount: try-unmount
 configure: $(CONFIGURE) add-exec
 
 $(CONFIGURE): % : %.template
-	$(SED) 's?<<ROOT_DIR>>?'`pwd`'?g' $< > $@
+	$(SED) 's?<<ROOT_DIR>>?'`realpath .`'?g' $< > $@
 
 add-exec: $(ADD_EXEC)
 	chmod +x $?

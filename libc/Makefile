@@ -2,6 +2,7 @@ INSTALL_DEPS = build/i686-woot/newlib/crt0.o build/i686-woot/newlib/libc.la buil
 
 all:
 	@$(MAKE) -C build
+	#@$(MAKE) -C build install
 	@$(MAKE) install.stamp
 
 $(INSTALL_DEPS):

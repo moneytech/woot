@@ -1131,6 +1131,13 @@ char *inet_ntoa(struct in_addr in)
 
 #include <netdb.h>
 
+int prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
+{
+    fprintf(stderr, "%s not implemented\n", __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
 struct hostent *gethostbyname(const char *name)
 {
     static char *h_aliases[] = { NULL };

@@ -2,6 +2,22 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#include <stdio.h>
+
+pid_t setsid(void)
+{
+    printf("%s: %s() not implemented\n", __FILE__, __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
+int getgroups(int size, gid_t list[])
+{
+    printf("%s: %s() not implemented\n", __FILE__, __FUNCTION__);
+    errno = ENOSYS;
+    return -1;
+}
+
 pid_t getpid()
 {
     long res = syscall0(SYS_getpid);
