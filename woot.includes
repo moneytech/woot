@@ -960,3 +960,11 @@ libmpfr/mpfr-4.0.2/src/arm
 libmpfr/mpfr-4.0.2/src/x86/core2
 libmpfr/mpfr-4.0.2/m4
 libmpfr/mpfr-4.0.2/src/powerpc32
+libmpc
+libmpc/mpc-1.1.0/tests
+libmpc/mpc-1.1.0/doc
+libmpc/mpc-1.1.0
+libmpc/mpc-1.1.0/src
+libmpc/mpc-1.1.0/m4
+libmpc/mpc-1.1.0/tools/bench
+libmpc/mpc-1.1.0/tools

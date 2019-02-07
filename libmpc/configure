@@ -1,0 +1,10 @@
+#!/bin/sh
+
+ROOT_DIR=`pwd`/.. && \
+rm -rf build && \
+mkdir -p build && \
+cd build && \
+CC=i686-woot-gcc \
+../mpfr-4.0.2/configure \
+--prefix=$ROOT_DIR/libmpfr \
+--host=i686-woot
