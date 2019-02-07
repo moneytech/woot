@@ -1,4 +1,4 @@
 #!/bin/sh
 
-echo Running i686-woot-ld
+#echo Running i686-woot-ld
 ld -melf_i386 -nostdlib -L<<ROOT_DIR>>/libc/i686-woot/lib -L<<ROOT_DIR>>/libwoot -L<<ROOT_DIR>>/zlib/lib -L<<ROOT_DIR>>/libpng/lib -L<<ROOT_DIR>>/libfreetype/lib -L<<ROOT_DIR>>/libgmp/lib -L<<ROOT_DIR>>/libsdl/lib "$@"

@@ -1,5 +1,5 @@
 #!/bin/sh
 
-echo Running i686-woot-ar
+#echo Running i686-woot-ar
 ar "$@"
 
