@@ -1,7 +1,7 @@
 NOTICE
 -
 
-**This repository is no longer updated. Project is now undergoing refactorization and directory structure change. But it is NOT dead. New GitHub repository will be available soon.**
+**This repository is no longer updated. Project is now undergoing refactorization and directory structure change. But it is NOT dead. New GitHub repository is available [here](https://github.com/pvc988/woot-os).**
 
 ---
 
